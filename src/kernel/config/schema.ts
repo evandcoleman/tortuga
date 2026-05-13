@@ -30,8 +30,13 @@ export const NewsletterConfigSchema = z.object({
     dedupe_episodes_into_seasons: z.boolean().default(true),
     max_items_per_section: z.number().int().positive().default(12),
     exclude_genres: z.array(z.string()).default([]),
-  }).default({}),
-  featured: z.object({ enabled: z.boolean().default(false) }).default({}),
+  }).default(() => ({
+    min_tmdb_rating: 0,
+    dedupe_episodes_into_seasons: true,
+    max_items_per_section: 12,
+    exclude_genres: [],
+  })),
+  featured: z.object({ enabled: z.boolean().default(false) }).default(() => ({ enabled: false })),
 });
 export type NewsletterConfig = z.infer<typeof NewsletterConfigSchema>;
 
