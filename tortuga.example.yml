@@ -1,0 +1,18 @@
+newsletter:
+  schedule: "0 9 * * SUN"
+  timezone: "America/New_York"
+  lookback_days: 7
+  from:
+    email: "tortuga@example.com"
+    name: "Olympus Plex"
+  reply_to: "you@example.com"
+  include_libraries:
+    - "Movies"
+    - "TV Shows"
+  filters:
+    min_tmdb_rating: 6.0
+    dedupe_episodes_into_seasons: true
+    max_items_per_section: 12
+    exclude_genres: []
+  featured:
+    enabled: false
