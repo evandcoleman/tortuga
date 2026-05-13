@@ -10,6 +10,8 @@ export interface VerifyOpts {
   body: string;
   header: string | null;
   secret: string;
+  /** Max allowed age of the timestamp in seconds. Defaults to 300 (5 minutes). */
+  tolerance?: number;
 }
 
 export function verifyResendSignature(opts: VerifyOpts): boolean {
@@ -20,6 +22,10 @@ export function verifyResendSignature(opts: VerifyOpts): boolean {
   const ts = parts.t;
   const sig = parts.v1;
   if (!ts || !sig) return false;
+  const tolerance = opts.tolerance ?? 300;
+  const tsNum = Number(ts);
+  if (!Number.isFinite(tsNum)) return false;
+  if (Math.abs(Date.now() / 1000 - tsNum) > tolerance) return false;
   const computed = createHmac('sha256', opts.secret).update(`${ts}.${opts.body}`).digest('hex');
   const a = Buffer.from(computed, 'hex');
   const b = Buffer.from(sig, 'hex');

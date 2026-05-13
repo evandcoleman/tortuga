@@ -18,7 +18,7 @@ const TERMINAL: Record<string, 'delivered' | 'bounced' | 'complained' | 'failed'
 export async function POST(req: Request) {
   const ctx = getAppContext();
   const body = await req.text();
-  const secret = process.env.RESEND_WEBHOOK_SECRET ?? '';
+  const secret = ctx.env.RESEND_WEBHOOK_SECRET ?? '';
   if (!secret) {
     log.warn('webhook received but RESEND_WEBHOOK_SECRET unset');
     return NextResponse.json({ error: 'not configured' }, { status: 401 });

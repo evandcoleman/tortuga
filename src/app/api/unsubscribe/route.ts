@@ -16,6 +16,12 @@ export async function GET(req: Request) {
       status: 400, headers: { 'content-type': 'text/html' },
     });
   }
+  const existing = ctx.db.select().from(unsubscribes).where(eq(unsubscribes.token, token)).get();
+  if (existing?.usedAt != null) {
+    return new NextResponse(htmlPage('Link no longer valid', 'This unsubscribe link is invalid or has been used.'), {
+      status: 400, headers: { 'content-type': 'text/html' },
+    });
+  }
   ctx.db.update(recipientsCache).set({ active: false })
     .where(eq(recipientsCache.email, verified.email)).run();
   ctx.db.update(unsubscribes).set({ usedAt: new Date() })

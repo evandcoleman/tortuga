@@ -6,6 +6,7 @@ import { createTautulliClient, type TautulliClient } from './integrations/tautul
 import { createTmdbClient, type TmdbClient } from './integrations/tmdb';
 import { createResendClient } from './integrations/resend';
 import { createScheduler, type Scheduler } from './scheduler/scheduler';
+import { createLogger } from './logging/logger';
 import { Resend } from 'resend';
 
 export interface AppContext {
@@ -29,7 +30,8 @@ export function getAppContext(): AppContext {
   if (env.AUTH_MODE === 'session' && env.ADMIN_EMAIL && env.ADMIN_PASSWORD) {
     // dynamic import to keep argon2 out of edge runtimes
     import('./auth/bootstrap').then(({ bootstrapAdminUser }) =>
-      bootstrapAdminUser(db, { email: env.ADMIN_EMAIL!, password: env.ADMIN_PASSWORD! }));
+      bootstrapAdminUser(db, { email: env.ADMIN_EMAIL!, password: env.ADMIN_PASSWORD! })
+    ).catch(err => createLogger('context').error({ err }, 'admin bootstrap failed'));
   }
   const tautulli = createTautulliClient({ url: env.TAUTULLI_URL, apiKey: env.TAUTULLI_API_KEY });
   const tmdb = createTmdbClient({ apiKey: env.TMDB_API_KEY });

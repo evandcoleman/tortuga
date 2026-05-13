@@ -16,6 +16,7 @@ export function applyFilters(
   let working = items
     .filter(i => i.rating >= opts.min_tmdb_rating)
     .filter(i => !includeLibraries?.length || includeLibraries.includes(i.libraryName))
+    // genres are not currently populated by the TMDB search; this filter is a no-op until per-item details are fetched.
     .filter(i => !i.genres || !i.genres.some(g => excludedGenres.has(g.toLowerCase())));
 
   if (opts.dedupe_episodes_into_seasons) {

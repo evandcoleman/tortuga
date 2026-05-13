@@ -12,6 +12,7 @@ export const EnvSchema = z.object({
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_PASSWORD: z.string().min(8).optional(),
   DATABASE_URL: z.string().default('file:/config/tortuga.db'),
+  RESEND_WEBHOOK_SECRET: z.string().min(1).optional(),
   DIGEST_RUN_TOKEN: z.string().min(16).optional(),
   LOG_LEVEL: z.string().default('info'),
   CONFIG_PATH: z.string().default('/config/tortuga.yml'),

@@ -11,7 +11,13 @@ export function generateUnsubscribeToken(email: string, secret: string): string 
   return `${payload}.${sig}`;
 }
 
-export function verifyUnsubscribeToken(token: string, secret: string): { email: string } | null {
+const DEFAULT_MAX_AGE_MS = 90 * 86_400_000; // 90 days
+
+export function verifyUnsubscribeToken(
+  token: string,
+  secret: string,
+  maxAgeMs: number = DEFAULT_MAX_AGE_MS,
+): { email: string } | null {
   const [payload, sig] = token.split('.');
   if (!payload || !sig) return null;
   const expected = createHmac('sha256', secret).update(payload).digest();
@@ -20,6 +26,7 @@ export function verifyUnsubscribeToken(token: string, secret: string): { email: 
   try {
     const parsed = JSON.parse(b64urlDecode(payload).toString('utf8'));
     if (typeof parsed.email !== 'string') return null;
+    if (typeof parsed.t === 'number' && Date.now() - parsed.t > maxAgeMs) return null;
     return { email: parsed.email };
   } catch { return null; }
 }

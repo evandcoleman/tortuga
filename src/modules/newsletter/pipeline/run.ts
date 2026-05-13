@@ -54,8 +54,7 @@ export async function runDigest(opts: RunDigestOpts) {
       return { id: digestId, status: 'skipped' as const, itemCount: 0 };
     }
 
-    const previewRecipient = opts.db.select().from(recipientsCache).all().find(r => r.active);
-    const placeholderUnsub = generateUnsubscribeToken(previewRecipient?.email ?? 'preview@example', opts.sessionSecret);
+    const placeholderUnsub = generateUnsubscribeToken('preview@tortuga.local', opts.sessionSecret);
     const subject = `New on ${opts.config.from.name} — ${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
     const html = await render(createElement(DigestEmail, {
       items: filtered,
@@ -82,7 +81,11 @@ export async function runDigest(opts: RunDigestOpts) {
       const sendId = createId();
       const tokenStr = generateUnsubscribeToken(r.email, opts.sessionSecret);
       opts.db.insert(unsubscribes).values({ token: tokenStr, email: r.email, createdAt: new Date() }).run();
-      const perRecipientHtml = html.replace(/token=[^"&]+/, `token=${tokenStr}`);
+      const perRecipientHtml = await render(createElement(DigestEmail, {
+        items: filtered,
+        unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${tokenStr}`,
+        appName: opts.config.from.name,
+      }));
       opts.db.insert(sends).values({
         id: sendId, digestId, recipientEmail: r.email, recipientName: r.name, status: 'queued',
       }).run();

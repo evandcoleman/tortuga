@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { generateUnsubscribeToken, verifyUnsubscribeToken } from './unsubscribe';
 
 describe('unsubscribe tokens', () => {
@@ -14,5 +14,15 @@ describe('unsubscribe tokens', () => {
   it('rejects with wrong secret', () => {
     const tok = generateUnsubscribeToken('u@x.io', secret);
     expect(verifyUnsubscribeToken(tok, 'b'.repeat(32))).toBeNull();
+  });
+  it('rejects tokens older than maxAge', () => {
+    const hundredDaysMs = 100 * 86_400_000;
+    const pastTs = Date.now() - hundredDaysMs;
+    // generate a token with a backdated timestamp by mocking Date.now
+    vi.spyOn(Date, 'now').mockReturnValueOnce(pastTs);
+    const tok = generateUnsubscribeToken('u@x.io', secret);
+    vi.restoreAllMocks();
+    // default maxAge is 90 days; 100-day-old token must be rejected
+    expect(verifyUnsubscribeToken(tok, secret)).toBeNull();
   });
 });
