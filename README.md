@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tortuga
 
-## Getting Started
+Front-of-house for your Plex server. Sends a weekly digest of new content,
+filtered and TMDB-enriched, via [Resend](https://resend.com). v1 ships
+newsletter-only; broadcasts, invites, and user lifecycle are on the roadmap.
 
-First, run the development server:
+## Quickstart (docker compose)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp docker-compose.example.yml docker-compose.yml
+mkdir -p config && cp tortuga.example.yml config/tortuga.yml
+# edit config/tortuga.yml and your .env
+docker compose up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`, sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD`,
+go to **Newsletter → Preview**, click "Generate fresh preview".
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Required env
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Var | Description |
+|---|---|
+| `TAUTULLI_URL` | URL to your Tautulli instance |
+| `TAUTULLI_API_KEY` | Tautulli API key (Settings → Web Interface) |
+| `TMDB_API_KEY` | TMDB v3 API key |
+| `RESEND_API_KEY` | Resend API key |
+| `APP_URL` | Public URL used in email links |
+| `SESSION_SECRET` | Random 32+ char string |
 
-## Learn More
+## Optional env
 
-To learn more about Next.js, take a look at the following resources:
+| Var | Default | Description |
+|---|---|---|
+| `AUTH_MODE` | `session` | `session` (built-in login) or `forward` (trust upstream header) |
+| `AUTH_FORWARD_HEADER` | `Remote-User` | Header to read when `AUTH_MODE=forward` |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | — | Bootstraps the first admin user when `AUTH_MODE=session` |
+| `DIGEST_RUN_TOKEN` | — | Bearer token to trigger `POST /api/digests/run` from external cron |
+| `RESEND_WEBHOOK_SECRET` | — | Required for Resend webhook delivery events |
+| `LOG_LEVEL` | `info` | pino log level |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deliverability
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Resend requires domain verification for the `from:` address in
+`tortuga.yml` (SPF/DKIM/DMARC). Set this up in Resend before your first send.
 
-## Deploy on Vercel
+## Triggering manually
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+curl -X POST $APP_URL/api/digests/run \
+  -H "Authorization: Bearer $DIGEST_RUN_TOKEN"
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Body `{"dry_run": true}` renders without sending.
+
+## Architecture
+
+See [docs/superpowers/specs/2026-05-12-tortuga-design.md](docs/superpowers/specs/2026-05-12-tortuga-design.md).
