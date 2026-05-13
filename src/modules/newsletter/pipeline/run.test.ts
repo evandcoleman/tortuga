@@ -1,0 +1,85 @@
+import { describe, it, expect, vi } from 'vitest';
+import { createDb } from '@/kernel/db/client';
+import { applyMigrations } from '@/kernel/db/migrate';
+import { runDigest } from './run';
+import { digests, sends } from '../schema';
+
+function fakes() {
+  const tautulli = {
+    getUsers: vi.fn().mockResolvedValue([
+      { plexUserId: 1, name: 'A', plexUsername: 'a', email: 'a@x.io' },
+    ]),
+    getRecentlyAdded: vi.fn().mockResolvedValue([
+      { guid: 'g1', title: 'M', mediaType: 'movie', libraryName: 'Movies', addedAt: new Date(), year: 2020, raw: {} },
+    ]),
+  };
+  const tmdb = {
+    searchMovie: vi.fn().mockResolvedValue({ id: 1, title: 'M', rating: 8, posterUrl: null, overview: 'o' }),
+    searchTv: vi.fn(),
+  };
+  const resend = {
+    emails: { send: vi.fn().mockResolvedValue({ data: { id: 'msg_1' }, error: null }) },
+  };
+  return { tautulli, tmdb, resend };
+}
+
+const baseConfig = {
+  schedule: '0 9 * * SUN', timezone: 'UTC', lookback_days: 7,
+  from: { email: 'from@x.io', name: 'T' },
+  filters: { min_tmdb_rating: 0, dedupe_episodes_into_seasons: true, max_items_per_section: 12, exclude_genres: [] },
+  featured: { enabled: false },
+} as const;
+
+describe('runDigest', () => {
+  it('runs full pipeline and records a sent digest', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, resend } = fakes();
+    const result = await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any,
+      config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-10T13:00:00Z'),
+    });
+    expect(result.status).toBe('sent');
+    expect(result.itemCount).toBe(1);
+    expect(db.select().from(sends).all()[0].status).toBe('sent');
+  });
+
+  it('skips when no items pass filters', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, resend } = fakes();
+    tautulli.getRecentlyAdded.mockResolvedValue([]);
+    const result = await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any,
+      config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-11T13:00:00Z'),
+    });
+    expect(result.status).toBe('skipped');
+    expect(db.select().from(sends).all()).toHaveLength(0);
+  });
+
+  it('does not fan out on dry-run', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, resend } = fakes();
+    const result = await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any,
+      config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-12T13:00:00Z'), dryRun: true,
+    });
+    expect(result.status).toBe('rendered');
+    expect(db.select().from(sends).all()).toHaveLength(0);
+  });
+
+  it('refuses to double-fire same scheduled_at', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, resend } = fakes();
+    const at = new Date('2026-05-13T13:00:00Z');
+    await runDigest({ db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any, config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32), scheduledAt: at });
+    await expect(
+      runDigest({ db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any, config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32), scheduledAt: at }),
+    ).rejects.toThrow(/UNIQUE/);
+  });
+});
