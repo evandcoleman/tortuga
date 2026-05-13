@@ -26,6 +26,11 @@ export function getAppContext(): AppContext {
   const config = loadYamlConfig(env.CONFIG_PATH);
   const db = createDb(env.DATABASE_URL);
   applyMigrations(db);
+  if (env.AUTH_MODE === 'session' && env.ADMIN_EMAIL && env.ADMIN_PASSWORD) {
+    // dynamic import to keep argon2 out of edge runtimes
+    import('./auth/bootstrap').then(({ bootstrapAdminUser }) =>
+      bootstrapAdminUser(db, { email: env.ADMIN_EMAIL!, password: env.ADMIN_PASSWORD! }));
+  }
   const tautulli = createTautulliClient({ url: env.TAUTULLI_URL, apiKey: env.TAUTULLI_API_KEY });
   const tmdb = createTmdbClient({ apiKey: env.TMDB_API_KEY });
   const resend = createResendClient(env.RESEND_API_KEY);
