@@ -317,6 +317,7 @@ INSERT digests row (status='pending', scheduled_at)
   │
   ▼
 6. Fan out sends
+   UPDATE digests SET status='sending'
    For each active recipient:
      INSERT sends row (status='queued')
      Inject HMAC unsubscribe token
