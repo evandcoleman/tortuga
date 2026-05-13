@@ -1,0 +1,20 @@
+services:
+  tortuga:
+    image: ghcr.io/evandcoleman/tortuga:latest
+    container_name: tortuga
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config:/config
+    environment:
+      TAUTULLI_URL: "http://tautulli:8181"
+      TAUTULLI_API_KEY: "${TAUTULLI_API_KEY}"
+      TMDB_API_KEY: "${TMDB_API_KEY}"
+      RESEND_API_KEY: "${RESEND_API_KEY}"
+      RESEND_WEBHOOK_SECRET: "${RESEND_WEBHOOK_SECRET}"
+      APP_URL: "${APP_URL:-http://localhost:3000}"
+      SESSION_SECRET: "${SESSION_SECRET}"
+      ADMIN_EMAIL: "${ADMIN_EMAIL}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      AUTH_MODE: "${AUTH_MODE:-session}"
+    restart: unless-stopped
