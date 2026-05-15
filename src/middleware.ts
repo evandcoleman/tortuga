@@ -5,6 +5,7 @@ const PUBLIC_PATHS = [
   '/api/healthz',
   '/api/unsubscribe',
   '/api/webhooks/resend',
+  '/api/webhooks/mailgun',
   '/api/auth',
 ];
 
