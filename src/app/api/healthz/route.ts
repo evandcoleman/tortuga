@@ -11,7 +11,7 @@ export async function GET() {
     catch { out.db = 'fail'; }
     try { await ctx.tautulli.getUsers(); out.tautulli = 'ok'; }
     catch { out.tautulli = 'fail'; }
-    out.resend = ctx.env.RESEND_API_KEY ? 'ok' : 'unconfigured';
+    out.email_provider = ctx.email.name;
     const failed = Object.entries(out).some(([k, v]) => k !== 'ts' && v === 'fail');
     return NextResponse.json(out, { status: failed ? 503 : 200 });
   } catch (err) {

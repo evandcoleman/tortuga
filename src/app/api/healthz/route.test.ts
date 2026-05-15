@@ -4,7 +4,8 @@ vi.mock('@/kernel/context', () => ({
   getAppContext: () => ({
     db: { $client: { prepare: () => ({ all: () => [{ 1: 1 }] }) } },
     tautulli: { getUsers: async () => [] },
-    env: { RESEND_API_KEY: 'x' },
+    env: {},
+    email: { name: 'resend' },
   }),
 }));
 
@@ -17,5 +18,6 @@ describe('GET /api/healthz', () => {
     expect(res.status).toBe(200);
     expect(body.db).toBe('ok');
     expect(body.tautulli).toBe('ok');
+    expect(body.email_provider).toBe('resend');
   });
 });

@@ -17,10 +17,13 @@ function fakes() {
     searchMovie: vi.fn().mockResolvedValue({ id: 1, title: 'M', rating: 8, posterUrl: null, overview: 'o' }),
     searchTv: vi.fn(),
   };
-  const resend = {
-    emails: { send: vi.fn().mockResolvedValue({ data: { id: 'msg_1' }, error: null }) },
+  const provider = {
+    name: 'resend' as const,
+    send: vi.fn().mockResolvedValue({ providerMessageId: 'msg_1', error: null }),
+    verifyWebhook: vi.fn(),
+    parseEvent: vi.fn(),
   };
-  return { tautulli, tmdb, resend };
+  return { tautulli, tmdb, provider };
 }
 
 const baseConfig = {
@@ -34,9 +37,9 @@ describe('runDigest', () => {
   it('runs full pipeline and records a sent digest', async () => {
     const db = createDb(':memory:');
     applyMigrations(db);
-    const { tautulli, tmdb, resend } = fakes();
+    const { tautulli, tmdb, provider } = fakes();
     const result = await runDigest({
-      db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any,
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
       config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
       scheduledAt: new Date('2026-05-10T13:00:00Z'),
     });
@@ -48,10 +51,10 @@ describe('runDigest', () => {
   it('skips when no items pass filters', async () => {
     const db = createDb(':memory:');
     applyMigrations(db);
-    const { tautulli, tmdb, resend } = fakes();
+    const { tautulli, tmdb, provider } = fakes();
     tautulli.getRecentlyAdded.mockResolvedValue([]);
     const result = await runDigest({
-      db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any,
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
       config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
       scheduledAt: new Date('2026-05-11T13:00:00Z'),
     });
@@ -62,9 +65,9 @@ describe('runDigest', () => {
   it('does not fan out on dry-run', async () => {
     const db = createDb(':memory:');
     applyMigrations(db);
-    const { tautulli, tmdb, resend } = fakes();
+    const { tautulli, tmdb, provider } = fakes();
     const result = await runDigest({
-      db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any,
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
       config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
       scheduledAt: new Date('2026-05-12T13:00:00Z'), dryRun: true,
     });
@@ -75,11 +78,11 @@ describe('runDigest', () => {
   it('refuses to double-fire same scheduled_at', async () => {
     const db = createDb(':memory:');
     applyMigrations(db);
-    const { tautulli, tmdb, resend } = fakes();
+    const { tautulli, tmdb, provider } = fakes();
     const at = new Date('2026-05-13T13:00:00Z');
-    await runDigest({ db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any, config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32), scheduledAt: at });
+    await runDigest({ db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any, config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32), scheduledAt: at });
     await expect(
-      runDigest({ db, tautulli: tautulli as any, tmdb: tmdb as any, resend: resend as any, config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32), scheduledAt: at }),
+      runDigest({ db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any, config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32), scheduledAt: at }),
     ).rejects.toThrow(/UNIQUE/);
   });
 });

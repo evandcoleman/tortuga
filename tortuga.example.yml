@@ -1,10 +1,16 @@
 newsletter:
+  email:
+    # provider: resend          # default; uses RESEND_API_KEY
+    provider: mailgun
+    mailgun:
+      domain: example.com
+      region: us
   schedule: "0 9 * * SUN"
   timezone: "America/New_York"
   lookback_days: 7
   from:
-    email: "tortuga@example.com"
-    name: "Olympus Plex"
+    email: "newsletter@example.com"
+    name: "Orpheus"
   reply_to: "you@example.com"
   include_libraries:
     - "Movies"

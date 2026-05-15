@@ -6,7 +6,7 @@ import { createElement } from 'react';
 import type { Db } from '@/kernel/db/client';
 import type { TautulliClient } from '@/kernel/integrations/tautulli';
 import type { TmdbClient } from '@/kernel/integrations/tmdb';
-import type { Resend } from 'resend';
+import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import { createLogger } from '@/kernel/logging/logger';
@@ -23,7 +23,7 @@ export interface RunDigestOpts {
   db: Db;
   tautulli: TautulliClient;
   tmdb: TmdbClient;
-  resend: Resend;
+  provider: EmailProvider;
   config: NewsletterConfig;
   appUrl: string;
   sessionSecret: string;
@@ -90,20 +90,21 @@ export async function runDigest(opts: RunDigestOpts) {
         id: sendId, digestId, recipientEmail: r.email, recipientName: r.name, status: 'queued',
       }).run();
       try {
-        const res = await opts.resend.emails.send({
-          from: `${opts.config.from.name} <${opts.config.from.email}>`,
+        const result = await opts.provider.send({
+          from: opts.config.from,
           to: r.email,
           subject,
           html: perRecipientHtml,
           replyTo: opts.config.reply_to,
         });
         opts.db.update(sends).set({
-          resendMessageId: res.data?.id ?? null,
-          status: res.error ? 'failed' : 'sent',
+          providerMessageId: result.providerMessageId,
+          provider: opts.provider.name,
+          status: result.error ? 'failed' : 'sent',
           sentAt: new Date(),
-          error: res.error?.message ?? null,
+          error: result.error,
         }).where(eq(sends.id, sendId)).run();
-        if (!res.error) anySent = true;
+        if (!result.error) anySent = true;
       } catch (e) {
         opts.db.update(sends).set({
           status: 'failed', error: e instanceof Error ? e.message : 'unknown', sentAt: new Date(),
@@ -117,7 +118,7 @@ export async function runDigest(opts: RunDigestOpts) {
 
     return { id: digestId, status: anySent ? 'sent' as const : 'failed' as const, itemCount: filtered.length };
   } catch (err) {
-    log.error({ digest_id: digestId, err }, 'digest run failed');
+    log.error({ digest_id: digestId, provider: opts.provider.name, err }, 'digest run failed');
     opts.db.update(digests).set({
       status: 'failed', ranAt: new Date(),
       error: err instanceof Error ? `${err.message}\n${err.stack ?? ''}` : String(err),

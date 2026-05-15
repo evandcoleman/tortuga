@@ -4,10 +4,10 @@ import { createDb, type Db } from './db/client';
 import { applyMigrations } from './db/migrate';
 import { createTautulliClient, type TautulliClient } from './integrations/tautulli';
 import { createTmdbClient, type TmdbClient } from './integrations/tmdb';
-import { createResendClient } from './integrations/resend';
 import { createScheduler, type Scheduler } from './scheduler/scheduler';
 import { createLogger } from './logging/logger';
-import { Resend } from 'resend';
+import { createEmailProvider } from './email/factory';
+import type { EmailProvider } from './email/types';
 
 export interface AppContext {
   env: Env;
@@ -15,7 +15,7 @@ export interface AppContext {
   db: Db;
   tautulli: TautulliClient;
   tmdb: TmdbClient;
-  resend: Resend;
+  email: EmailProvider;
   scheduler: Scheduler;
 }
 
@@ -35,9 +35,9 @@ export function getAppContext(): AppContext {
   }
   const tautulli = createTautulliClient({ url: env.TAUTULLI_URL, apiKey: env.TAUTULLI_API_KEY });
   const tmdb = createTmdbClient({ apiKey: env.TMDB_API_KEY });
-  const resend = createResendClient(env.RESEND_API_KEY);
+  const email = createEmailProvider(env, config.newsletter.email);
   const scheduler = createScheduler();
-  cached = { env, config, db, tautulli, tmdb, resend, scheduler };
+  cached = { env, config, db, tautulli, tmdb, email, scheduler };
   return cached;
 }
 
