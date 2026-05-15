@@ -28,15 +28,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid signature' }, { status: 401 });
   }
   const payload = JSON.parse(body) as { type: string; data?: { email_id?: string } };
-  const resendMessageId = payload.data?.email_id ?? '';
+  const providerMessageId = payload.data?.email_id ?? '';
   ctx.db.insert(sendEvents).values({
-    id: createId(), sendId: null, resendMessageId, type: payload.type,
+    id: createId(), sendId: null, providerMessageId, provider: 'resend', type: payload.type,
     receivedAt: new Date(), payload: body,
   }).run();
   const terminal = TERMINAL[payload.type];
-  if (terminal && resendMessageId) {
+  if (terminal && providerMessageId) {
     ctx.db.update(sends).set({ status: terminal })
-      .where(eq(sends.resendMessageId, resendMessageId)).run();
+      .where(eq(sends.providerMessageId, providerMessageId)).run();
   }
   return NextResponse.json({ ok: true });
 }

@@ -98,7 +98,8 @@ export async function runDigest(opts: RunDigestOpts) {
           replyTo: opts.config.reply_to,
         });
         opts.db.update(sends).set({
-          resendMessageId: res.data?.id ?? null,
+          providerMessageId: res.data?.id ?? null,
+          provider: 'resend',
           status: res.error ? 'failed' : 'sent',
           sentAt: new Date(),
           error: res.error?.message ?? null,
