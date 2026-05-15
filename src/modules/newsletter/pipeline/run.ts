@@ -118,7 +118,7 @@ export async function runDigest(opts: RunDigestOpts) {
 
     return { id: digestId, status: anySent ? 'sent' as const : 'failed' as const, itemCount: filtered.length };
   } catch (err) {
-    log.error({ digest_id: digestId, err }, 'digest run failed');
+    log.error({ digest_id: digestId, provider: opts.provider.name, err }, 'digest run failed');
     opts.db.update(digests).set({
       status: 'failed', ranAt: new Date(),
       error: err instanceof Error ? `${err.message}\n${err.stack ?? ''}` : String(err),
