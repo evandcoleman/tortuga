@@ -1,4 +1,10 @@
 newsletter:
+  email:
+    # provider: resend          # default; uses RESEND_API_KEY
+    provider: mailgun
+    mailgun:
+      domain: example.com
+      region: us
   schedule: "0 9 * * SUN"
   timezone: "America/New_York"
   lookback_days: 7

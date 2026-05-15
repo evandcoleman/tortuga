@@ -45,4 +45,51 @@ newsletter:
   it('throws when file missing', () => {
     expect(() => loadYamlConfig(join(dir, 'missing.yml'))).toThrow(/required/);
   });
+
+  it('newsletter.email defaults to provider=resend', () => {
+    const path = join(dir, 'default-email.yml');
+    writeFileSync(path, `
+newsletter:
+  from:
+    email: "from@example.com"
+    name: "Test"
+`);
+    const cfg = loadYamlConfig(path);
+    expect(cfg.newsletter.email.provider).toBe('resend');
+    rmSync(dir, { recursive: true });
+  });
+
+  it('newsletter.email parses mailgun provider with domain', () => {
+    const path = join(dir, 'mailgun-email.yml');
+    writeFileSync(path, `
+newsletter:
+  from:
+    email: "from@example.com"
+    name: "Test"
+  email:
+    provider: mailgun
+    mailgun:
+      domain: example.com
+      region: us
+`);
+    const cfg = loadYamlConfig(path);
+    expect(cfg.newsletter.email.provider).toBe('mailgun');
+    expect(cfg.newsletter.email.mailgun?.domain).toBe('example.com');
+    expect(cfg.newsletter.email.mailgun?.region).toBe('us');
+    rmSync(dir, { recursive: true });
+  });
+
+  it('newsletter.email throws when mailgun selected but no domain', () => {
+    const path = join(dir, 'mailgun-no-domain.yml');
+    writeFileSync(path, `
+newsletter:
+  from:
+    email: "from@example.com"
+    name: "Test"
+  email:
+    provider: mailgun
+`);
+    expect(() => loadYamlConfig(path)).toThrow();
+    rmSync(dir, { recursive: true });
+  });
 });
