@@ -13,7 +13,7 @@ export function registerNewsletterModule() {
     handler: async () => {
       log.info('scheduled digest firing');
       await runDigest({
-        db: ctx.db, tautulli: ctx.tautulli, tmdb: ctx.tmdb, resend: ctx.resend,
+        db: ctx.db, tautulli: ctx.tautulli, tmdb: ctx.tmdb, provider: ctx.email,
         config: ctx.config.newsletter,
         appUrl: ctx.env.APP_URL,
         sessionSecret: ctx.env.SESSION_SECRET,
