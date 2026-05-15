@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getAppContext } from '@/kernel/context';
-import { verifyResendSignature } from '@/kernel/integrations/resend';
+import { ResendProvider } from '@/kernel/email/resend';
 import { sendEvents, sends } from '@/modules/newsletter/schema';
 import { createLogger } from '@/kernel/logging/logger';
 
@@ -23,7 +23,8 @@ export async function POST(req: Request) {
     log.warn('webhook received but RESEND_WEBHOOK_SECRET unset');
     return NextResponse.json({ error: 'not configured' }, { status: 401 });
   }
-  if (!verifyResendSignature({ body, header: req.headers.get('Resend-Signature'), secret })) {
+  const provider = new ResendProvider({ apiKey: ctx.env.RESEND_API_KEY ?? '' });
+  if (!provider.verifyWebhook({ body, headers: req.headers, secret })) {
     return NextResponse.json({ error: 'invalid signature' }, { status: 401 });
   }
   const payload = JSON.parse(body) as { type: string; data?: { email_id?: string } };
