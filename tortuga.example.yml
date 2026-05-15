@@ -9,8 +9,8 @@ newsletter:
   timezone: "America/New_York"
   lookback_days: 7
   from:
-    email: "tortuga@example.com"
-    name: "Olympus Plex"
+    email: "newsletter@example.com"
+    name: "Orpheus"
   reply_to: "you@example.com"
   include_libraries:
     - "Movies"
