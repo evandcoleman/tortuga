@@ -1,58 +1,34 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { auth } from '@/kernel/auth/auth';
+import { auth, signOut } from '@/kernel/auth/auth';
+import { getAppContext } from '@/kernel/context';
+import { Sidebar } from './_components/sidebar';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const mode = process.env.AUTH_MODE ?? 'session';
+  const mode = (process.env.AUTH_MODE ?? 'session') as 'session' | 'forward';
+  let userEmail: string | null = null;
   if (mode === 'session') {
     const session = await auth();
     if (!session?.user) redirect('/login');
+    userEmail = session.user.email ?? null;
   }
+  const ctx = getAppContext();
+
+  async function doSignOut() {
+    'use server';
+    await signOut({ redirectTo: '/login' });
+  }
+
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '220px 1fr',
-        minHeight: '100vh',
-        background: '#0f1115',
-        color: '#e7e9ee',
-      }}
-    >
-      <nav
-        style={{
-          background: '#0b0d12',
-          padding: 24,
-          borderRight: '1px solid #1e242e',
-        }}
-      >
-        <h1 style={{ fontSize: 18, marginTop: 0 }}>Tortuga</h1>
-        <ul
-          style={{
-            listStyle: 'none',
-            padding: 0,
-            marginTop: 24,
-            display: 'grid',
-            gap: 8,
-          }}
-        >
-          <li>
-            <Link href="/">Dashboard</Link>
-          </li>
-          <li>
-            <Link href="/newsletter">Newsletter</Link>
-          </li>
-          <li>
-            <Link href="/newsletter/preview">Preview</Link>
-          </li>
-          <li>
-            <Link href="/newsletter/history">History</Link>
-          </li>
-          <li>
-            <Link href="/newsletter/recipients">Recipients</Link>
-          </li>
-        </ul>
-      </nav>
-      <main style={{ padding: 32 }}>{children}</main>
+    <div className="flex min-h-screen bg-canvas text-fg">
+      <Sidebar
+        userEmail={userEmail}
+        providerName={ctx.email.name}
+        authMode={mode}
+        signOutAction={mode === 'session' ? doSignOut : undefined}
+      />
+      <main className="flex-1 overflow-x-hidden">
+        <div className="mx-auto w-full max-w-6xl px-10 py-10">{children}</div>
+      </main>
     </div>
   );
 }

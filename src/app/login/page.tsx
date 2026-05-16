@@ -17,48 +17,115 @@ export default async function LoginPage({
   }
 
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        background: '#0f1115',
-        color: '#e7e9ee',
-      }}
-    >
-      <form
-        action={action}
-        style={{ background: '#181c25', padding: 32, borderRadius: 12, width: 320 }}
-      >
-        <h1 style={{ margin: 0, marginBottom: 16 }}>Tortuga</h1>
-        <input name="email" type="email" placeholder="Email" required style={inputStyle} />
-        <input name="password" type="password" placeholder="Password" required style={inputStyle} />
-        {params.error ? <p style={{ color: '#ff6b6b' }}>Invalid credentials.</p> : null}
-        <button type="submit" style={btnStyle}>
-          Sign in
-        </button>
-      </form>
+    <main className="relative grid min-h-screen w-full place-items-center overflow-hidden bg-canvas px-6 py-12">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 [background:radial-gradient(60%_60%_at_50%_0%,oklch(80%_0.14_78/_0.10),transparent_70%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,oklch(80%_0.14_78/_0.4),transparent)]"
+      />
+
+      <div className="relative w-full max-w-[380px]">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-gold to-gold-lo text-gold-ink shadow-lift">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 3l6 4v6c0 4-2.7 6.7-6 8-3.3-1.3-6-4-6-8V7l6-4z"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M9.5 12.5l1.8 1.8 3.2-3.4"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <div className="text-[11px] font-medium uppercase tracking-[0.22em] text-faint">Tortuga</div>
+          <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.02em] text-fg">
+            Sign in to continue
+          </h1>
+          <p className="mt-1.5 text-[13px] text-muted">Front-of-house for your Plex server.</p>
+        </div>
+
+        <form
+          action={action}
+          className="rounded-xl border border-line bg-surface/80 p-6 shadow-lift backdrop-blur-sm"
+        >
+          <Field label="Email" name="email" type="email" autoComplete="username" required />
+          <Field
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+
+          {params.error ? (
+            <div className="mb-3 rounded-md bg-danger/10 px-3 py-2 text-[12.5px] text-danger ring-1 ring-inset ring-danger/30">
+              Invalid email or password.
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-[13.5px] font-semibold tracking-[-0.005em] text-gold-ink shadow-soft transition hover:bg-gold-hi focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+          >
+            Sign in
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14M13 5l7 7-7 7" />
+            </svg>
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-[11.5px] text-faint">
+          Bootstrapped via <code className="font-mono text-subtle">ADMIN_EMAIL</code> /{' '}
+          <code className="font-mono text-subtle">ADMIN_PASSWORD</code>.
+        </p>
+      </div>
     </main>
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  display: 'block',
-  width: '100%',
-  padding: 8,
-  marginBottom: 12,
-  background: '#0f1115',
-  color: '#e7e9ee',
-  border: '1px solid #2a3140',
-  borderRadius: 6,
-};
-
-const btnStyle: React.CSSProperties = {
-  width: '100%',
-  padding: 10,
-  background: '#4f7cff',
-  color: 'white',
-  border: 'none',
-  borderRadius: 6,
-  fontWeight: 600,
-};
+function Field({
+  label,
+  name,
+  type,
+  required,
+  autoComplete,
+}: {
+  label: string;
+  name: string;
+  type: string;
+  required?: boolean;
+  autoComplete?: string;
+}) {
+  return (
+    <label className="mb-3 block">
+      <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
+        {label}
+      </span>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        autoComplete={autoComplete}
+        className="block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg placeholder:text-faint focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30"
+      />
+    </label>
+  );
+}

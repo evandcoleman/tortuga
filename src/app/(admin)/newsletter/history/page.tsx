@@ -1,6 +1,20 @@
 import { desc } from 'drizzle-orm';
 import { getAppContext } from '@/kernel/context';
 import { digests, sends } from '@/modules/newsletter/schema';
+import {
+  Badge,
+  Card,
+  DigestStatusBadge,
+  EmptyState,
+  PageHeader,
+  TD,
+  TH,
+  THead,
+  TR,
+  Table,
+  formatDateTime,
+  formatRelative,
+} from '../../_components/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,31 +34,80 @@ export default function History() {
     counts[s.digestId] = counts[s.digestId] ?? {};
     counts[s.digestId][s.status] = (counts[s.digestId][s.status] ?? 0) + 1;
   }
+
   return (
     <div>
-      <h2>History</h2>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Status</th>
-            <th>Items</th>
-            <th>Sent</th>
-            <th>Failed</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(d => (
-            <tr key={d.id} style={{ borderTop: '1px solid #1e242e' }}>
-              <td>{d.scheduledAt.toISOString()}</td>
-              <td>{d.status}</td>
-              <td>{d.itemCount}</td>
-              <td>{counts[d.id]?.sent ?? 0}</td>
-              <td>{counts[d.id]?.failed ?? 0}</td>
+      <PageHeader
+        eyebrow="Newsletter"
+        title="History"
+        description="The 50 most recent digest runs and their per-recipient outcomes."
+      />
+
+      {rows.length === 0 ? (
+        <Card>
+          <EmptyState
+            title="No history yet"
+            description="Once digests run, you’ll see results here — status, item count, and delivery breakdown."
+          />
+        </Card>
+      ) : (
+        <Table>
+          <THead>
+            <tr>
+              <TH className="w-[28%]">When</TH>
+              <TH>Status</TH>
+              <TH className="text-right">Items</TH>
+              <TH className="text-right">Sent</TH>
+              <TH className="text-right">Failed</TH>
+              <TH>Error</TH>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </THead>
+          <tbody>
+            {rows.map(d => {
+              const sent = counts[d.id]?.sent ?? 0;
+              const delivered = counts[d.id]?.delivered ?? 0;
+              const failed =
+                (counts[d.id]?.failed ?? 0) +
+                (counts[d.id]?.bounced ?? 0) +
+                (counts[d.id]?.complained ?? 0);
+              return (
+                <TR key={d.id}>
+                  <TD>
+                    <div className="text-[13px] text-fg">{formatDateTime(d.scheduledAt)}</div>
+                    <div className="text-[11.5px] text-subtle">{formatRelative(d.scheduledAt)}</div>
+                  </TD>
+                  <TD>
+                    <DigestStatusBadge status={d.status} />
+                  </TD>
+                  <TD className="text-right font-mono text-[12.5px] text-muted">{d.itemCount}</TD>
+                  <TD className="text-right">
+                    <span className="font-mono text-[12.5px] text-fg">{sent + delivered}</span>
+                  </TD>
+                  <TD className="text-right">
+                    {failed > 0 ? (
+                      <Badge tone="danger">{failed}</Badge>
+                    ) : (
+                      <span className="font-mono text-[12.5px] text-faint">0</span>
+                    )}
+                  </TD>
+                  <TD>
+                    {d.error ? (
+                      <span
+                        className="block max-w-[280px] truncate font-mono text-[11.5px] text-danger"
+                        title={d.error}
+                      >
+                        {d.error}
+                      </span>
+                    ) : (
+                      <span className="text-faint">—</span>
+                    )}
+                  </TD>
+                </TR>
+              );
+            })}
+          </tbody>
+        </Table>
+      )}
     </div>
   );
 }
