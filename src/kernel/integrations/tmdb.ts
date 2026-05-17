@@ -18,9 +18,14 @@ export interface TmdbItem {
 export function createTmdbClient(opts: TmdbOpts) {
   async function call<T>(path: string, params: Record<string, string> = {}): Promise<T> {
     const url = new URL(`https://api.themoviedb.org/3${path}`);
-    url.searchParams.set('api_key', opts.apiKey);
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-    const res = await fetchWithRetry(url.toString(), {}, { fetcher: opts.fetcher });
+    const init: RequestInit = {
+      headers: {
+        accept: 'application/json',
+        authorization: `Bearer ${opts.apiKey}`,
+      },
+    };
+    const res = await fetchWithRetry(url.toString(), init, { fetcher: opts.fetcher });
     if (!res.ok) throw new TmdbError(`HTTP ${res.status}`, res.status, res.status >= 500);
     return res.json() as Promise<T>;
   }

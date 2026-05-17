@@ -18,4 +18,15 @@ describe('TmdbClient', () => {
     const c = createTmdbClient({ apiKey: 'k', fetcher });
     expect(await c.searchMovie({ title: 'Y' })).toBeNull();
   });
+
+  it('authenticates via Bearer header, never via api_key query param', async () => {
+    const fetcher = vi.fn().mockResolvedValue(ok({ results: [] }));
+    const c = createTmdbClient({ apiKey: 'jwt-token', fetcher });
+    await c.searchTv({ title: 'Z' });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit];
+    expect(url).not.toContain('api_key=');
+    const headers = init.headers as Record<string, string>;
+    expect(headers.authorization).toBe('Bearer jwt-token');
+  });
 });
