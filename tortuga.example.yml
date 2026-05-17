@@ -22,3 +22,8 @@ newsletter:
     exclude_genres: []
   featured:
     enabled: false
+  # Optional. When set, digest items render an "Open in Plex" deep link.
+  # Find your server's machineIdentifier at https://plex.tv/api/resources?X-Plex-Token=...
+  # or in Plex Web → Settings → Network → Show Advanced → Server ID.
+  # plex:
+  #   server_id: "abc123def4567890abc123def4567890abc12345"

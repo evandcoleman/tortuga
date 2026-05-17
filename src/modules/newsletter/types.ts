@@ -12,4 +12,6 @@ export interface EnrichedItem {
   seasonNumber?: number;
   episodeCount?: number;
   genres?: string[];
+  ratingKey?: string;
+  plexUrl?: string;
 }

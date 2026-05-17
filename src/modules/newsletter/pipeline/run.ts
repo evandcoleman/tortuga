@@ -54,13 +54,27 @@ export async function runDigest(opts: RunDigestOpts) {
       return { id: digestId, status: 'skipped' as const, itemCount: 0 };
     }
 
+    const serverId = opts.config.plex?.server_id;
+    const withPlexLinks = filtered.map(it => {
+      if (!serverId || !it.ratingKey) return it;
+      const key = encodeURIComponent(`/library/metadata/${it.ratingKey}`);
+      return {
+        ...it,
+        plexUrl: `https://app.plex.tv/desktop/#!/server/${serverId}/details?key=${key}`,
+      };
+    });
+
     const placeholderUnsub = generateUnsubscribeToken('preview@tortuga.local', opts.sessionSecret);
     const subject = `New on ${opts.config.from.name} — ${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
-    const html = await render(createElement(DigestEmail, {
-      items: filtered,
-      unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
-      appName: opts.config.from.name,
-    }));
+    const html = await render(
+      createElement(DigestEmail, {
+        items: withPlexLinks,
+        unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
+        appName: opts.config.from.name,
+        windowStart,
+        windowEnd,
+      }),
+    );
 
     opts.db.update(digests).set({
       status: 'rendered', itemCount: filtered.length,
@@ -81,11 +95,15 @@ export async function runDigest(opts: RunDigestOpts) {
       const sendId = createId();
       const tokenStr = generateUnsubscribeToken(r.email, opts.sessionSecret);
       opts.db.insert(unsubscribes).values({ token: tokenStr, email: r.email, createdAt: new Date() }).run();
-      const perRecipientHtml = await render(createElement(DigestEmail, {
-        items: filtered,
-        unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${tokenStr}`,
-        appName: opts.config.from.name,
-      }));
+      const perRecipientHtml = await render(
+        createElement(DigestEmail, {
+          items: withPlexLinks,
+          unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${tokenStr}`,
+          appName: opts.config.from.name,
+          windowStart,
+          windowEnd,
+        }),
+      );
       opts.db.insert(sends).values({
         id: sendId, digestId, recipientEmail: r.email, recipientName: r.name, status: 'queued',
       }).run();

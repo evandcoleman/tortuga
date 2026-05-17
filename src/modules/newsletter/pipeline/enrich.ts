@@ -20,11 +20,28 @@ async function mapWithConcurrency<I, O>(items: I[], fn: (i: I) => Promise<O>, li
   return out;
 }
 
+function pickRatingKey(raw: Record<string, unknown>, mediaType: string): string | undefined {
+  const v = (k: string) => {
+    const x = raw[k];
+    return typeof x === 'string' && x.length > 0
+      ? x
+      : typeof x === 'number'
+        ? String(x)
+        : undefined;
+  };
+  if (mediaType === 'episode' || mediaType === 'season') {
+    return v('grandparent_rating_key') ?? v('parent_rating_key') ?? v('rating_key');
+  }
+  return v('rating_key');
+}
+
 export async function enrichItems(db: Db, tmdb: TmdbClient, items: TautulliItem[]): Promise<EnrichedItem[]> {
   return mapWithConcurrency(items, async (item) => {
+    const ratingKey = pickRatingKey(item.raw, item.mediaType);
     const cached = db.select().from(itemsCache).where(eq(itemsCache.guid, item.guid)).all();
     if (cached.length > 0) {
-      return JSON.parse(cached[0].payload) as EnrichedItem;
+      const prior = JSON.parse(cached[0].payload) as EnrichedItem;
+      return { ...prior, ratingKey: ratingKey ?? prior.ratingKey };
     }
     const isTv = item.mediaType === 'episode' || item.mediaType === 'season' || item.mediaType === 'show';
     const searchTitle = item.grandparentTitle ?? item.title;
@@ -43,7 +60,11 @@ export async function enrichItems(db: Db, tmdb: TmdbClient, items: TautulliItem[
       posterUrl: tmdbRes?.posterUrl ?? null,
       overview: tmdbRes?.overview ?? item.summary ?? '',
       showTitle: item.grandparentTitle,
-      seasonNumber: typeof item.raw.parent_media_index === 'string' ? Number(item.raw.parent_media_index) : undefined,
+      seasonNumber:
+        typeof item.raw.parent_media_index === 'string'
+          ? Number(item.raw.parent_media_index)
+          : undefined,
+      ratingKey,
     };
     db.insert(itemsCache).values({
       guid: item.guid,

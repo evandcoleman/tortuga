@@ -55,6 +55,9 @@ export const NewsletterConfigSchema = z.object({
     exclude_genres: [],
   })),
   featured: z.object({ enabled: z.boolean().default(false) }).default(() => ({ enabled: false })),
+  plex: z.object({
+    server_id: z.string().min(1),
+  }).optional(),
 });
 export type NewsletterConfig = z.infer<typeof NewsletterConfigSchema>;
 

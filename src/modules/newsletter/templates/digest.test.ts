@@ -10,10 +10,36 @@ const items: EnrichedItem[] = [{
 }];
 
 describe('DigestEmail', () => {
+  const baseProps = {
+    items,
+    unsubscribeUrl: 'https://x/u',
+    appName: 'Tortuga',
+    windowStart: new Date('2026-05-01T00:00:00Z'),
+    windowEnd: new Date('2026-05-08T00:00:00Z'),
+  };
+
   it('renders subject + sections', async () => {
-    const html = await render(DigestEmail({ items, unsubscribeUrl: 'https://x/u', appName: 'Tortuga' }));
+    const html = await render(DigestEmail(baseProps));
     expect(html).toContain('A Movie');
     expect(html).toContain('Movies');
     expect(html).toContain('Unsubscribe');
+  });
+
+  it('renders Open in Plex when plexUrl present', async () => {
+    const html = await render(
+      DigestEmail({
+        ...baseProps,
+        items: [
+          { ...items[0], plexUrl: 'https://app.plex.tv/desktop/#!/server/abc/details?key=x' },
+        ],
+      }),
+    );
+    expect(html).toContain('Open in Plex');
+    expect(html).toContain('https://app.plex.tv/desktop/');
+  });
+
+  it('omits Open in Plex when plexUrl missing', async () => {
+    const html = await render(DigestEmail(baseProps));
+    expect(html).not.toContain('Open in Plex');
   });
 });
