@@ -9,6 +9,7 @@ import { createLogger } from './logging/logger';
 import { createEmailProvider } from './email/factory';
 import type { EmailProvider } from './email/types';
 import { resolveLlmClient, type LlmClient } from './integrations/llm';
+import { readConfigOverride } from './config/overrides';
 
 export interface AppContext {
   env: Env;
@@ -26,9 +27,10 @@ let cached: AppContext | null = null;
 export function getAppContext(): AppContext {
   if (cached) return cached;
   const env = loadEnv();
-  const config = loadYamlConfig(env.CONFIG_PATH);
   const db = createDb(env.DATABASE_URL);
   applyMigrations(db);
+  const newsletter = readConfigOverride(db) ?? loadYamlConfig(env.CONFIG_PATH).newsletter;
+  const config: YamlConfig = { newsletter };
   if (env.AUTH_MODE === 'session' && env.ADMIN_EMAIL && env.ADMIN_PASSWORD) {
     // dynamic import to keep argon2 out of edge runtimes
     import('./auth/bootstrap').then(({ bootstrapAdminUser }) =>
@@ -44,6 +46,18 @@ export function getAppContext(): AppContext {
   return cached;
 }
 
+// Reload the singleton in-process. Only correct because the Nomad job runs count=1
+// (no second replica holds a stale cache). Stops old cron timers before rebuilding,
+// then re-registers modules so the scheduler reflects new schedule/timezone/enabled.
+export async function invalidateAppContext(): Promise<void> {
+  if (cached) cached.scheduler.stopAll();
+  cached = null;
+  getAppContext();
+  const { registerAllModules } = await import('@/modules'); // lazy: avoid circular import
+  registerAllModules();
+}
+
 export function resetAppContextForTests() {
+  if (cached) cached.scheduler.stopAll();
   cached = null;
 }
