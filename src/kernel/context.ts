@@ -50,11 +50,19 @@ export function getAppContext(): AppContext {
 // (no second replica holds a stale cache). Stops old cron timers before rebuilding,
 // then re-registers modules so the scheduler reflects new schedule/timezone/enabled.
 export async function invalidateAppContext(): Promise<void> {
-  if (cached) cached.scheduler.stopAll();
+  const prior = cached;
+  prior?.scheduler.stopAll();
   cached = null;
-  getAppContext();
-  const { registerAllModules } = await import('@/modules'); // lazy: avoid circular import
-  registerAllModules();
+  try {
+    getAppContext();
+    const { registerAllModules } = await import('@/modules'); // lazy: avoid circular import
+    registerAllModules();
+  } catch (err) {
+    // Rebuild failed — restore the prior context so the app keeps a working
+    // singleton + scheduler rather than running degraded with none.
+    cached = prior;
+    throw err;
+  }
 }
 
 export function resetAppContextForTests() {
