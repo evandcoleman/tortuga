@@ -8,6 +8,7 @@ function fakes() {
   const tautulli = {
     getUsers: vi.fn().mockResolvedValue([
       { plexUserId: 1, name: 'A', plexUsername: 'a', email: 'a@x.io' },
+      { plexUserId: 2, name: 'B', plexUsername: 'b', email: 'b@x.io' },
     ]),
     getRecentlyAdded: vi.fn().mockResolvedValue([
       { guid: 'g1', title: 'M', mediaType: 'movie', libraryName: 'Movies', addedAt: new Date(), year: 2020, raw: {} },
@@ -23,7 +24,8 @@ function fakes() {
     verifyWebhook: vi.fn(),
     parseEvent: vi.fn(),
   };
-  return { tautulli, tmdb, provider };
+  const llm = { generateText: vi.fn().mockResolvedValue('An editorial intro.') };
+  return { tautulli, tmdb, provider, llm };
 }
 
 const baseConfig = {
@@ -84,5 +86,33 @@ describe('runDigest', () => {
     await expect(
       runDigest({ db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any, config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32), scheduledAt: at }),
     ).rejects.toThrow(/UNIQUE/);
+  });
+
+  it('generates the intro exactly once even with multiple recipients', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, provider, llm } = fakes();
+    await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+      config: { ...baseConfig, commentary: { enabled: true, provider: 'anthropic', model: '', voice: '' } } as any,
+      appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-14T13:00:00Z'), llm: llm as any,
+    });
+    expect(provider.send).toHaveBeenCalledTimes(2);
+    expect(llm.generateText).toHaveBeenCalledTimes(1);
+  });
+
+  it('still sends when the LLM throws (graceful degradation)', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, provider, llm } = fakes();
+    llm.generateText.mockRejectedValue(new Error('boom'));
+    const result = await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+      config: { ...baseConfig, commentary: { enabled: true, provider: 'anthropic', model: '', voice: '' } } as any,
+      appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-15T13:00:00Z'), llm: llm as any,
+    });
+    expect(result.status).toBe('sent');
   });
 });

@@ -16,6 +16,10 @@ import { applyFilters } from '../filters';
 import { syncRecipients } from './recipients';
 import { enrichItems } from './enrich';
 import { DigestEmail } from '../templates/digest';
+import { marked } from 'marked';
+import type { LlmClient } from '@/kernel/integrations/llm';
+import type { DigestLink } from '../templates/digest';
+import { generateIntro } from './commentary';
 
 const log = createLogger('newsletter.run');
 
@@ -30,6 +34,7 @@ export interface RunDigestOpts {
   scheduledAt: Date;
   dryRun?: boolean;
   recipientFilter?: (email: string) => boolean;
+  llm?: LlmClient | null;
 }
 
 export async function runDigest(opts: RunDigestOpts) {
@@ -64,6 +69,24 @@ export async function runDigest(opts: RunDigestOpts) {
       };
     });
 
+    const intro = opts.llm
+      ? await generateIntro(opts.llm, withPlexLinks, {
+          appName: opts.config.from.name,
+          voice: opts.config.commentary?.voice,
+        })
+      : null;
+
+    const extras = opts.config.extras;
+    const requestLink: DigestLink | undefined = extras?.request_url
+      ? { url: extras.request_url, label: extras.request_label ?? 'Request a title' }
+      : undefined;
+    const personalLink: DigestLink | undefined = extras?.personal_url
+      ? { url: extras.personal_url, label: extras.personal_label ?? new URL(extras.personal_url).host }
+      : undefined;
+    const freeformHtml = extras?.freeform_markdown
+      ? (marked.parse(extras.freeform_markdown, { async: false }) as string)
+      : undefined;
+
     const placeholderUnsub = generateUnsubscribeToken('preview@tortuga.local', opts.sessionSecret);
     const subject = `New on ${opts.config.from.name} — ${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
     const html = await render(
@@ -73,6 +96,10 @@ export async function runDigest(opts: RunDigestOpts) {
         appName: opts.config.from.name,
         windowStart,
         windowEnd,
+        intro: intro ?? undefined,
+        requestLink,
+        personalLink,
+        freeformHtml,
       }),
     );
 
@@ -102,6 +129,10 @@ export async function runDigest(opts: RunDigestOpts) {
           appName: opts.config.from.name,
           windowStart,
           windowEnd,
+          intro: intro ?? undefined,
+          requestLink,
+          personalLink,
+          freeformHtml,
         }),
       );
       opts.db.insert(sends).values({
