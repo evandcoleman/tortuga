@@ -64,5 +64,7 @@ describe('DigestEmail', () => {
     const html = await render(DigestEmail(baseProps));
     expect(html).not.toContain('Request a title');
     expect(html).not.toContain('Maintenance Sunday.');
+    expect(html).not.toContain('A curated week of cinema.');
+    expect(html).not.toContain('example.com');
   });
 });

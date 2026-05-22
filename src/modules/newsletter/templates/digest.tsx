@@ -239,10 +239,14 @@ export function DigestEmail({
                 padding: 16,
               }}
             >
-              <div
-                style={{ fontSize: 14, lineHeight: 1.55, color: PALETTE.ink }}
-                dangerouslySetInnerHTML={{ __html: freeformHtml }}
-              />
+              <Row>
+                <Column>
+                  <div
+                    style={{ fontSize: 14, lineHeight: 1.55, color: PALETTE.ink }}
+                    dangerouslySetInnerHTML={{ __html: freeformHtml }}
+                  />
+                </Column>
+              </Row>
             </Section>
           ) : null}
 
