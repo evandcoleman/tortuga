@@ -1,6 +1,6 @@
 export class IntegrationError extends Error {
   constructor(
-    public readonly source: 'tautulli' | 'tmdb' | 'resend',
+    public readonly source: 'tautulli' | 'tmdb' | 'resend' | 'anthropic' | 'openai',
     message: string,
     public readonly status?: number,
     public readonly retryable = false,
@@ -18,4 +18,9 @@ export class TmdbError extends IntegrationError {
 }
 export class ResendError extends IntegrationError {
   constructor(m: string, s?: number, r = false, c?: unknown) { super('resend', m, s, r, c); }
+}
+export class LlmError extends IntegrationError {
+  constructor(source: 'anthropic' | 'openai', m: string, s?: number, r = false, c?: unknown) {
+    super(source, m, s, r, c);
+  }
 }
