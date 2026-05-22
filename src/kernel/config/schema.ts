@@ -18,6 +18,8 @@ export const EnvSchema = z.object({
   DIGEST_RUN_TOKEN: z.string().min(16).optional(),
   LOG_LEVEL: z.string().default('info'),
   CONFIG_PATH: z.string().default('/config/tortuga.yml'),
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
 });
 export type Env = z.infer<typeof EnvSchema>;
 
@@ -57,6 +59,19 @@ export const NewsletterConfigSchema = z.object({
   featured: z.object({ enabled: z.boolean().default(false) }).default(() => ({ enabled: false })),
   plex: z.object({
     server_id: z.string().min(1),
+  }).optional(),
+  commentary: z.object({
+    enabled: z.boolean().default(false),
+    provider: z.enum(['anthropic', 'openai']).default('anthropic'),
+    model: z.string().default(''),
+    voice: z.string().default(''),
+  }).default(() => ({ enabled: false, provider: 'anthropic' as const, model: '', voice: '' })),
+  extras: z.object({
+    request_url: z.string().url().optional(),
+    request_label: z.string().default('Request a title'),
+    personal_url: z.string().url().optional(),
+    personal_label: z.string().optional(),
+    freeform_markdown: z.string().optional(),
   }).optional(),
 });
 export type NewsletterConfig = z.infer<typeof NewsletterConfigSchema>;

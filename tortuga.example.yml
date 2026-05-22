@@ -27,3 +27,20 @@ newsletter:
   # or in Plex Web → Settings → Network → Show Advanced → Server ID.
   # plex:
   #   server_id: "abc123def4567890abc123def4567890abc12345"
+  # Optional. AI-generated editorial intro paragraph at the top of the digest.
+  # Requires ANTHROPIC_API_KEY (provider: anthropic) or OPENAI_API_KEY (provider: openai)
+  # in the environment when enabled.
+  commentary:
+    enabled: false
+    provider: anthropic        # anthropic | openai
+    model: ""                  # optional; defaults: claude-haiku-4-5 / gpt-4o-mini
+    voice: ""                  # optional; freeform tone instructions, e.g.
+                               # "witty film-buff concierge, a little irreverent"
+  # Optional. Extra links and a freeform block rendered in the digest footer.
+  extras:
+    request_url: "https://requests.example.com"   # your Overseerr/Ombi/request site
+    request_label: "Request a title"
+    personal_url: "https://example.com"
+    personal_label: "example.com"
+    freeform_markdown: |
+      Reminder: please don't delete other people's watch history.

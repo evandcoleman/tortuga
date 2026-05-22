@@ -42,4 +42,29 @@ describe('DigestEmail', () => {
     const html = await render(DigestEmail(baseProps));
     expect(html).not.toContain('Open in Plex');
   });
+
+  it('renders intro, links, and freeform when present', async () => {
+    const html = await render(
+      DigestEmail({
+        ...baseProps,
+        intro: 'A curated week of cinema.',
+        requestLink: { url: 'https://req.example', label: 'Request a title' },
+        personalLink: { url: 'https://example.com', label: 'example.com' },
+        freeformHtml: '<p>Maintenance Sunday.</p>',
+      }),
+    );
+    expect(html).toContain('A curated week of cinema.');
+    expect(html).toContain('https://req.example');
+    expect(html).toContain('Request a title');
+    expect(html).toContain('https://example.com');
+    expect(html).toContain('Maintenance Sunday.');
+  });
+
+  it('omits intro/links/freeform when absent', async () => {
+    const html = await render(DigestEmail(baseProps));
+    expect(html).not.toContain('Request a title');
+    expect(html).not.toContain('Maintenance Sunday.');
+    expect(html).not.toContain('A curated week of cinema.');
+    expect(html).not.toContain('example.com');
+  });
 });

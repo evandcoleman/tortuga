@@ -8,6 +8,7 @@ import { createScheduler, type Scheduler } from './scheduler/scheduler';
 import { createLogger } from './logging/logger';
 import { createEmailProvider } from './email/factory';
 import type { EmailProvider } from './email/types';
+import { resolveLlmClient, type LlmClient } from './integrations/llm';
 
 export interface AppContext {
   env: Env;
@@ -16,6 +17,7 @@ export interface AppContext {
   tautulli: TautulliClient;
   tmdb: TmdbClient;
   email: EmailProvider;
+  llm: LlmClient | null;
   scheduler: Scheduler;
 }
 
@@ -36,8 +38,9 @@ export function getAppContext(): AppContext {
   const tautulli = createTautulliClient({ url: env.TAUTULLI_URL, apiKey: env.TAUTULLI_API_KEY });
   const tmdb = createTmdbClient({ apiKey: env.TMDB_API_KEY });
   const email = createEmailProvider(env, config.newsletter.email);
+  const llm = resolveLlmClient(env, config.newsletter);
   const scheduler = createScheduler();
-  cached = { env, config, db, tautulli, tmdb, email, scheduler };
+  cached = { env, config, db, tautulli, tmdb, email, llm, scheduler };
   return cached;
 }
 
