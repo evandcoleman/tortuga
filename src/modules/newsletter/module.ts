@@ -6,6 +6,10 @@ const log = createLogger('newsletter.module');
 
 export function registerNewsletterModule() {
   const ctx = getAppContext();
+  if (!ctx.config.newsletter.schedule_enabled) {
+    log.info('newsletter schedule disabled (schedule_enabled=false); not registering cron');
+    return;
+  }
   ctx.scheduler.register({
     name: 'newsletter.digest',
     cron: ctx.config.newsletter.schedule,

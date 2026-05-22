@@ -25,6 +25,7 @@ export type Env = z.infer<typeof EnvSchema>;
 
 export const NewsletterConfigSchema = z.object({
   schedule: z.string().default('0 9 * * SUN'),
+  schedule_enabled: z.boolean().default(true),
   timezone: z.string().default('America/New_York'),
   lookback_days: z.number().int().positive().default(7),
   email: z.object({

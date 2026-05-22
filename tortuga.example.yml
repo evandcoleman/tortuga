@@ -6,6 +6,8 @@ newsletter:
       domain: example.com
       region: us
   schedule: "0 9 * * SUN"
+  # Set to false to pause automatic scheduled sends (manual preview/API runs still work).
+  schedule_enabled: true
   timezone: "America/New_York"
   lookback_days: 7
   from:

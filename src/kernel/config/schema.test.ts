@@ -21,6 +21,11 @@ describe('NewsletterConfigSchema commentary/extras', () => {
     expect(cfg.extras).toMatchObject({ request_url: 'https://req.example', request_label: 'Request a title' });
   });
 
+  it('defaults schedule_enabled to true and parses false', () => {
+    expect(NewsletterConfigSchema.parse({ from: { email: 'a@b.io', name: 'T' } }).schedule_enabled).toBe(true);
+    expect(NewsletterConfigSchema.parse({ from: { email: 'a@b.io', name: 'T' }, schedule_enabled: false }).schedule_enabled).toBe(false);
+  });
+
   it('accepts optional ANTHROPIC_API_KEY / OPENAI_API_KEY in env', () => {
     const env = EnvSchema.parse({
       TAUTULLI_URL: 'http://t', TAUTULLI_API_KEY: 'k', TMDB_API_KEY: 'k',
