@@ -41,7 +41,7 @@ export async function enrichItems(db: Db, tmdb: TmdbClient, items: TautulliItem[
     const cached = db.select().from(itemsCache).where(eq(itemsCache.guid, item.guid)).all();
     if (cached.length > 0) {
       const prior = JSON.parse(cached[0].payload) as EnrichedItem;
-      return { ...prior, ratingKey: ratingKey ?? prior.ratingKey };
+      return { ...prior, addedAt: cached[0].addedAt, ratingKey: ratingKey ?? prior.ratingKey };
     }
     const isTv = item.mediaType === 'episode' || item.mediaType === 'season' || item.mediaType === 'show';
     const searchTitle = item.grandparentTitle ?? item.title;

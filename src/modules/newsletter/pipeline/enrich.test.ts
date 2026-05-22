@@ -34,4 +34,13 @@ describe('enrichItems', () => {
     await enrichItems(db, fakeTmdb as any, [item]);
     expect(fakeTmdb.searchMovie.mock.calls.length).toBe(callsBefore);
   });
+
+  it('returns addedAt as a Date on a cache hit (not the stringified JSON value)', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    await enrichItems(db, fakeTmdb as any, [item]);
+    const [cachedItem] = await enrichItems(db, fakeTmdb as any, [item]);
+    expect(cachedItem.addedAt).toBeInstanceOf(Date);
+    expect(() => cachedItem.addedAt.getTime()).not.toThrow();
+  });
 });
