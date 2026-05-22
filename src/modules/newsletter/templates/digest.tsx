@@ -16,12 +16,21 @@ import {
 import * as React from 'react';
 import type { EnrichedItem } from '../types';
 
+export interface DigestLink {
+  url: string;
+  label: string;
+}
+
 export interface DigestEmailProps {
   items: EnrichedItem[];
   unsubscribeUrl: string;
   appName: string;
   windowStart: Date;
   windowEnd: Date;
+  intro?: string;
+  requestLink?: DigestLink;
+  personalLink?: DigestLink;
+  freeformHtml?: string;
 }
 
 const PALETTE = {
@@ -79,6 +88,10 @@ export function DigestEmail({
   appName,
   windowStart,
   windowEnd,
+  intro,
+  requestLink,
+  personalLink,
+  freeformHtml,
 }: DigestEmailProps) {
   const sections = new Map<string, EnrichedItem[]>();
   for (const it of items) {
@@ -152,6 +165,23 @@ export function DigestEmail({
             </Text>
           </Section>
 
+          {intro ? (
+            <Section style={{ marginTop: 20 }}>
+              <Text
+                style={{
+                  margin: 0,
+                  fontFamily: FONT_SERIF,
+                  fontSize: 17,
+                  lineHeight: 1.55,
+                  color: PALETTE.ink,
+                  fontStyle: 'italic',
+                }}
+              >
+                {intro}
+              </Text>
+            </Section>
+          ) : null}
+
           <Hr
             style={{
               borderColor: PALETTE.rule,
@@ -198,6 +228,62 @@ export function DigestEmail({
               ))}
             </Section>
           ))}
+
+          {freeformHtml ? (
+            <Section
+              style={{
+                marginTop: 40,
+                background: PALETTE.cardBg,
+                border: `1px solid ${PALETTE.hairline}`,
+                borderRadius: 6,
+                padding: 16,
+              }}
+            >
+              <div
+                style={{ fontSize: 14, lineHeight: 1.55, color: PALETTE.ink }}
+                dangerouslySetInnerHTML={{ __html: freeformHtml }}
+              />
+            </Section>
+          ) : null}
+
+          {requestLink || personalLink ? (
+            <Section style={{ marginTop: 32, textAlign: 'center' }}>
+              {requestLink ? (
+                <Link
+                  href={requestLink.url}
+                  style={{
+                    display: 'inline-block',
+                    margin: '0 8px',
+                    padding: '10px 18px',
+                    borderRadius: 999,
+                    background: PALETTE.accent,
+                    color: PALETTE.paper,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                    letterSpacing: 0.2,
+                  }}
+                >
+                  {requestLink.label}
+                </Link>
+              ) : null}
+              {personalLink ? (
+                <Link
+                  href={personalLink.url}
+                  style={{
+                    display: 'inline-block',
+                    margin: '0 8px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: PALETTE.accent,
+                    textDecoration: 'none',
+                  }}
+                >
+                  {personalLink.label}
+                </Link>
+              ) : null}
+            </Section>
+          ) : null}
 
           <Hr
             style={{
