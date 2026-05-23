@@ -4,18 +4,17 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { createElement } from 'react';
 import { render } from '@react-email/render';
-// tsx transforms these CJS-interop modules; import via default to get named exports
-import digestMod from '../src/modules/newsletter/templates/digest.tsx';
-import themesMod from '../src/modules/newsletter/templates/themes.ts';
-import layoutsMod from '../src/modules/newsletter/templates/layouts/index.ts';
-import type { EnrichedItem } from '../src/modules/newsletter/types.ts';
+// tsx transpiles these modules to CJS, so under Node's ESM loader their named
+// exports arrive on the default binding. Import default, then destructure.
+// (scripts/ is excluded from the app tsconfig — this runs via `npx tsx`.)
+import digestMod from '../src/modules/newsletter/templates/digest';
+import themesMod from '../src/modules/newsletter/templates/themes';
+import layoutsMod from '../src/modules/newsletter/templates/layouts';
+import type { EnrichedItem } from '../src/modules/newsletter/types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { DigestEmail } = digestMod as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { THEMES } = themesMod as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { LAYOUTS } = layoutsMod as any;
+const { DigestEmail } = digestMod;
+const { THEMES } = themesMod;
+const { LAYOUTS } = layoutsMod;
 
 const items: EnrichedItem[] = [
   {
@@ -57,9 +56,9 @@ await mkdir(outDir, { recursive: true });
 for (const theme of Object.values(THEMES)) {
   for (const lay of Object.values(LAYOUTS)) {
     const html = await render(
-      createElement(DigestEmail, { ...baseProps, themeId: (theme as any).id, layoutId: (lay as any).id }),
+      createElement(DigestEmail, { ...baseProps, themeId: theme.id, layoutId: lay.id }),
     );
-    const file = `${outDir}/${(theme as any).id}__${(lay as any).id}.html`;
+    const file = `${outDir}/${theme.id}__${lay.id}.html`;
     await writeFile(file, html, 'utf8');
     console.log(`wrote ${file}`);
   }
