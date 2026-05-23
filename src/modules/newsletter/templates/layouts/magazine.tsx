@@ -24,6 +24,7 @@ export function MagazineItems({ items, theme }: LayoutItemsProps) {
                 style={{
                   display: 'block',
                   width: '100%',
+                  maxWidth: '100%',
                   height: 'auto',
                   borderRadius: Math.min(8, layout.radius),
                   border: `1px solid ${palette.hairline}`,

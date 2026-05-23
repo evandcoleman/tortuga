@@ -38,7 +38,7 @@ export function CompactItems({ items, theme }: LayoutItemsProps) {
                       fontFamily: fonts.body,
                     }}
                   >
-                    {'  ·  '}
+                    {' · '}
                     {kicker}
                   </span>
                 ) : null}

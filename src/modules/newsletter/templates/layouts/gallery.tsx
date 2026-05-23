@@ -6,6 +6,7 @@ import { displayTitle } from '../item-format';
 const PER_ROW = 3;
 const POSTER_W = 150;
 const POSTER_H = 225;
+const COL_STYLE = { verticalAlign: 'top' as const, width: `${100 / PER_ROW}%`, padding: 8 };
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -17,14 +18,13 @@ export function GalleryItems({ items, theme }: LayoutItemsProps) {
   const { palette, fonts, layout } = theme;
   const posterRadius = Math.min(4, layout.radius);
   const rows = chunk(items, PER_ROW);
-  const colStyle = { verticalAlign: 'top' as const, width: `${100 / PER_ROW}%`, padding: 8 };
 
   return (
     <Section style={{ marginTop: 12 }}>
-      {rows.map((row, ri) => (
-        <Row key={ri}>
+      {rows.map(row => (
+        <Row key={row.map(i => i.guid).join(',')}>
           {row.map(item => (
-            <Column key={item.guid} style={colStyle}>
+            <Column key={item.guid} style={COL_STYLE}>
               {item.posterUrl ? (
                 <Img
                   src={item.posterUrl}
@@ -73,7 +73,7 @@ export function GalleryItems({ items, theme }: LayoutItemsProps) {
           ))}
           {row.length < PER_ROW
             ? Array.from({ length: PER_ROW - row.length }).map((_, i) => (
-                <Column key={`pad-${i}`} style={colStyle} />
+                <Column key={`pad-${i}`} style={COL_STYLE} />
               ))
             : null}
         </Row>
