@@ -90,4 +90,14 @@ describe('parseNewsletterForm', () => {
       expect(r.config.featured.enabled).toBe(true);
     }
   });
+
+  it('parses the layout field, defaulting to list when absent', () => {
+    const withLayout = parseNewsletterForm(fd({ ...base, layout: 'gallery' }));
+    expect(withLayout.ok).toBe(true);
+    if (withLayout.ok) expect(withLayout.config.layout).toBe('gallery');
+
+    const without = parseNewsletterForm(fd(base));
+    expect(without.ok).toBe(true);
+    if (without.ok) expect(without.config.layout).toBe('list');
+  });
 });

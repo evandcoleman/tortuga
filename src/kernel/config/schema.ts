@@ -59,6 +59,7 @@ export const NewsletterConfigSchema = z.object({
   })),
   featured: z.object({ enabled: z.boolean().default(false) }).default(() => ({ enabled: false })),
   theme: z.string().default('editorial'),
+  layout: z.string().default('list'),
   plex: z.object({
     server_id: z.string().min(1),
   }).optional(),

@@ -69,6 +69,7 @@ export function parseNewsletterForm(fd: FormData): ParseResult {
     },
     featured: { enabled: bool(fd, 'featured.enabled') },
     theme: str(fd, 'theme') || 'editorial',
+    layout: str(fd, 'layout') || 'list',
     ...(str(fd, 'plex.server_id') ? { plex: { server_id: str(fd, 'plex.server_id') } } : {}),
     commentary: {
       enabled: bool(fd, 'commentary.enabled'),
