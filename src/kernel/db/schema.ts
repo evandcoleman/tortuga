@@ -12,3 +12,9 @@ export const sessions = sqliteTable('sessions', {
   userId: text('user_id').notNull().references(() => users.id),
   expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
 });
+
+export const configOverrides = sqliteTable('config_overrides', {
+  id: integer('id').primaryKey(), // always 1 — single row
+  value: text('value').notNull(), // JSON of the full newsletter config
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+});
