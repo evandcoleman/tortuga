@@ -4,6 +4,10 @@ import type { EnrichedItem } from '../types';
 
 const log = createLogger('newsletter.commentary');
 
+// A title's release year is only worth showing the model when it's this many
+// years older than the newest item in the drop (otherwise it's just noise).
+const MIN_VINTAGE_GAP_YEARS = 3;
+
 export const DEFAULT_VOICE =
   'You are the warm, knowledgeable curator of a private media server. ' +
   "Write a single short paragraph (2-3 sentences) introducing this week's new additions. " +
@@ -44,9 +48,14 @@ export async function generateIntro(
   opts: GenerateIntroOpts,
 ): Promise<string | null> {
   try {
+    // Most weekly drops are dominated by current-year titles. Repeating the year
+    // on every line makes the model fixate on it, so only surface a year when a
+    // title is notably older than the newest item — i.e. a back-catalog oddity.
+    const newestYear = Math.max(0, ...items.map(i => i.year ?? 0));
     const summary = items
       .map(i => {
-        const year = i.year ? ` (${i.year})` : '';
+        const isVintage = i.year != null && newestYear - i.year >= MIN_VINTAGE_GAP_YEARS;
+        const year = isVintage ? ` (${i.year})` : '';
         const rating = i.rating > 0 ? `, ${i.rating.toFixed(1)}/10` : '';
         return `- ${i.title}${year} [${i.mediaType}${rating}]`;
       })

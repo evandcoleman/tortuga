@@ -56,4 +56,18 @@ describe('generateIntro', () => {
     const llm = { generateText: vi.fn().mockResolvedValue('# \n\n##  ') };
     expect(await generateIntro(llm, items, { appName: 'Orpheus' })).toBeNull();
   });
+
+  it('shows the year only for titles notably older than the newest in the batch', async () => {
+    const llm = { generateText: vi.fn().mockResolvedValue('ok') };
+    const mixed: EnrichedItem[] = [
+      { ...items[0], title: 'New Show', year: 2026 },
+      { ...items[0], title: 'Last Year', year: 2025 },
+      { ...items[0], title: 'Old Reel', year: 1949 },
+    ];
+    await generateIntro(llm, mixed, { appName: 'Orpheus' });
+    const prompt = llm.generateText.mock.calls[0][0].prompt as string;
+    expect(prompt).not.toContain('New Show (2026)');
+    expect(prompt).not.toContain('Last Year (2025)');
+    expect(prompt).toContain('Old Reel (1949)');
+  });
 });
