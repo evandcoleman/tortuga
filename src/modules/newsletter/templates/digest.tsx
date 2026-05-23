@@ -51,7 +51,6 @@ export function formatDateRange(start: Date, end: Date): string {
   return `${fmt(start, { month: 'short', day: 'numeric', year: 'numeric' })} – ${fmt(end, { month: 'short', day: 'numeric', year: 'numeric' })}`;
 }
 
-
 export function DigestEmail({
   items,
   unsubscribeUrl,

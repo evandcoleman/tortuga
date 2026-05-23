@@ -112,6 +112,8 @@ describe('DigestEmail', () => {
   it('defaults to the List layout (88px poster)', async () => {
     const html = await render(DigestEmail(baseProps));
     expect(html).toContain('width="88"');
+    expect(html).not.toContain('width="150"');
+    expect(html).not.toContain('width="584"');
   });
 
   it('renders the Gallery layout (150px posters, no 88px card poster)', async () => {
@@ -134,5 +136,7 @@ describe('DigestEmail', () => {
   it('falls back to List for an unknown layout id', async () => {
     const html = await render(DigestEmail({ ...baseProps, layoutId: 'bogus' }));
     expect(html).toContain('width="88"');
+    expect(html).not.toContain('width="150"');
+    expect(html).not.toContain('width="584"');
   });
 });
