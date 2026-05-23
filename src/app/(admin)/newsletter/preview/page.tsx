@@ -4,7 +4,7 @@ import { getAppContext } from '@/kernel/context';
 import { runDigest } from '@/modules/newsletter/pipeline/run';
 import { getThemedPreviews } from '@/modules/newsletter/pipeline/preview-cache';
 import { digests } from '@/modules/newsletter/schema';
-import { ThemeSwitcher } from './ThemeSwitcher';
+import { PreviewSwitcher } from './PreviewSwitcher';
 import { SubmitButton } from './SubmitButton';
 import {
   Badge,
@@ -69,6 +69,7 @@ export default function Preview() {
   const themed = getThemedPreviews();
   const themedPreviews = themed && row && themed.digestId === row.id ? themed.previews : null;
   const defaultThemeId = ctx.config.newsletter.theme;
+  const defaultLayoutId = ctx.config.newsletter.layout;
 
   return (
     <div>
@@ -136,7 +137,11 @@ export default function Preview() {
             <div className="text-[11px] text-faint">dry-run</div>
           </div>
           {themedPreviews ? (
-            <ThemeSwitcher previews={themedPreviews} defaultThemeId={defaultThemeId} />
+            <PreviewSwitcher
+              previews={themedPreviews}
+              defaultThemeId={defaultThemeId}
+              defaultLayoutId={defaultLayoutId}
+            />
           ) : (
             <iframe
               srcDoc={html}

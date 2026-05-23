@@ -117,12 +117,9 @@ describe('runDigest', () => {
     const cached = getThemedPreviews();
     const themeIds = Object.keys(THEMES).sort();
     const layoutIds = Object.keys(LAYOUTS).sort();
-    expect(cached?.previews.map(p => p.themeId).sort()).toEqual(
-      themeIds.flatMap(t => layoutIds.map(() => t)).sort(),
-    );
-    expect(cached?.previews.map(p => p.layoutId).sort()).toEqual(
-      themeIds.flatMap(() => layoutIds).sort(),
-    );
+    const expectedPairs = themeIds.flatMap(t => layoutIds.map(l => `${t}:${l}`)).sort();
+    const actualPairs = (cached?.previews ?? []).map(p => `${p.themeId}:${p.layoutId}`).sort();
+    expect(actualPairs).toEqual(expectedPairs);
     expect(cached?.previews.every(p => p.html.includes('New on'))).toBe(true);
   });
 
