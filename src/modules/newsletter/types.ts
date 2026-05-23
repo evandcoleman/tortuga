@@ -11,6 +11,8 @@ export interface EnrichedItem {
   showTitle?: string;
   seasonNumber?: number;
   episodeCount?: number;
+  episodeNumber?: number;
+  episodeNumbers?: number[];
   genres?: string[];
   ratingKey?: string;
   plexUrl?: string;
