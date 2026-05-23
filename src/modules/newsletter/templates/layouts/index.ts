@@ -3,6 +3,7 @@ import type { EnrichedItem } from '../../types';
 import type { Theme } from '../themes';
 import { ListItems } from './list';
 import { GalleryItems } from './gallery';
+import { CompactItems } from './compact';
 
 export interface LayoutItemsProps {
   items: EnrichedItem[];
@@ -17,12 +18,14 @@ export interface NewsletterLayout {
 
 export const listLayout: NewsletterLayout = { id: 'list', label: 'List', Items: ListItems };
 export const galleryLayout: NewsletterLayout = { id: 'gallery', label: 'Gallery', Items: GalleryItems };
+export const compactLayout: NewsletterLayout = { id: 'compact', label: 'Compact', Items: CompactItems };
 
 export const DEFAULT_LAYOUT_ID = 'list';
 
 export const LAYOUTS: Record<string, NewsletterLayout> = {
   [listLayout.id]: listLayout,
   [galleryLayout.id]: galleryLayout,
+  [compactLayout.id]: compactLayout,
 };
 
 export function resolveLayout(id?: string | null): NewsletterLayout {
