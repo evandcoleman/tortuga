@@ -6,6 +6,7 @@ import { Button, Card, CardHeader } from '../_components/ui';
 import { saveSettings, type SaveState } from './actions';
 import { TextField, NumberField, TextareaField, SelectField, CheckboxField } from './fields';
 import { THEME_OPTIONS } from '@/modules/newsletter/templates/themes';
+import { LAYOUT_OPTIONS } from '@/modules/newsletter/templates/layouts';
 
 const initial: SaveState = { status: 'idle' };
 
@@ -58,9 +59,10 @@ export function SettingsForm({ config }: { config: NewsletterConfig }) {
       </Card>
 
       <Card>
-        <CardHeader title="Appearance" description="Visual theme for the newsletter email." />
+        <CardHeader title="Appearance" description="Visual theme and layout for the newsletter email." />
         <div className="grid gap-4 sm:grid-cols-2">
-          <SelectField name="theme" label="Theme" defaultValue={config.theme} options={THEME_OPTIONS} hint="Colors, type, and layout for the email." />
+          <SelectField name="theme" label="Theme" defaultValue={config.theme} options={THEME_OPTIONS} hint="Colors and typography." />
+          <SelectField name="layout" label="Layout" defaultValue={config.layout} options={LAYOUT_OPTIONS} hint="How items are arranged." />
         </div>
       </Card>
 
