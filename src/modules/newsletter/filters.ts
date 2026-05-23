@@ -28,6 +28,9 @@ export function applyFilters(
         const existing = rolledUp.get(key);
         if (existing) {
           existing.episodeCount = (existing.episodeCount ?? 1) + 1;
+          if (typeof item.episodeNumber === 'number') {
+            existing.episodeNumbers = [...(existing.episodeNumbers ?? []), item.episodeNumber];
+          }
           continue;
         }
         const season: EnrichedItem = {
@@ -35,12 +38,16 @@ export function applyFilters(
           mediaType: 'season',
           title: `${item.showTitle} — Season ${item.seasonNumber}`,
           episodeCount: 1,
+          episodeNumbers: typeof item.episodeNumber === 'number' ? [item.episodeNumber] : [],
         };
         rolledUp.set(key, season);
         kept.push(season);
       } else {
         kept.push(item);
       }
+    }
+    for (const season of rolledUp.values()) {
+      season.episodeNumbers?.sort((a, b) => a - b);
     }
     working = kept;
   }

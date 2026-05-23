@@ -45,4 +45,27 @@ describe('applyFilters', () => {
     const out = applyFilters(items, { min_tmdb_rating: 0, dedupe_episodes_into_seasons: false, max_items_per_section: 99, exclude_genres: ['Horror'] });
     expect(out.map(i => i.guid)).toEqual(['b']);
   });
+
+  it('accumulates sorted episodeNumbers during roll-up', () => {
+    const items = [
+      base({ guid: 'e2', mediaType: 'episode', showTitle: 'X', seasonNumber: 1, libraryName: 'TV Shows', title: 'E2', episodeNumber: 7 }),
+      base({ guid: 'e1', mediaType: 'episode', showTitle: 'X', seasonNumber: 1, libraryName: 'TV Shows', title: 'E1', episodeNumber: 5 }),
+      base({ guid: 'e3', mediaType: 'episode', showTitle: 'X', seasonNumber: 1, libraryName: 'TV Shows', title: 'E3', episodeNumber: 6 }),
+    ];
+    const out = applyFilters(items, { min_tmdb_rating: 0, dedupe_episodes_into_seasons: true, max_items_per_section: 99, exclude_genres: [] });
+    const season = out.find(i => i.seasonNumber === 1);
+    expect(season?.episodeCount).toBe(3);
+    expect(season?.episodeNumbers).toEqual([5, 6, 7]);
+  });
+
+  it('leaves episodeNumbers shorter than episodeCount when a number is missing', () => {
+    const items = [
+      base({ guid: 'e1', mediaType: 'episode', showTitle: 'Y', seasonNumber: 1, libraryName: 'TV Shows', title: 'E1', episodeNumber: 5 }),
+      base({ guid: 'e2', mediaType: 'episode', showTitle: 'Y', seasonNumber: 1, libraryName: 'TV Shows', title: 'E2' }),
+    ];
+    const out = applyFilters(items, { min_tmdb_rating: 0, dedupe_episodes_into_seasons: true, max_items_per_section: 99, exclude_genres: [] });
+    const season = out.find(i => i.seasonNumber === 1);
+    expect(season?.episodeCount).toBe(2);
+    expect(season?.episodeNumbers).toEqual([5]);
+  });
 });
