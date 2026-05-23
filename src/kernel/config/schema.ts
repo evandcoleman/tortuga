@@ -66,7 +66,8 @@ export const NewsletterConfigSchema = z.object({
     provider: z.enum(['anthropic', 'openai']).default('anthropic'),
     model: z.string().default(''),
     voice: z.string().default(''),
-  }).default(() => ({ enabled: false, provider: 'anthropic' as const, model: '', voice: '' })),
+    disclaimer: z.boolean().default(false),
+  }).default(() => ({ enabled: false, provider: 'anthropic' as const, model: '', voice: '', disclaimer: false })),
   extras: z.object({
     request_url: z.string().url().optional(),
     request_label: z.string().default('Request a title'),

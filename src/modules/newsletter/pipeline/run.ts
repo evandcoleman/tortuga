@@ -97,6 +97,7 @@ export async function runDigest(opts: RunDigestOpts) {
         windowStart,
         windowEnd,
         intro: intro ?? undefined,
+        disclaimer: opts.config.commentary?.disclaimer ?? false,
         requestLink,
         personalLink,
         freeformHtml,

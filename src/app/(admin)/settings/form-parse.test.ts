@@ -42,6 +42,13 @@ describe('parseNewsletterForm', () => {
     expect(r.ok && r.config.schedule_enabled).toBe(false);
   });
 
+  it('parses the AI disclaimer checkbox', () => {
+    const on = parseNewsletterForm(fd({ ...base, 'commentary.disclaimer': 'on' }));
+    expect(on.ok && on.config.commentary.disclaimer).toBe(true);
+    const off = parseNewsletterForm(fd(base));
+    expect(off.ok && off.config.commentary.disclaimer).toBe(false);
+  });
+
   it('splits comma/newline lists and drops blanks', () => {
     const r = parseNewsletterForm(fd({ ...base, 'filters.exclude_genres': 'Horror, Reality\nNews' }));
     expect(r.ok && r.config.filters.exclude_genres).toEqual(['Horror', 'Reality', 'News']);

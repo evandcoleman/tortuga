@@ -74,6 +74,7 @@ export function parseNewsletterForm(fd: FormData): ParseResult {
       provider: str(fd, 'commentary.provider') === 'openai' ? ('openai' as const) : ('anthropic' as const),
       model: str(fd, 'commentary.model'),
       voice: str(fd, 'commentary.voice'),
+      disclaimer: bool(fd, 'commentary.disclaimer'),
     },
     ...(hasExtras ? { extras: extrasFields } : {}),
   };
