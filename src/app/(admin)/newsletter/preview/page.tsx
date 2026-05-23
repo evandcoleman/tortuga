@@ -5,6 +5,7 @@ import { runDigest } from '@/modules/newsletter/pipeline/run';
 import { getThemedPreviews } from '@/modules/newsletter/pipeline/preview-cache';
 import { digests } from '@/modules/newsletter/schema';
 import { ThemeSwitcher } from './ThemeSwitcher';
+import { GenerateButton } from './GenerateButton';
 import {
   Badge,
   Button,
@@ -79,9 +80,7 @@ export default function Preview() {
         actions={
           <>
             <form action={generate}>
-              <Button type="submit" variant="secondary">
-                <RefreshIcon /> Generate fresh preview
-              </Button>
+              <GenerateButton />
             </form>
             <form action={send}>
               <Button
@@ -153,24 +152,6 @@ export default function Preview() {
         />
       )}
     </div>
-  );
-}
-
-function RefreshIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 12a9 9 0 1 0 3-6.5" />
-      <path d="M3 4v4h4" />
-    </svg>
   );
 }
 
