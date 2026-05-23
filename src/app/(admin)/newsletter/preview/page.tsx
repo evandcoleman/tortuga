@@ -5,10 +5,9 @@ import { runDigest } from '@/modules/newsletter/pipeline/run';
 import { getThemedPreviews } from '@/modules/newsletter/pipeline/preview-cache';
 import { digests } from '@/modules/newsletter/schema';
 import { ThemeSwitcher } from './ThemeSwitcher';
-import { GenerateButton } from './GenerateButton';
+import { SubmitButton } from './SubmitButton';
 import {
   Badge,
-  Button,
   Card,
   EmptyState,
   PageHeader,
@@ -80,17 +79,19 @@ export default function Preview() {
         actions={
           <>
             <form action={generate}>
-              <GenerateButton />
+              <SubmitButton variant="secondary" pendingLabel="Generating…">
+                <RefreshIcon /> Generate fresh preview
+              </SubmitButton>
             </form>
             <form action={send}>
-              <Button
-                type="submit"
+              <SubmitButton
                 variant="primary"
+                pendingLabel="Sending…"
                 disabled={!row}
                 title={row ? 'Send to all active recipients' : 'Generate a preview first'}
               >
                 <SendIcon /> Send now
-              </Button>
+              </SubmitButton>
             </form>
           </>
         }
@@ -152,6 +153,24 @@ export default function Preview() {
         />
       )}
     </div>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.5" />
+      <path d="M3 4v4h4" />
+    </svg>
   );
 }
 
