@@ -15,6 +15,7 @@ import {
 } from '@react-email/components';
 import * as React from 'react';
 import type { EnrichedItem } from '../types';
+import { resolveTheme, type Theme } from './themes';
 
 export interface DigestLink {
   url: string;
@@ -29,34 +30,19 @@ export interface DigestEmailProps {
   windowEnd: Date;
   intro?: string;
   disclaimer?: boolean;
+  themeId?: string;
   requestLink?: DigestLink;
   personalLink?: DigestLink;
   freeformHtml?: string;
 }
 
-const PALETTE = {
-  paper: '#faf8f4',
-  ink: '#161410',
-  muted: '#5d564b',
-  rule: '#e3ddd0',
-  hairline: '#ece6d8',
-  accent: '#b07a1e',
-  cardBg: '#ffffff',
-  chipBg: '#f3eedf',
-  chipFg: '#7a5d24',
-} as const;
-
-const FONT_SERIF =
-  '"Iowan Old Style","Apple Garamond","Baskerville","Times New Roman","Droid Serif","Times","Source Serif Pro",serif';
-const FONT_SANS = '"Inter","Helvetica Neue","Helvetica","Arial",sans-serif';
-
-function formatDateRange(start: Date, end: Date): string {
+export function formatDateRange(start: Date, end: Date): string {
   const fmt = (d: Date, opts: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat('en-US', opts).format(d);
   const sameYear = start.getFullYear() === end.getFullYear();
   const sameMonth = sameYear && start.getMonth() === end.getMonth();
   if (sameMonth) {
-    return `${fmt(start, { month: 'long', day: 'numeric' })}–${fmt(end, { day: 'numeric', year: 'numeric' })}`;
+    return `${fmt(start, { month: 'long', day: 'numeric' })}–${fmt(end, { day: 'numeric' })}, ${end.getFullYear()}`;
   }
   if (sameYear) {
     return `${fmt(start, { month: 'short', day: 'numeric' })} – ${fmt(end, { month: 'short', day: 'numeric', year: 'numeric' })}`;
@@ -91,10 +77,14 @@ export function DigestEmail({
   windowEnd,
   intro,
   disclaimer,
+  themeId,
   requestLink,
   personalLink,
   freeformHtml,
 }: DigestEmailProps) {
+  const theme = resolveTheme(themeId);
+  const { palette, fonts, layout } = theme;
+
   const sections = new Map<string, EnrichedItem[]>();
   for (const it of items) {
     const list = sections.get(it.libraryName) ?? [];
@@ -107,17 +97,17 @@ export function DigestEmail({
   return (
     <Html>
       <Head>
-        <meta name="color-scheme" content="light only" />
-        <meta name="supported-color-schemes" content="light" />
+        <meta name="color-scheme" content={theme.colorScheme} />
+        <meta name="supported-color-schemes" content={theme.colorScheme} />
       </Head>
       <Preview>{`${items.length} new on ${appName} · ${dateRange}`}</Preview>
       <Body
         style={{
           margin: 0,
           padding: 0,
-          background: PALETTE.paper,
-          color: PALETTE.ink,
-          fontFamily: FONT_SANS,
+          background: palette.paper,
+          color: palette.ink,
+          fontFamily: fonts.body,
           WebkitFontSmoothing: 'antialiased',
         }}
       >
@@ -126,7 +116,7 @@ export function DigestEmail({
             maxWidth: 640,
             margin: '0 auto',
             padding: '40px 28px 56px',
-            background: PALETTE.paper,
+            background: palette.paper,
           }}
         >
           <Section>
@@ -134,9 +124,9 @@ export function DigestEmail({
               style={{
                 margin: 0,
                 fontSize: 11,
-                letterSpacing: 4,
+                letterSpacing: layout.eyebrowLetterSpacing,
                 textTransform: 'uppercase',
-                color: PALETTE.accent,
+                color: palette.accent,
                 fontWeight: 600,
               }}
             >
@@ -146,12 +136,12 @@ export function DigestEmail({
               as="h1"
               style={{
                 margin: '10px 0 0',
-                fontFamily: FONT_SERIF,
+                fontFamily: fonts.heading,
                 fontSize: 36,
                 lineHeight: 1.1,
-                letterSpacing: '-0.02em',
-                color: PALETTE.ink,
-                fontWeight: 600,
+                letterSpacing: layout.headingLetterSpacing,
+                color: palette.ink,
+                fontWeight: layout.headingWeight,
               }}
             >
               New on {appName}
@@ -160,7 +150,7 @@ export function DigestEmail({
               style={{
                 margin: '8px 0 0',
                 fontSize: 14,
-                color: PALETTE.muted,
+                color: palette.muted,
               }}
             >
               {dateRange} · {items.length} {itemNoun}
@@ -172,11 +162,11 @@ export function DigestEmail({
               <Text
                 style={{
                   margin: 0,
-                  fontFamily: FONT_SERIF,
+                  fontFamily: fonts.heading,
                   fontSize: 17,
                   lineHeight: 1.55,
-                  color: PALETTE.ink,
-                  fontStyle: 'italic',
+                  color: palette.ink,
+                  fontStyle: layout.introItalic ? 'italic' : 'normal',
                 }}
               >
                 {intro}
@@ -185,11 +175,11 @@ export function DigestEmail({
                 <Text
                   style={{
                     margin: '8px 0 0',
-                    fontFamily: FONT_SANS,
+                    fontFamily: fonts.body,
                     fontSize: 12,
                     letterSpacing: '0.04em',
                     textTransform: 'uppercase',
-                    color: PALETTE.muted,
+                    color: palette.muted,
                   }}
                 >
                   Generated by AI
@@ -200,9 +190,9 @@ export function DigestEmail({
 
           <Hr
             style={{
-              borderColor: PALETTE.rule,
+              borderColor: palette.rule,
               borderStyle: 'solid',
-              borderWidth: '0 0 1px',
+              borderWidth: `0 0 ${layout.ruleWidth}px`,
               margin: '28px 0 0',
             }}
           />
@@ -217,7 +207,7 @@ export function DigestEmail({
                       fontSize: 10,
                       letterSpacing: 3,
                       textTransform: 'uppercase',
-                      color: PALETTE.muted,
+                      color: palette.muted,
                       fontWeight: 600,
                     }}
                   >
@@ -225,14 +215,14 @@ export function DigestEmail({
                   </Text>
                 </Column>
                 <Column align="right">
-                  <Text style={{ margin: 0, fontSize: 11, color: PALETTE.muted }}>
+                  <Text style={{ margin: 0, fontSize: 11, color: palette.muted }}>
                     {group.length} {group.length === 1 ? 'title' : 'titles'}
                   </Text>
                 </Column>
               </Row>
               <Hr
                 style={{
-                  borderColor: PALETTE.hairline,
+                  borderColor: palette.hairline,
                   borderStyle: 'solid',
                   borderWidth: '0 0 1px',
                   margin: '8px 0 0',
@@ -240,7 +230,7 @@ export function DigestEmail({
               />
 
               {group.map(item => (
-                <ItemCard key={item.guid} item={item} />
+                <ItemCard key={item.guid} item={item} theme={theme} />
               ))}
             </Section>
           ))}
@@ -249,16 +239,17 @@ export function DigestEmail({
             <Section
               style={{
                 marginTop: 40,
-                background: PALETTE.cardBg,
-                border: `1px solid ${PALETTE.hairline}`,
-                borderRadius: 6,
+                background: palette.cardBg,
+                border: `${layout.cardBorderWidth}px solid ${palette.hairline}`,
+                borderRadius: layout.radius,
+                boxShadow: layout.cardShadow,
                 padding: 16,
               }}
             >
               <Row>
                 <Column>
                   <div
-                    style={{ fontSize: 14, lineHeight: 1.55, color: PALETTE.ink }}
+                    style={{ fontSize: 14, lineHeight: 1.55, color: palette.ink }}
                     dangerouslySetInnerHTML={{ __html: freeformHtml }}
                   />
                 </Column>
@@ -275,9 +266,9 @@ export function DigestEmail({
                     display: 'inline-block',
                     margin: '0 8px',
                     padding: '10px 18px',
-                    borderRadius: 999,
-                    background: PALETTE.accent,
-                    color: PALETTE.paper,
+                    borderRadius: layout.radius === 0 ? 0 : 999,
+                    background: palette.accent,
+                    color: palette.onAccent,
                     fontSize: 13,
                     fontWeight: 600,
                     textDecoration: 'none',
@@ -295,7 +286,7 @@ export function DigestEmail({
                     margin: '0 8px',
                     fontSize: 13,
                     fontWeight: 600,
-                    color: PALETTE.accent,
+                    color: palette.accent,
                     textDecoration: 'none',
                   }}
                 >
@@ -307,9 +298,9 @@ export function DigestEmail({
 
           <Hr
             style={{
-              borderColor: PALETTE.rule,
+              borderColor: palette.rule,
               borderStyle: 'solid',
-              borderWidth: '0 0 1px',
+              borderWidth: `0 0 ${layout.ruleWidth}px`,
               margin: '48px 0 20px',
             }}
           />
@@ -317,7 +308,7 @@ export function DigestEmail({
             style={{
               margin: 0,
               fontSize: 11,
-              color: PALETTE.muted,
+              color: palette.muted,
               letterSpacing: 1,
               textTransform: 'uppercase',
               textAlign: 'center',
@@ -330,7 +321,7 @@ export function DigestEmail({
             style={{
               margin: '6px 0 0',
               fontSize: 12,
-              color: PALETTE.muted,
+              color: palette.muted,
               textAlign: 'center',
               lineHeight: 1.5,
             }}
@@ -339,7 +330,7 @@ export function DigestEmail({
             <br />
             <Link
               href={unsubscribeUrl}
-              style={{ color: PALETTE.muted, textDecoration: 'underline' }}
+              style={{ color: palette.muted, textDecoration: 'underline' }}
             >
               Unsubscribe
             </Link>
@@ -350,20 +341,23 @@ export function DigestEmail({
   );
 }
 
-function ItemCard({ item }: { item: EnrichedItem }) {
+function ItemCard({ item, theme }: { item: EnrichedItem; theme: Theme }) {
+  const { palette, fonts, layout } = theme;
   const kicker = itemKicker(item);
   const overview = truncate(item.overview, 220);
   const showsRating = item.rating > 0;
   const displayTitle =
     item.mediaType === 'season' && item.showTitle ? item.showTitle : item.title;
+  const posterRadius = Math.min(4, layout.radius);
 
   return (
     <Section
       style={{
         marginTop: 20,
-        background: PALETTE.cardBg,
-        border: `1px solid ${PALETTE.hairline}`,
-        borderRadius: 6,
+        background: palette.cardBg,
+        border: `${layout.cardBorderWidth}px solid ${palette.hairline}`,
+        borderRadius: layout.radius,
+        boxShadow: layout.cardShadow,
         padding: 16,
       }}
     >
@@ -381,9 +375,9 @@ function ItemCard({ item }: { item: EnrichedItem }) {
                 display: 'block',
                 width: 88,
                 height: 132,
-                borderRadius: 4,
-                border: `1px solid ${PALETTE.hairline}`,
-                background: PALETTE.chipBg,
+                borderRadius: posterRadius,
+                border: `1px solid ${palette.hairline}`,
+                background: palette.chipBg,
               }}
             />
           ) : (
@@ -391,9 +385,9 @@ function ItemCard({ item }: { item: EnrichedItem }) {
               style={{
                 width: 88,
                 height: 132,
-                borderRadius: 4,
-                background: PALETTE.chipBg,
-                border: `1px dashed ${PALETTE.rule}`,
+                borderRadius: posterRadius,
+                background: palette.chipBg,
+                border: `1px dashed ${palette.rule}`,
               }}
             />
           )}
@@ -407,7 +401,7 @@ function ItemCard({ item }: { item: EnrichedItem }) {
                 fontSize: 10,
                 letterSpacing: 1.6,
                 textTransform: 'uppercase',
-                color: PALETTE.chipFg,
+                color: palette.chipFg,
                 fontWeight: 600,
               }}
             >
@@ -418,26 +412,26 @@ function ItemCard({ item }: { item: EnrichedItem }) {
             as="h3"
             style={{
               margin: '4px 0 0',
-              fontFamily: FONT_SERIF,
+              fontFamily: fonts.heading,
               fontSize: 20,
               lineHeight: 1.2,
               letterSpacing: '-0.01em',
-              color: PALETTE.ink,
-              fontWeight: 600,
+              color: palette.ink,
+              fontWeight: layout.headingWeight,
             }}
           >
             {displayTitle}
           </Heading>
 
           {showsRating ? (
-            <Text style={{ margin: '6px 0 0', fontSize: 12, color: PALETTE.muted }}>
+            <Text style={{ margin: '6px 0 0', fontSize: 12, color: palette.muted }}>
               <span
                 style={{
                   display: 'inline-block',
                   padding: '2px 8px',
-                  borderRadius: 999,
-                  background: PALETTE.chipBg,
-                  color: PALETTE.chipFg,
+                  borderRadius: layout.radius === 0 ? 0 : 999,
+                  background: palette.chipBg,
+                  color: palette.chipFg,
                   fontSize: 11,
                   fontWeight: 600,
                   letterSpacing: 0.2,
@@ -454,7 +448,7 @@ function ItemCard({ item }: { item: EnrichedItem }) {
                 margin: '10px 0 0',
                 fontSize: 14,
                 lineHeight: 1.55,
-                color: PALETTE.ink,
+                color: palette.ink,
               }}
             >
               {overview}
@@ -466,7 +460,7 @@ function ItemCard({ item }: { item: EnrichedItem }) {
               <Link
                 href={item.plexUrl}
                 style={{
-                  color: PALETTE.accent,
+                  color: palette.accent,
                   textDecoration: 'none',
                   fontWeight: 600,
                   letterSpacing: 0.2,

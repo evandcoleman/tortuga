@@ -98,6 +98,7 @@ export async function runDigest(opts: RunDigestOpts) {
         windowEnd,
         intro: intro ?? undefined,
         disclaimer: opts.config.commentary?.disclaimer ?? false,
+        themeId: opts.config.theme,
         requestLink,
         personalLink,
         freeformHtml,

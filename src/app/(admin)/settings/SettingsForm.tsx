@@ -5,6 +5,7 @@ import type { NewsletterConfig } from '@/kernel/config/schema';
 import { Button, Card, CardHeader } from '../_components/ui';
 import { saveSettings, type SaveState } from './actions';
 import { TextField, NumberField, TextareaField, SelectField, CheckboxField } from './fields';
+import { THEME_OPTIONS } from '@/modules/newsletter/templates/themes';
 
 const initial: SaveState = { status: 'idle' };
 
@@ -53,6 +54,13 @@ export function SettingsForm({ config }: { config: NewsletterConfig }) {
         </div>
         <div className="mt-2">
           <CheckboxField name="filters.dedupe_episodes_into_seasons" label="Group episodes into seasons" defaultChecked={config.filters.dedupe_episodes_into_seasons} />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Appearance" description="Visual theme for the newsletter email." />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField name="theme" label="Theme" defaultValue={config.theme} options={THEME_OPTIONS} hint="Colors, type, and layout for the email." />
         </div>
       </Card>
 

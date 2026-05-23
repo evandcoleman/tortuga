@@ -42,6 +42,13 @@ describe('parseNewsletterForm', () => {
     expect(r.ok && r.config.schedule_enabled).toBe(false);
   });
 
+  it('parses the selected theme and defaults to editorial when blank', () => {
+    const picked = parseNewsletterForm(fd({ ...base, theme: 'newsprint' }));
+    expect(picked.ok && picked.config.theme).toBe('newsprint');
+    const blank = parseNewsletterForm(fd(base));
+    expect(blank.ok && blank.config.theme).toBe('editorial');
+  });
+
   it('parses the AI disclaimer checkbox', () => {
     const on = parseNewsletterForm(fd({ ...base, 'commentary.disclaimer': 'on' }));
     expect(on.ok && on.config.commentary.disclaimer).toBe(true);
