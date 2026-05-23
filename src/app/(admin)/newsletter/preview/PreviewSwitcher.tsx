@@ -78,21 +78,29 @@ export function PreviewSwitcher({
     layouts.find(l => l.id === defaultLayoutId)?.id ?? layouts[0]?.id ?? '',
   );
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState(false);
   const [isSaving, startSaving] = useTransition();
 
   const selectTheme = (id: string) => {
     setThemeId(id);
     setSaved(false);
+    setError(false);
   };
   const selectLayout = (id: string) => {
     setLayoutId(id);
     setSaved(false);
+    setError(false);
   };
 
   const onSave = () => {
+    setError(false);
     startSaving(async () => {
-      await savePreviewDefault(themeId, layoutId);
-      setSaved(true);
+      try {
+        await savePreviewDefault(themeId, layoutId);
+        setSaved(true);
+      } catch {
+        setError(true);
+      }
     });
   };
 
@@ -108,6 +116,7 @@ export function PreviewSwitcher({
           type="button"
           onClick={onSave}
           disabled={isSaving}
+          aria-busy={isSaving}
           className={[
             'rounded-full px-3 py-1 text-[12px] font-medium transition-colors',
             'bg-gold text-gold-ink hover:opacity-90 disabled:opacity-60',
@@ -117,6 +126,9 @@ export function PreviewSwitcher({
         </button>
         {saved ? (
           <span className="text-[12px] font-medium text-muted">Saved ✓</span>
+        ) : null}
+        {error ? (
+          <span className="text-[12px] font-medium text-red-600">Save failed — try again</span>
         ) : null}
       </div>
       <iframe
