@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
 import { enrichItems } from './enrich';
@@ -42,5 +43,32 @@ describe('enrichItems', () => {
     const [cachedItem] = await enrichItems(db, fakeTmdb as any, [item]);
     expect(cachedItem.addedAt).toBeInstanceOf(Date);
     expect(() => cachedItem.addedAt.getTime()).not.toThrow();
+  });
+
+  it('captures episodeNumber from media_index for episodes', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const epItem: TautulliItem = {
+      guid: 'ep1', title: 'Ep', mediaType: 'episode', libraryName: 'TV',
+      addedAt: new Date(), grandparentTitle: 'Show',
+      raw: { parent_media_index: '2', media_index: '5' },
+    };
+    const out = await enrichItems(db, fakeTmdb as any, [epItem]);
+    expect(out[0].seasonNumber).toBe(2);
+    expect(out[0].episodeNumber).toBe(5);
+  });
+
+  it('backfills episodeNumber on a cache hit', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const epItem: TautulliItem = {
+      guid: 'ep2', title: 'Ep', mediaType: 'episode', libraryName: 'TV',
+      addedAt: new Date(), grandparentTitle: 'Show',
+      raw: { parent_media_index: '1', media_index: '9' },
+    };
+    const { episodeNumber: _drop, ...stale } = (await enrichItems(db, fakeTmdb as any, [epItem]))[0];
+    db.update(itemsCache).set({ payload: JSON.stringify(stale) }).where(eq(itemsCache.guid, 'ep2')).run();
+    const out = await enrichItems(db, fakeTmdb as any, [epItem]);
+    expect(out[0].episodeNumber).toBe(9);
   });
 });

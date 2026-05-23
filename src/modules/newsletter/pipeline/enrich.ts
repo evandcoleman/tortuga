@@ -38,10 +38,20 @@ function pickRatingKey(raw: Record<string, unknown>, mediaType: string): string 
 export async function enrichItems(db: Db, tmdb: TmdbClient, items: TautulliItem[]): Promise<EnrichedItem[]> {
   return mapWithConcurrency(items, async (item) => {
     const ratingKey = pickRatingKey(item.raw, item.mediaType);
+    const rawEpisodeNumber =
+      item.raw.media_index !== undefined && item.raw.media_index !== null
+        ? Number(item.raw.media_index)
+        : undefined;
+    const episodeNumber = Number.isFinite(rawEpisodeNumber) ? rawEpisodeNumber : undefined;
     const cached = db.select().from(itemsCache).where(eq(itemsCache.guid, item.guid)).all();
     if (cached.length > 0) {
       const prior = JSON.parse(cached[0].payload) as EnrichedItem;
-      return { ...prior, addedAt: cached[0].addedAt, ratingKey: ratingKey ?? prior.ratingKey };
+      return {
+        ...prior,
+        addedAt: cached[0].addedAt,
+        ratingKey: ratingKey ?? prior.ratingKey,
+        episodeNumber: episodeNumber ?? prior.episodeNumber,
+      };
     }
     const isTv = item.mediaType === 'episode' || item.mediaType === 'season' || item.mediaType === 'show';
     const searchTitle = item.grandparentTitle ?? item.title;
@@ -64,6 +74,7 @@ export async function enrichItems(db: Db, tmdb: TmdbClient, items: TautulliItem[
         typeof item.raw.parent_media_index === 'string'
           ? Number(item.raw.parent_media_index)
           : undefined,
+      episodeNumber,
       ratingKey,
     };
     db.insert(itemsCache).values({
