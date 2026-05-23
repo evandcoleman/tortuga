@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 
-export interface MatrixPreview {
-  themeId: string;
-  themeLabel: string;
-  layoutId: string;
-  layoutLabel: string;
-  html: string;
-}
+import type { MatrixPreview } from '@/modules/newsletter/pipeline/preview-cache';
 
 interface Option {
   id: string;
