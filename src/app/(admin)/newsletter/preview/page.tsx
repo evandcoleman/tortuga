@@ -2,7 +2,9 @@ import { revalidatePath } from 'next/cache';
 import { desc, eq } from 'drizzle-orm';
 import { getAppContext } from '@/kernel/context';
 import { runDigest } from '@/modules/newsletter/pipeline/run';
+import { getThemedPreviews } from '@/modules/newsletter/pipeline/preview-cache';
 import { digests } from '@/modules/newsletter/schema';
+import { ThemeSwitcher } from './ThemeSwitcher';
 import {
   Badge,
   Button,
@@ -29,6 +31,7 @@ async function generate() {
     sessionSecret: ctx.env.SESSION_SECRET,
     scheduledAt: new Date(),
     dryRun: true,
+    cacheThemedPreviews: true,
   });
   revalidatePath('/newsletter/preview');
 }
@@ -63,6 +66,9 @@ export default function Preview() {
     .all();
   const row = latest[0];
   const html = row?.renderedHtml ?? '';
+  const themed = getThemedPreviews();
+  const themedPreviews = themed && row && themed.digestId === row.id ? themed.previews : null;
+  const defaultThemeId = ctx.config.newsletter.theme;
 
   return (
     <div>
@@ -129,11 +135,15 @@ export default function Preview() {
             </div>
             <div className="text-[11px] text-faint">dry-run</div>
           </div>
-          <iframe
-            srcDoc={html}
-            title="Digest preview"
-            className="block h-[820px] w-full rounded-b-[10px] bg-white"
-          />
+          {themedPreviews ? (
+            <ThemeSwitcher previews={themedPreviews} defaultThemeId={defaultThemeId} />
+          ) : (
+            <iframe
+              srcDoc={html}
+              title="Digest preview"
+              className="block h-[820px] w-full rounded-b-[10px] bg-white"
+            />
+          )}
         </Card>
       ) : (
         <EmptyState

@@ -16,6 +16,8 @@ import { applyFilters } from '../filters';
 import { syncRecipients } from './recipients';
 import { enrichItems } from './enrich';
 import { DigestEmail } from '../templates/digest';
+import { THEMES } from '../templates/themes';
+import { setThemedPreviews } from './preview-cache';
 import { marked } from 'marked';
 import type { LlmClient } from '@/kernel/integrations/llm';
 import type { DigestLink } from '../templates/digest';
@@ -35,6 +37,7 @@ export interface RunDigestOpts {
   dryRun?: boolean;
   recipientFilter?: (email: string) => boolean;
   llm?: LlmClient | null;
+  cacheThemedPreviews?: boolean;
 }
 
 export async function runDigest(opts: RunDigestOpts) {
@@ -89,19 +92,27 @@ export async function runDigest(opts: RunDigestOpts) {
 
     const placeholderUnsub = generateUnsubscribeToken('preview@tortuga.local', opts.sessionSecret);
     const subject = `New on ${opts.config.from.name} — ${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
+
+    // Shared across the stored preview and every per-recipient render so the
+    // theme and disclaimer are identical everywhere; only the unsubscribe token
+    // differs per recipient.
+    const baseEmailProps = {
+      items: withPlexLinks,
+      appName: opts.config.from.name,
+      windowStart,
+      windowEnd,
+      intro: intro ?? undefined,
+      disclaimer: opts.config.commentary?.disclaimer ?? false,
+      themeId: opts.config.theme,
+      requestLink,
+      personalLink,
+      freeformHtml,
+    };
+
     const html = await render(
       createElement(DigestEmail, {
-        items: withPlexLinks,
+        ...baseEmailProps,
         unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
-        appName: opts.config.from.name,
-        windowStart,
-        windowEnd,
-        intro: intro ?? undefined,
-        disclaimer: opts.config.commentary?.disclaimer ?? false,
-        themeId: opts.config.theme,
-        requestLink,
-        personalLink,
-        freeformHtml,
       }),
     );
 
@@ -109,6 +120,21 @@ export async function runDigest(opts: RunDigestOpts) {
       status: 'rendered', itemCount: filtered.length,
       renderedHtml: html, renderedSubject: subject,
     }).where(eq(digests.id, digestId)).run();
+
+    if (opts.cacheThemedPreviews) {
+      const previews = [];
+      for (const theme of Object.values(THEMES)) {
+        const themedHtml = await render(
+          createElement(DigestEmail, {
+            ...baseEmailProps,
+            unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
+            themeId: theme.id,
+          }),
+        );
+        previews.push({ id: theme.id, label: theme.label, html: themedHtml });
+      }
+      setThemedPreviews({ digestId, previews });
+    }
 
     if (opts.dryRun) {
       return { id: digestId, status: 'rendered' as const, itemCount: filtered.length };
@@ -126,15 +152,8 @@ export async function runDigest(opts: RunDigestOpts) {
       opts.db.insert(unsubscribes).values({ token: tokenStr, email: r.email, createdAt: new Date() }).run();
       const perRecipientHtml = await render(
         createElement(DigestEmail, {
-          items: withPlexLinks,
+          ...baseEmailProps,
           unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${tokenStr}`,
-          appName: opts.config.from.name,
-          windowStart,
-          windowEnd,
-          intro: intro ?? undefined,
-          requestLink,
-          personalLink,
-          freeformHtml,
         }),
       );
       opts.db.insert(sends).values({

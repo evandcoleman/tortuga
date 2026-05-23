@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
 import { runDigest } from './run';
+import { getThemedPreviews } from './preview-cache';
+import { THEMES } from '../templates/themes';
 import { digests, sends } from '../schema';
 
 function fakes() {
@@ -100,6 +102,20 @@ describe('runDigest', () => {
     });
     expect(provider.send).toHaveBeenCalledTimes(2);
     expect(llm.generateText).toHaveBeenCalledTimes(1);
+  });
+
+  it('caches a render of every theme when cacheThemedPreviews is set', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, provider } = fakes();
+    await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+      config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-16T13:00:00Z'), dryRun: true, cacheThemedPreviews: true,
+    });
+    const cached = getThemedPreviews();
+    expect(cached?.previews.map(p => p.id).sort()).toEqual(Object.keys(THEMES).sort());
+    expect(cached?.previews.every(p => p.html.includes('New on'))).toBe(true);
   });
 
   it('still sends when the LLM throws (graceful degradation)', async () => {
