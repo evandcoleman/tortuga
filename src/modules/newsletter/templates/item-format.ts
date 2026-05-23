@@ -15,8 +15,8 @@ export function itemKicker(item: EnrichedItem): string | null {
     bits.push(`Season ${item.seasonNumber}`);
     const nums = item.episodeNumbers;
     if (nums && nums.length > 0 && nums.length === item.episodeCount) {
-      const range = formatEpisodeRange(nums);
-      bits.push(range.includes('–') ? `Episodes ${range}` : nums.map(n => `E${n}`).join(', '));
+      const isConsecutiveRun = nums.length > 1 && nums[nums.length - 1] - nums[0] === nums.length - 1;
+      bits.push(isConsecutiveRun ? `Episodes ${formatEpisodeRange(nums)}` : nums.map(n => `E${n}`).join(', '));
     } else if (item.episodeCount) {
       bits.push(`${item.episodeCount} new episode${item.episodeCount === 1 ? '' : 's'}`);
     }

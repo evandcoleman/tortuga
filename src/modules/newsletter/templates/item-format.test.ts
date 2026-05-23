@@ -45,4 +45,7 @@ describe('itemKicker episode handling', () => {
   it('still labels a movie', () => {
     expect(itemKicker(ep({ mediaType: 'movie', year: 2024 }))).toBe('Film · 2024');
   });
+  it('renders mixed runs as an E-prefixed list, not a dash range', () => {
+    expect(itemKicker(ep({ mediaType: 'season', seasonNumber: 1, episodeCount: 4, episodeNumbers: [1, 2, 4, 5] }))).toBe('Season 1 · E1, E2, E4, E5');
+  });
 });
