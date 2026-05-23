@@ -108,4 +108,31 @@ describe('DigestEmail', () => {
     expect(html).not.toContain('A curated week of cinema.');
     expect(html).not.toContain('example.com');
   });
+
+  it('defaults to the List layout (88px poster)', async () => {
+    const html = await render(DigestEmail(baseProps));
+    expect(html).toContain('width="88"');
+  });
+
+  it('renders the Gallery layout (150px posters, no 88px card poster)', async () => {
+    const html = await render(DigestEmail({ ...baseProps, layoutId: 'gallery' }));
+    expect(html).toContain('width="150"');
+    expect(html).not.toContain('width="88"');
+  });
+
+  it('renders the Magazine layout (full-width 584px poster)', async () => {
+    const html = await render(DigestEmail({ ...baseProps, layoutId: 'magazine' }));
+    expect(html).toContain('width="584"');
+  });
+
+  it('renders the Compact layout with no posters', async () => {
+    const html = await render(DigestEmail({ ...baseProps, layoutId: 'compact' }));
+    expect(html).not.toContain('image.tmdb.org');
+    expect(html).toContain('A Movie');
+  });
+
+  it('falls back to List for an unknown layout id', async () => {
+    const html = await render(DigestEmail({ ...baseProps, layoutId: 'bogus' }));
+    expect(html).toContain('width="88"');
+  });
 });
