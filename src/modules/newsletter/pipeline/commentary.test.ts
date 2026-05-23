@@ -57,6 +57,27 @@ describe('generateIntro', () => {
     expect(await generateIntro(llm, items, { appName: 'Orpheus' })).toBeNull();
   });
 
+  it('grounds the model with each title overview and genres', async () => {
+    const llm = { generateText: vi.fn().mockResolvedValue('ok') };
+    const rich: EnrichedItem[] = [{
+      ...items[0],
+      title: 'Dune',
+      overview: 'A noble family takes control of a dangerous desert planet.',
+      genres: ['Sci-Fi', 'Adventure'],
+    }];
+    await generateIntro(llm, rich, { appName: 'Orpheus' });
+    const prompt = llm.generateText.mock.calls[0][0].prompt as string;
+    expect(prompt).toContain('desert planet');
+    expect(prompt).toContain('Sci-Fi');
+  });
+
+  it('instructs the model not to invent facts about titles', async () => {
+    const llm = { generateText: vi.fn().mockResolvedValue('ok') };
+    await generateIntro(llm, items, { appName: 'Orpheus' });
+    const prompt = (llm.generateText.mock.calls[0][0].prompt as string).toLowerCase();
+    expect(prompt).toContain('do not invent');
+  });
+
   it('shows the year only for titles notably older than the newest in the batch', async () => {
     const llm = { generateText: vi.fn().mockResolvedValue('ok') };
     const mixed: EnrichedItem[] = [

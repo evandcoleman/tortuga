@@ -8,6 +8,9 @@ const log = createLogger('newsletter.commentary');
 // years older than the newest item in the drop (otherwise it's just noise).
 const MIN_VINTAGE_GAP_YEARS = 3;
 
+// Cap each title's synopsis so a large drop can't blow up the prompt.
+const MAX_SYNOPSIS_CHARS = 200;
+
 export const DEFAULT_VOICE =
   'You are the warm, knowledgeable curator of a private media server. ' +
   "Write a single short paragraph (2-3 sentences) introducing this week's new additions. " +
@@ -57,11 +60,19 @@ export async function generateIntro(
         const isVintage = i.year != null && newestYear - i.year >= MIN_VINTAGE_GAP_YEARS;
         const year = isVintage ? ` (${i.year})` : '';
         const rating = i.rating > 0 ? `, ${i.rating.toFixed(1)}/10` : '';
-        return `- ${i.title}${year} [${i.mediaType}${rating}]`;
+        const genres = i.genres?.length ? ` — ${i.genres.slice(0, 3).join('/')}` : '';
+        const synopsis = i.overview?.trim()
+          ? `: ${i.overview.trim().replace(/\s+/g, ' ').slice(0, MAX_SYNOPSIS_CHARS)}`
+          : '';
+        return `- ${i.title}${year} [${i.mediaType}${rating}]${genres}${synopsis}`;
       })
       .join('\n');
     const system = opts.voice && opts.voice.trim().length > 0 ? opts.voice.trim() : DEFAULT_VOICE;
-    const prompt = `These titles were just added to ${opts.appName}:\n${summary}\n\nWrite the intro paragraph.`;
+    const prompt =
+      `These titles were just added to ${opts.appName}. ` +
+      'Base every description on the details below — do not invent plots, genres, seasons, years, or any fact ' +
+      'about a title you were not given. If you lack details, stay general.\n\n' +
+      `${summary}\n\nWrite the intro paragraph.`;
     const text = await llm.generateText({ system, prompt, maxTokens: 400 });
     const cleaned = stripMarkdown(text);
     return cleaned.length > 0 ? cleaned : null;
