@@ -1,17 +1,19 @@
-// In-memory cache of the latest dry-run preview rendered across every theme.
-// Transient by design: it lets the preview page swap themes instantly without
-// re-fetching data or re-running the AI intro. Cleared on process restart —
-// the preview page just regenerates on demand, so persistence isn't needed.
+// In-memory cache of the latest dry-run preview rendered across every
+// theme × layout combination. Transient by design: it lets the preview page
+// swap theme/layout instantly without re-fetching data or re-running the AI
+// intro. Cleared on process restart — the preview page regenerates on demand.
 
-export interface ThemedPreview {
-  id: string;
-  label: string;
+export interface MatrixPreview {
+  themeId: string;
+  themeLabel: string;
+  layoutId: string;
+  layoutLabel: string;
   html: string;
 }
 
 interface PreviewEntry {
   digestId: string;
-  previews: ThemedPreview[];
+  previews: MatrixPreview[];
 }
 
 let latest: PreviewEntry | null = null;

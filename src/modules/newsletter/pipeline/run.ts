@@ -17,6 +17,7 @@ import { syncRecipients } from './recipients';
 import { enrichItems } from './enrich';
 import { DigestEmail } from '../templates/digest';
 import { THEMES } from '../templates/themes';
+import { LAYOUTS } from '../templates/layouts';
 import { setThemedPreviews } from './preview-cache';
 import { marked } from 'marked';
 import type { LlmClient } from '@/kernel/integrations/llm';
@@ -104,6 +105,7 @@ export async function runDigest(opts: RunDigestOpts) {
       intro: intro ?? undefined,
       disclaimer: opts.config.commentary?.disclaimer ?? false,
       themeId: opts.config.theme,
+      layoutId: opts.config.layout,
       requestLink,
       personalLink,
       freeformHtml,
@@ -124,14 +126,23 @@ export async function runDigest(opts: RunDigestOpts) {
     if (opts.cacheThemedPreviews) {
       const previews = [];
       for (const theme of Object.values(THEMES)) {
-        const themedHtml = await render(
-          createElement(DigestEmail, {
-            ...baseEmailProps,
-            unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
+        for (const lay of Object.values(LAYOUTS)) {
+          const comboHtml = await render(
+            createElement(DigestEmail, {
+              ...baseEmailProps,
+              unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
+              themeId: theme.id,
+              layoutId: lay.id,
+            }),
+          );
+          previews.push({
             themeId: theme.id,
-          }),
-        );
-        previews.push({ id: theme.id, label: theme.label, html: themedHtml });
+            themeLabel: theme.label,
+            layoutId: lay.id,
+            layoutLabel: lay.label,
+            html: comboHtml,
+          });
+        }
       }
       setThemedPreviews({ digestId, previews });
     }

@@ -4,6 +4,7 @@ import { applyMigrations } from '@/kernel/db/migrate';
 import { runDigest } from './run';
 import { getThemedPreviews } from './preview-cache';
 import { THEMES } from '../templates/themes';
+import { LAYOUTS } from '../templates/layouts';
 import { digests, sends } from '../schema';
 
 function fakes() {
@@ -114,7 +115,14 @@ describe('runDigest', () => {
       scheduledAt: new Date('2026-05-16T13:00:00Z'), dryRun: true, cacheThemedPreviews: true,
     });
     const cached = getThemedPreviews();
-    expect(cached?.previews.map(p => p.id).sort()).toEqual(Object.keys(THEMES).sort());
+    const themeIds = Object.keys(THEMES).sort();
+    const layoutIds = Object.keys(LAYOUTS).sort();
+    expect(cached?.previews.map(p => p.themeId).sort()).toEqual(
+      themeIds.flatMap(t => layoutIds.map(() => t)).sort(),
+    );
+    expect(cached?.previews.map(p => p.layoutId).sort()).toEqual(
+      themeIds.flatMap(() => layoutIds).sort(),
+    );
     expect(cached?.previews.every(p => p.html.includes('New on'))).toBe(true);
   });
 
