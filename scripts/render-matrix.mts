@@ -34,7 +34,7 @@ const items: EnrichedItem[] = [
   {
     guid: 'g3', title: 'Severance', mediaType: 'season', showTitle: 'Severance',
     libraryName: 'TV', addedAt: new Date('2026-05-03T00:00:00Z'), rating: 8.7,
-    seasonNumber: 2, episodeCount: 10,
+    seasonNumber: 2, episodeCount: 3, episodeNumbers: [5, 6, 7],
     posterUrl: 'https://image.tmdb.org/t/p/w500/lFf6LLrQjYldcZItzOkGmMMigP7.jpg',
     overview: 'Mark and his colleagues uncover the truth behind their severed work lives.',
     plexUrl: 'https://app.plex.tv/desktop/#!/server/abc/details?key=3',
