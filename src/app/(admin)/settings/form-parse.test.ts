@@ -67,4 +67,13 @@ describe('parseNewsletterForm', () => {
     const r = parseNewsletterForm(fd({ ...base, 'email.provider': 'mailgun', 'email.mailgun.domain': '' }));
     expect(r.ok).toBe(false);
   });
+
+  it('round-trips plex.server_id and featured.enabled (carried via hidden inputs)', () => {
+    const r = parseNewsletterForm(fd({ ...base, 'plex.server_id': 'abc123', 'featured.enabled': 'on' }));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.config.plex?.server_id).toBe('abc123');
+      expect(r.config.featured.enabled).toBe(true);
+    }
+  });
 });

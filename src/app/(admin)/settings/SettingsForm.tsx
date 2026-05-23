@@ -14,6 +14,9 @@ export function SettingsForm({ config }: { config: NewsletterConfig }) {
 
   return (
     <form action={action} className="grid gap-5">
+      {/* Round-trip config the UI doesn't surface, so saving never drops it. */}
+      <input type="hidden" name="plex.server_id" value={config.plex?.server_id ?? ''} />
+      <input type="hidden" name="featured.enabled" value={config.featured.enabled ? 'on' : ''} />
       <Card>
         <CardHeader title="Schedule" description="When the digest is generated and sent." />
         <div className="grid gap-4 sm:grid-cols-2">
