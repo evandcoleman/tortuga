@@ -15,6 +15,29 @@ export interface GenerateIntroOpts {
   voice?: string;
 }
 
+// The intro renders as escaped plaintext, and models ignore "no markdown"
+// instructions, so strip markdown to plain prose before it reaches the email.
+export function stripMarkdown(input: string): string {
+  const withoutHeadings = input
+    .split('\n')
+    .filter(line => !/^\s{0,3}#{1,6}(\s|$)/.test(line))
+    .map(line =>
+      line
+        .replace(/^\s{0,3}>\s?/, '')
+        .replace(/^\s{0,3}([-*+]|\d+\.)\s+/, ''),
+    )
+    .join('\n');
+
+  return withoutHeadings
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/(\*\*\*|\*\*|\*|___|__|_)(.+?)\1/g, '$2')
+    .replace(/~~(.+?)~~/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export async function generateIntro(
   llm: LlmClient,
   items: EnrichedItem[],
@@ -31,8 +54,8 @@ export async function generateIntro(
     const system = opts.voice && opts.voice.trim().length > 0 ? opts.voice.trim() : DEFAULT_VOICE;
     const prompt = `These titles were just added to ${opts.appName}:\n${summary}\n\nWrite the intro paragraph.`;
     const text = await llm.generateText({ system, prompt, maxTokens: 400 });
-    const trimmed = text.trim();
-    return trimmed.length > 0 ? trimmed : null;
+    const cleaned = stripMarkdown(text);
+    return cleaned.length > 0 ? cleaned : null;
   } catch (err) {
     log.warn({ err }, 'commentary generation failed; sending digest without intro');
     return null;

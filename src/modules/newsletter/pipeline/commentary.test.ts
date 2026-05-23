@@ -31,4 +31,29 @@ describe('generateIntro', () => {
     const llm = { generateText: vi.fn().mockResolvedValue('   ') };
     expect(await generateIntro(llm, items, { appName: 'Tortuga' })).toBeNull();
   });
+
+  it('strips a leading markdown heading and emphasis from the output', async () => {
+    const llm = {
+      generateText: vi.fn().mockResolvedValue(
+        '# New on Orpheus\n\nWe added *Euphoria* and **The Testaments** this week.',
+      ),
+    };
+    const out = await generateIntro(llm, items, { appName: 'Orpheus' });
+    expect(out).toBe('We added Euphoria and The Testaments this week.');
+  });
+
+  it('unwraps links and strips list/quote markers and inline code', async () => {
+    const llm = {
+      generateText: vi.fn().mockResolvedValue(
+        '> Highlights:\n- Watch [Heat](https://x/y)\n- Try `vim`',
+      ),
+    };
+    const out = await generateIntro(llm, items, { appName: 'Orpheus' });
+    expect(out).toBe('Highlights: Watch Heat Try vim');
+  });
+
+  it('returns null when output is only markdown structure', async () => {
+    const llm = { generateText: vi.fn().mockResolvedValue('# \n\n##  ') };
+    expect(await generateIntro(llm, items, { appName: 'Orpheus' })).toBeNull();
+  });
 });
