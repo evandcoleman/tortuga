@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 
 import type { MatrixPreview } from '@/modules/newsletter/pipeline/preview-cache';
+import { savePreviewDefault } from './actions';
 
 interface Option {
   id: string;
@@ -76,14 +77,48 @@ export function PreviewSwitcher({
   const [layoutId, setLayoutId] = useState(
     layouts.find(l => l.id === defaultLayoutId)?.id ?? layouts[0]?.id ?? '',
   );
+  const [saved, setSaved] = useState(false);
+  const [isSaving, startSaving] = useTransition();
+
+  const selectTheme = (id: string) => {
+    setThemeId(id);
+    setSaved(false);
+  };
+  const selectLayout = (id: string) => {
+    setLayoutId(id);
+    setSaved(false);
+  };
+
+  const onSave = () => {
+    startSaving(async () => {
+      await savePreviewDefault(themeId, layoutId);
+      setSaved(true);
+    });
+  };
 
   const active =
     previews.find(p => p.themeId === themeId && p.layoutId === layoutId) ?? previews[0];
 
   return (
     <div>
-      <AxisRow title="Theme" options={themes} activeId={themeId} onSelect={setThemeId} />
-      <AxisRow title="Layout" options={layouts} activeId={layoutId} onSelect={setLayoutId} />
+      <AxisRow title="Theme" options={themes} activeId={themeId} onSelect={selectTheme} />
+      <AxisRow title="Layout" options={layouts} activeId={layoutId} onSelect={selectLayout} />
+      <div className="flex items-center gap-3 border-b border-line px-4 py-2.5">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={isSaving}
+          className={[
+            'rounded-full px-3 py-1 text-[12px] font-medium transition-colors',
+            'bg-gold text-gold-ink hover:opacity-90 disabled:opacity-60',
+          ].join(' ')}
+        >
+          {isSaving ? 'Saving…' : 'Save as default'}
+        </button>
+        {saved ? (
+          <span className="text-[12px] font-medium text-muted">Saved ✓</span>
+        ) : null}
+      </div>
       <iframe
         srcDoc={active?.html ?? ''}
         title={`Digest preview — ${active?.themeLabel ?? ''} / ${active?.layoutLabel ?? ''}`}
