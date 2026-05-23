@@ -3,10 +3,15 @@ import type { EnrichedItem } from '../../types';
 import type { Theme } from '../themes';
 import { ListItems } from './list';
 
+export interface LayoutItemsProps {
+  items: EnrichedItem[];
+  theme: Theme;
+}
+
 export interface NewsletterLayout {
   id: string;
   label: string;
-  Items: (props: { items: EnrichedItem[]; theme: Theme }) => ReactNode;
+  Items: (props: LayoutItemsProps) => ReactNode;
 }
 
 export const listLayout: NewsletterLayout = { id: 'list', label: 'List', Items: ListItems };

@@ -2,9 +2,10 @@ import { Column, Heading, Img, Link, Row, Section, Text } from '@react-email/com
 import * as React from 'react';
 import type { EnrichedItem } from '../../types';
 import type { Theme } from '../themes';
+import type { LayoutItemsProps } from './index';
 import { itemKicker, truncate, displayTitle } from '../item-format';
 
-export function ListItems({ items, theme }: { items: EnrichedItem[]; theme: Theme }) {
+export function ListItems({ items, theme }: LayoutItemsProps) {
   return (
     <>
       {items.map(item => (
