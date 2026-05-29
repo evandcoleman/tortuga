@@ -17,7 +17,6 @@ export function SettingsForm({ config }: { config: NewsletterConfig }) {
   return (
     <form action={action} className="grid gap-5">
       {/* Round-trip config the UI doesn't surface, so saving never drops it. */}
-      <input type="hidden" name="plex.server_id" value={config.plex?.server_id ?? ''} />
       <input type="hidden" name="featured.enabled" value={config.featured.enabled ? 'on' : ''} />
       <Card>
         <CardHeader title="Schedule" description="When the digest is generated and sent." />
@@ -63,6 +62,20 @@ export function SettingsForm({ config }: { config: NewsletterConfig }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <SelectField name="theme" label="Theme" defaultValue={config.theme} options={THEME_OPTIONS} hint="Colors and typography." />
           <SelectField name="layout" label="Layout" defaultValue={config.layout} options={LAYOUT_OPTIONS} hint="How items are arranged." />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Plex" description="Connects the newsletter to your Plex server for deep-links to titles." />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            name="plex.server_id"
+            label="Server ID (optional)"
+            defaultValue={config.plex?.server_id ?? ''}
+            error={err['plex.server_id']}
+            placeholder="e.g. a1b2c3d4e5f6…"
+            hint="Powers “Open in Plex” deep-links in the email. Find it in your Plex server under Settings → Manage → Remote Access (the ~40-character Server ID). Leave blank to skip deep-links."
+          />
         </div>
       </Card>
 

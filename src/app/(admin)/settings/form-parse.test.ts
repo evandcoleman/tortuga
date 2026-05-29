@@ -82,13 +82,19 @@ describe('parseNewsletterForm', () => {
     expect(r.ok).toBe(false);
   });
 
-  it('round-trips plex.server_id and featured.enabled (carried via hidden inputs)', () => {
+  it('parses plex.server_id from the visible field and round-trips featured.enabled', () => {
     const r = parseNewsletterForm(fd({ ...base, 'plex.server_id': 'abc123', 'featured.enabled': 'on' }));
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.config.plex?.server_id).toBe('abc123');
       expect(r.config.featured.enabled).toBe(true);
     }
+  });
+
+  it('parses empty plex.server_id and omits the plex object when not set', () => {
+    const r = parseNewsletterForm(fd({ ...base, 'plex.server_id': '' }));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.config.plex).toBeUndefined();
   });
 
   it('parses the layout field, defaulting to list when absent', () => {
