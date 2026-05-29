@@ -1,18 +1,18 @@
 import { getAppContext } from '@/kernel/context';
 import { recipientsCache } from '@/modules/newsletter/schema';
 import {
-  Badge,
   Card,
   EmptyState,
   PageHeader,
   Stat,
-  TD,
   TH,
   THead,
-  TR,
   Table,
   formatRelative,
 } from '../../_components/ui';
+import { AddForm } from './AddForm';
+import { ImportForm } from './ImportForm';
+import { RecipientRow, type RecipientRowData } from './RecipientRow';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +21,7 @@ export default function Recipients() {
   const rows = ctx.db.select().from(recipientsCache).all();
   const active = rows.filter(r => r.active);
   const inactive = rows.filter(r => !r.active);
+  const manual = rows.filter(r => r.source === 'manual');
   const sorted = [...rows].sort((a, b) => {
     if (a.active !== b.active) return a.active ? -1 : 1;
     return a.email.localeCompare(b.email);
@@ -32,11 +33,12 @@ export default function Recipients() {
       <PageHeader
         eyebrow="Newsletter"
         title="Recipients"
-        description="Synced from Plex. Anyone who unsubscribes via the digest is marked inactive automatically."
+        description="Synced from Plex and managed by hand. Manual recipients survive every Plex sync; unsubscribes are marked inactive automatically."
       />
 
-      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
         <Stat label="Active" value={active.length} tone="success" />
+        <Stat label="Manual" value={manual.length} tone={manual.length > 0 ? 'info' : 'neutral'} />
         <Stat
           label="Unsubscribed"
           value={inactive.length}
@@ -49,11 +51,16 @@ export default function Recipients() {
         />
       </section>
 
+      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+        <AddForm />
+        <ImportForm />
+      </div>
+
       {rows.length === 0 ? (
         <Card>
           <EmptyState
-            title="No recipients cached"
-            description="Tortuga refreshes recipients on each run. Trigger a preview to populate this list from Plex."
+            title="No recipients yet"
+            description="Add someone above, import a list, or trigger a preview to populate this from Plex."
           />
         </Card>
       ) : (
@@ -63,34 +70,22 @@ export default function Recipients() {
               <TH>Email</TH>
               <TH>Name</TH>
               <TH>Plex</TH>
-              <TH className="text-right">Status</TH>
+              <TH>Source</TH>
+              <TH>Status</TH>
+              <TH className="text-right">Actions</TH>
             </tr>
           </THead>
           <tbody>
-            {sorted.map(r => (
-              <TR key={r.email}>
-                <TD>
-                  <span className="font-mono text-[12.5px] text-fg">{r.email}</span>
-                </TD>
-                <TD className="text-muted">{r.name}</TD>
-                <TD>
-                  {r.plexUsername ? (
-                    <span className="font-mono text-[12px] text-muted">{r.plexUsername}</span>
-                  ) : (
-                    <span className="text-faint">—</span>
-                  )}
-                </TD>
-                <TD className="text-right">
-                  {r.active ? (
-                    <Badge tone="success" dot>
-                      active
-                    </Badge>
-                  ) : (
-                    <Badge tone="neutral">unsubscribed</Badge>
-                  )}
-                </TD>
-              </TR>
-            ))}
+            {sorted.map(r => {
+              const data: RecipientRowData = {
+                email: r.email,
+                name: r.name,
+                plexUsername: r.plexUsername,
+                source: r.source,
+                active: r.active,
+              };
+              return <RecipientRow key={r.email} recipient={data} />;
+            })}
           </tbody>
         </Table>
       )}

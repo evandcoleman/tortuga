@@ -46,6 +46,7 @@ export const recipientsCache = sqliteTable('recipients_cache', {
   plexUsername: text('plex_username'),
   lastSynced: integer('last_synced', { mode: 'timestamp_ms' }).notNull(),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  source: text('source').$type<'plex' | 'manual'>().notNull().default('plex'),
 });
 
 export const itemsCache = sqliteTable('items_cache', {
