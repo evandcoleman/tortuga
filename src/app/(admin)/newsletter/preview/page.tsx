@@ -141,6 +141,7 @@ export default function Preview() {
               previews={themedPreviews}
               defaultThemeId={defaultThemeId}
               defaultLayoutId={defaultLayoutId}
+              defaultTestEmail={ctx.env.ADMIN_EMAIL ?? ''}
             />
           ) : (
             <iframe

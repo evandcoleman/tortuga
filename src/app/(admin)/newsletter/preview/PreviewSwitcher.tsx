@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 
 import type { MatrixPreview } from '@/modules/newsletter/pipeline/preview-cache';
 import { savePreviewDefault } from './actions';
+import { TestDigestForm } from './TestDigestForm';
 
 interface Option {
   id: string;
@@ -63,10 +64,12 @@ export function PreviewSwitcher({
   previews,
   defaultThemeId,
   defaultLayoutId,
+  defaultTestEmail,
 }: {
   previews: MatrixPreview[];
   defaultThemeId: string;
   defaultLayoutId: string;
+  defaultTestEmail: string;
 }) {
   const themes = uniqueOptions(previews, 'theme');
   const layouts = uniqueOptions(previews, 'layout');
@@ -131,6 +134,7 @@ export function PreviewSwitcher({
           <span className="text-[12px] font-medium text-red-600">Save failed — try again</span>
         ) : null}
       </div>
+      <TestDigestForm themeId={themeId} layoutId={layoutId} defaultEmail={defaultTestEmail} />
       <iframe
         srcDoc={active?.html ?? ''}
         title={`Digest preview — ${active?.themeLabel ?? ''} / ${active?.layoutLabel ?? ''}`}
