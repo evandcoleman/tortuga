@@ -3,6 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { getAppContext, invalidateAppContext } from '@/kernel/context';
 import { writeConfigOverride, clearConfigOverride } from '@/kernel/config/overrides';
+import { createEmailProvider } from '@/kernel/email/factory';
+import {
+  testTautulli,
+  testTmdb,
+  testEmailProvider,
+  type ConnectionTestsResult,
+} from '@/kernel/integrations/connection-tests';
 import { parseNewsletterForm } from './form-parse';
 
 export type SaveState =
@@ -21,6 +28,24 @@ export async function saveSettings(_prev: SaveState, formData: FormData): Promis
   revalidatePath('/settings');
   revalidatePath('/');
   return { status: 'success' };
+}
+
+/**
+ * Run live connectivity checks against the configured integrations. Uses the
+ * clients already wired into the AppContext so it reflects current config.
+ * Each check is isolated: one failure never blocks the others, and all error
+ * details are sanitized inside the test helpers before reaching the UI.
+ */
+export async function testConnections(): Promise<ConnectionTestsResult> {
+  const ctx = getAppContext();
+  const [tautulli, tmdb] = await Promise.all([
+    testTautulli(ctx.tautulli),
+    testTmdb(ctx.tmdb),
+  ]);
+  const email = testEmailProvider(() =>
+    createEmailProvider(ctx.env, ctx.config.newsletter.email),
+  );
+  return { tautulli, tmdb, email };
 }
 
 export async function revertToFileDefault(): Promise<void> {

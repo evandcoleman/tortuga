@@ -1,9 +1,11 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState, useTransition } from 'react';
 import type { NewsletterConfig } from '@/kernel/config/schema';
+import type { ConnectionTestsResult } from '@/kernel/integrations/connection-tests';
 import { Button, Card, CardHeader } from '../_components/ui';
-import { saveSettings, type SaveState } from './actions';
+import { saveSettings, testConnections, type SaveState } from './actions';
+import { ConnectionStatus } from './ConnectionStatus';
 import { TextField, NumberField, TextareaField, SelectField, CheckboxField } from './fields';
 import { THEME_OPTIONS } from '@/modules/newsletter/templates/themes';
 import { LAYOUT_OPTIONS } from '@/modules/newsletter/templates/layouts';
@@ -13,6 +15,21 @@ const initial: SaveState = { status: 'idle' };
 export function SettingsForm({ config }: { config: NewsletterConfig }) {
   const [state, action, pending] = useActionState(saveSettings, initial);
   const err = state.status === 'error' ? state.errors : {};
+
+  const [testResults, setTestResults] = useState<ConnectionTestsResult | null>(null);
+  const [testError, setTestError] = useState(false);
+  const [isTesting, startTesting] = useTransition();
+
+  const runTests = () => {
+    setTestError(false);
+    startTesting(async () => {
+      try {
+        setTestResults(await testConnections());
+      } catch {
+        setTestError(true);
+      }
+    });
+  };
 
   return (
     <form action={action} className="grid gap-5">
@@ -42,6 +59,22 @@ export function SettingsForm({ config }: { config: NewsletterConfig }) {
           <SelectField name="email.mailgun.region" label="Mailgun region" defaultValue={config.email.mailgun?.region ?? 'us'}
             options={[{ value: 'us', label: 'US' }, { value: 'eu', label: 'EU' }]} />
         </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Integration Tests"
+          description="Verify Tautulli, TMDB, and the email provider with live checks. No email is sent."
+          action={
+            <Button type="button" variant="secondary" onClick={runTests} disabled={isTesting} aria-busy={isTesting}>
+              {isTesting ? 'Testing…' : 'Test connections'}
+            </Button>
+          }
+        />
+        <ConnectionStatus results={testResults} pending={isTesting} />
+        {testError ? (
+          <p className="mt-3 text-[13px] text-danger">Could not run the tests. Try again.</p>
+        ) : null}
       </Card>
 
       <Card>
