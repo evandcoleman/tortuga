@@ -4,9 +4,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // only owns: discovering the latest rendered digest + assembling provider/from.
 const renderAndSendTestDigest = vi.fn();
 const getAppContext = vi.fn();
+const runDigest = vi.fn();
 
 vi.mock('@/modules/newsletter/pipeline/test-digest', () => ({
   renderAndSendTestDigest: (...args: unknown[]) => renderAndSendTestDigest(...args),
+}));
+
+vi.mock('@/modules/newsletter/pipeline/run', () => ({
+  runDigest: (...args: unknown[]) => runDigest(...args),
 }));
 
 vi.mock('@/kernel/context', () => ({
@@ -41,7 +46,26 @@ function makeCtx(rows: Array<Record<string, unknown>>) {
   };
 }
 
-import { sendTestDigest } from './actions';
+function makeSendNowCtx(sentRows: Array<Record<string, unknown>>) {
+  return {
+    db: makeDb(sentRows),
+    email: { name: 'resend' },
+    tautulli: {},
+    tmdb: {},
+    llm: null,
+    env: { APP_URL: 'https://x.test', SESSION_SECRET: 'secret' },
+    config: {
+      newsletter: {
+        theme: 'gold',
+        layout: 'grid',
+        from: { email: 'news@tortuga.local', name: 'Tortuga' },
+        reply_to: 'reply@tortuga.local',
+      },
+    },
+  };
+}
+
+import { sendNowDigest, sendTestDigest } from './actions';
 
 describe('sendTestDigest server action', () => {
   beforeEach(() => {
@@ -111,5 +135,79 @@ describe('sendTestDigest server action', () => {
     expect(renderAndSendTestDigest).toHaveBeenCalledWith(
       expect.objectContaining({ subject: 'New on Tortuga' }),
     );
+  });
+});
+
+describe('sendNowDigest server action', () => {
+  beforeEach(() => {
+    runDigest.mockReset();
+    getAppContext.mockReset();
+  });
+
+  it('runs a real (non-dry-run) digest and reports the sent recipient count', async () => {
+    // Arrange — three rows in the sends table for the new digest are counted
+    getAppContext.mockReturnValue(makeSendNowCtx([{ id: 's1' }, { id: 's2' }, { id: 's3' }]));
+    runDigest.mockResolvedValue({ id: 'dig-new', status: 'sent', itemCount: 7 });
+
+    // Act
+    const result = await sendNowDigest();
+
+    // Assert
+    expect(runDigest).toHaveBeenCalledWith(
+      expect.objectContaining({ config: expect.objectContaining({ theme: 'gold', layout: 'grid' }) }),
+    );
+    // dryRun must NOT be set — this is a live send
+    expect(runDigest.mock.calls[0][0].dryRun).toBeUndefined();
+    expect(result).toEqual({
+      success: true,
+      id: 'dig-new',
+      status: 'sent',
+      itemCount: 7,
+      sentCount: 3,
+    });
+  });
+
+  it('overrides theme and layout for this run only when provided', async () => {
+    // Arrange
+    getAppContext.mockReturnValue(makeSendNowCtx([{ id: 's1' }]));
+    runDigest.mockResolvedValue({ id: 'dig-new', status: 'sent', itemCount: 1 });
+
+    // Act
+    await sendNowDigest('noir', 'list');
+
+    // Assert
+    expect(runDigest).toHaveBeenCalledWith(
+      expect.objectContaining({ config: expect.objectContaining({ theme: 'noir', layout: 'list' }) }),
+    );
+  });
+
+  it('reports a partial send when the digest run failed mid-flight', async () => {
+    // Arrange — runDigest marks the digest failed but two sends already went out
+    getAppContext.mockReturnValue(makeSendNowCtx([{ id: 's1' }, { id: 's2' }]));
+    runDigest.mockResolvedValue({ id: 'dig-bad', status: 'failed', itemCount: 4 });
+
+    // Act
+    const result = await sendNowDigest();
+
+    // Assert
+    expect(result).toEqual({
+      success: true,
+      id: 'dig-bad',
+      status: 'failed',
+      itemCount: 4,
+      sentCount: 2,
+    });
+  });
+
+  it('returns a structured error instead of throwing when runDigest throws', async () => {
+    // Arrange
+    getAppContext.mockReturnValue(makeSendNowCtx([]));
+    runDigest.mockRejectedValue(new Error('Email provider unreachable'));
+
+    // Act
+    const result = await sendNowDigest();
+
+    // Assert
+    expect(result).toEqual({ success: false, error: 'Email provider unreachable' });
   });
 });

@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react';
 import type { MatrixPreview } from '@/modules/newsletter/pipeline/preview-cache';
 import { savePreviewDefault } from './actions';
 import { TestDigestForm } from './TestDigestForm';
+import { SendNowButton } from './SendNowButton';
 
 interface Option {
   id: string;
@@ -65,11 +66,13 @@ export function PreviewSwitcher({
   defaultThemeId,
   defaultLayoutId,
   defaultTestEmail,
+  recipientCount,
 }: {
   previews: MatrixPreview[];
   defaultThemeId: string;
   defaultLayoutId: string;
   defaultTestEmail: string;
+  recipientCount: number;
 }) {
   const themes = uniqueOptions(previews, 'theme');
   const layouts = uniqueOptions(previews, 'layout');
@@ -135,6 +138,7 @@ export function PreviewSwitcher({
         ) : null}
       </div>
       <TestDigestForm themeId={themeId} layoutId={layoutId} defaultEmail={defaultTestEmail} />
+      <SendNowButton themeId={themeId} layoutId={layoutId} recipientCount={recipientCount} />
       <iframe
         srcDoc={active?.html ?? ''}
         title={`Digest preview — ${active?.themeLabel ?? ''} / ${active?.layoutLabel ?? ''}`}

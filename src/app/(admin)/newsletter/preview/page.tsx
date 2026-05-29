@@ -3,7 +3,7 @@ import { desc, eq } from 'drizzle-orm';
 import { getAppContext } from '@/kernel/context';
 import { runDigest } from '@/modules/newsletter/pipeline/run';
 import { getThemedPreviews } from '@/modules/newsletter/pipeline/preview-cache';
-import { digests } from '@/modules/newsletter/schema';
+import { digests, recipientsCache } from '@/modules/newsletter/schema';
 import { PreviewSwitcher } from './PreviewSwitcher';
 import { SubmitButton } from './SubmitButton';
 import {
@@ -36,25 +36,6 @@ async function generate() {
   revalidatePath('/newsletter/preview');
 }
 
-async function send() {
-  'use server';
-  const ctx = getAppContext();
-  await runDigest({
-    db: ctx.db,
-    tautulli: ctx.tautulli,
-    tmdb: ctx.tmdb,
-    provider: ctx.email,
-    llm: ctx.llm,
-    config: ctx.config.newsletter,
-    appUrl: ctx.env.APP_URL,
-    sessionSecret: ctx.env.SESSION_SECRET,
-    scheduledAt: new Date(),
-  });
-  revalidatePath('/newsletter/preview');
-  revalidatePath('/newsletter/history');
-  revalidatePath('/');
-}
-
 export default function Preview() {
   const ctx = getAppContext();
   const latest = ctx.db
@@ -70,6 +51,11 @@ export default function Preview() {
   const themedPreviews = themed && row && themed.digestId === row.id ? themed.previews : null;
   const defaultThemeId = ctx.config.newsletter.theme;
   const defaultLayoutId = ctx.config.newsletter.layout;
+  const recipientCount = ctx.db
+    .select()
+    .from(recipientsCache)
+    .all()
+    .filter(r => r.active).length;
 
   return (
     <div>
@@ -78,23 +64,11 @@ export default function Preview() {
         title="Preview"
         description="Render the digest as a dry-run, inspect it, then send when it’s ready. Sending is irreversible."
         actions={
-          <>
-            <form action={generate}>
-              <SubmitButton variant="secondary" pendingLabel="Generating…">
-                <RefreshIcon /> Generate fresh preview
-              </SubmitButton>
-            </form>
-            <form action={send}>
-              <SubmitButton
-                variant="primary"
-                pendingLabel="Sending…"
-                disabled={!row}
-                title={row ? 'Send to all active recipients' : 'Generate a preview first'}
-              >
-                <SendIcon /> Send now
-              </SubmitButton>
-            </form>
-          </>
+          <form action={generate}>
+            <SubmitButton variant="secondary" pendingLabel="Generating…">
+              <RefreshIcon /> Generate fresh preview
+            </SubmitButton>
+          </form>
         }
       />
 
@@ -142,6 +116,7 @@ export default function Preview() {
               defaultThemeId={defaultThemeId}
               defaultLayoutId={defaultLayoutId}
               defaultTestEmail={ctx.env.ADMIN_EMAIL ?? ''}
+              recipientCount={recipientCount}
             />
           ) : (
             <iframe
@@ -176,24 +151,6 @@ function RefreshIcon() {
     >
       <path d="M3 12a9 9 0 1 0 3-6.5" />
       <path d="M3 4v4h4" />
-    </svg>
-  );
-}
-
-function SendIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3.5 12L21 4l-4 17-4-7.5-9.5-1.5z" />
-      <path d="M13 12.5L21 4" />
     </svg>
   );
 }
