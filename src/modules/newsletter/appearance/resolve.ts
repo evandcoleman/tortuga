@@ -41,9 +41,7 @@ export interface ResolvedSection {
 export function buildLibrarySections(items: EnrichedItem[], rules?: LibraryRule[]): ResolvedSection[] {
   const groups = new Map<string, EnrichedItem[]>();
   for (const it of items) {
-    const list = groups.get(it.libraryName) ?? [];
-    list.push(it);
-    groups.set(it.libraryName, list);
+    groups.set(it.libraryName, [...(groups.get(it.libraryName) ?? []), it]);
   }
 
   if (!rules || rules.length === 0) {
