@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type { EmailProvider } from '@/kernel/email/types';
+import type { Appearance } from '@/modules/newsletter/appearance/schema';
 import { createLogger } from '@/kernel/logging/logger';
 
 import { getThemedPreviews, type MatrixPreview } from './preview-cache';
@@ -26,6 +27,12 @@ export interface TestDigestOpts {
   from: { email: string; name: string };
   /** Optional reply-to address from newsletter config. */
   replyTo?: string;
+  /**
+   * Appearance customization from newsletter config. The cached preview matrix
+   * is already rendered with this applied (see runDigest), so it is accepted for
+   * signature completeness and forward-compatibility rather than re-rendering.
+   */
+  appearance?: Appearance;
   /**
    * Lookup for the cached theme×layout preview matrix. Injectable for tests;
    * defaults to the in-process preview cache populated by runDigest.

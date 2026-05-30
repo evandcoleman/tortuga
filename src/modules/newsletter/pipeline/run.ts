@@ -109,6 +109,7 @@ export async function runDigest(opts: RunDigestOpts) {
       requestLink,
       personalLink,
       freeformHtml,
+      appearance: opts.config.appearance,
     };
 
     const html = await render(
