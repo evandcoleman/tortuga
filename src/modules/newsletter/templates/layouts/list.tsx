@@ -3,25 +3,35 @@ import * as React from 'react';
 import type { EnrichedItem } from '../../types';
 import type { Theme } from '../themes';
 import type { LayoutItemsProps } from './index';
+import { posterScaleFactor, type ResolvedItemDisplay } from './index';
 import { itemKicker, truncate, displayTitle } from '../item-format';
 
-export function ListItems({ items, theme }: LayoutItemsProps) {
+const DEFAULT_DISPLAY: ResolvedItemDisplay = {
+  showPoster: true, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md',
+};
+
+export function ListItems({ items, theme, itemDisplay }: LayoutItemsProps) {
+  const d = itemDisplay ?? DEFAULT_DISPLAY;
   return (
     <>
       {items.map(item => (
-        <ItemCard key={item.guid} item={item} theme={theme} />
+        <ItemCard key={item.guid} item={item} theme={theme} display={d} />
       ))}
     </>
   );
 }
 
-function ItemCard({ item, theme }: { item: EnrichedItem; theme: Theme }) {
+function ItemCard({ item, theme, display }: { item: EnrichedItem; theme: Theme; display: ResolvedItemDisplay }) {
   const { palette, fonts, layout } = theme;
   const kicker = itemKicker(item);
-  const overview = truncate(item.overview, 220);
-  const showsRating = item.rating > 0;
+  const overview = truncate(item.overview, display.overviewMaxChars ?? 220);
+  const showsRating = display.showRating && item.rating > 0;
   const title = displayTitle(item);
   const posterRadius = Math.min(4, layout.radius);
+  const scale = posterScaleFactor(display.posterScale);
+  const posterW = Math.round(88 * scale);
+  const posterH = Math.round(132 * scale);
+  const colW = Math.round(104 * scale);
 
   return (
     <Section
@@ -35,34 +45,36 @@ function ItemCard({ item, theme }: { item: EnrichedItem; theme: Theme }) {
       }}
     >
       <Row>
-        <Column style={{ verticalAlign: 'top', paddingRight: 16, width: 104 }}>
-          {item.posterUrl ? (
-            <Img
-              src={item.posterUrl}
-              alt=""
-              width={88}
-              height={132}
-              style={{
-                display: 'block',
-                width: 88,
-                height: 132,
-                borderRadius: posterRadius,
-                border: `1px solid ${palette.hairline}`,
-                background: palette.chipBg,
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: 88,
-                height: 132,
-                borderRadius: posterRadius,
-                background: palette.chipBg,
-                border: `1px dashed ${palette.rule}`,
-              }}
-            />
-          )}
-        </Column>
+        {display.showPoster ? (
+          <Column style={{ verticalAlign: 'top', paddingRight: 16, width: colW }}>
+            {item.posterUrl ? (
+              <Img
+                src={item.posterUrl}
+                alt=""
+                width={posterW}
+                height={posterH}
+                style={{
+                  display: 'block',
+                  width: posterW,
+                  height: posterH,
+                  borderRadius: posterRadius,
+                  border: `1px solid ${palette.hairline}`,
+                  background: palette.chipBg,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: posterW,
+                  height: posterH,
+                  borderRadius: posterRadius,
+                  background: palette.chipBg,
+                  border: `1px dashed ${palette.rule}`,
+                }}
+              />
+            )}
+          </Column>
+        ) : null}
 
         <Column style={{ verticalAlign: 'top' }}>
           {kicker ? (
@@ -113,7 +125,7 @@ function ItemCard({ item, theme }: { item: EnrichedItem; theme: Theme }) {
             </Text>
           ) : null}
 
-          {overview ? (
+          {display.showOverview && overview ? (
             <Text
               style={{
                 margin: '10px 0 0',

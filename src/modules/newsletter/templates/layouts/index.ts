@@ -1,14 +1,19 @@
 import type { ReactNode } from 'react';
 import type { EnrichedItem } from '../../types';
 import type { Theme } from '../themes';
+import type { ResolvedItemDisplay } from '../../appearance/resolve';
 import { ListItems } from './list';
 import { GalleryItems } from './gallery';
 import { CompactItems } from './compact';
 import { MagazineItems } from './magazine';
 
+export { posterScaleFactor } from '../../appearance/resolve';
+export type { ResolvedItemDisplay } from '../../appearance/resolve';
+
 export interface LayoutItemsProps {
   items: EnrichedItem[];
   theme: Theme;
+  itemDisplay?: ResolvedItemDisplay;
 }
 
 export interface NewsletterLayout {

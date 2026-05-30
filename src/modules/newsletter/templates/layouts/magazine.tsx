@@ -1,26 +1,36 @@
 import { Heading, Img, Link, Section, Text } from '@react-email/components';
 import * as React from 'react';
 import type { LayoutItemsProps } from './index';
+import { posterScaleFactor, type ResolvedItemDisplay } from './index';
 import { itemKicker, truncate, displayTitle } from '../item-format';
 
 const POSTER_W = 584;
 const POSTER_H = 328;
 
-export function MagazineItems({ items, theme }: LayoutItemsProps) {
+const DEFAULT_DISPLAY: ResolvedItemDisplay = {
+  showPoster: true, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md',
+};
+
+export function MagazineItems({ items, theme, itemDisplay }: LayoutItemsProps) {
   const { palette, fonts, layout } = theme;
+  const d = itemDisplay ?? DEFAULT_DISPLAY;
+  const scale = posterScaleFactor(d.posterScale);
+  const posterW = Math.round(POSTER_W * scale);
+  const posterH = Math.round(POSTER_H * scale);
   return (
     <>
       {items.map(item => {
         const kicker = itemKicker(item);
-        const overview = truncate(item.overview, 360);
+        const overview = truncate(item.overview, d.overviewMaxChars ?? 360);
+        const showsRating = d.showRating && item.rating > 0;
         return (
           <Section key={item.guid} style={{ marginTop: 24 }}>
-            {item.posterUrl ? (
+            {d.showPoster && item.posterUrl ? (
               <Img
                 src={item.posterUrl}
                 alt=""
-                width={POSTER_W}
-                height={POSTER_H}
+                width={posterW}
+                height={posterH}
                 style={{
                   display: 'block',
                   width: '100%',
@@ -59,12 +69,12 @@ export function MagazineItems({ items, theme }: LayoutItemsProps) {
             >
               {displayTitle(item)}
             </Heading>
-            {item.rating > 0 ? (
+            {showsRating ? (
               <Text style={{ margin: '6px 0 0', fontSize: 12, color: palette.muted }}>
                 ★ {item.rating.toFixed(1)}
               </Text>
             ) : null}
-            {overview ? (
+            {d.showOverview && overview ? (
               <Text style={{ margin: '10px 0 0', fontSize: 15, lineHeight: 1.6, color: palette.ink }}>
                 {overview}
               </Text>

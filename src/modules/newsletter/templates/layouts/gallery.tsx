@@ -1,6 +1,7 @@
 import { Column, Link, Row, Section, Text, Img } from '@react-email/components';
 import * as React from 'react';
 import type { LayoutItemsProps } from './index';
+import { posterScaleFactor, type ResolvedItemDisplay } from './index';
 import { displayTitle } from '../item-format';
 
 const PER_ROW = 3;
@@ -8,15 +9,23 @@ const POSTER_W = 150;
 const POSTER_H = 225;
 const COL_STYLE = { verticalAlign: 'top' as const, width: `${100 / PER_ROW}%`, padding: 8 };
 
+const DEFAULT_DISPLAY: ResolvedItemDisplay = {
+  showPoster: true, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md',
+};
+
 function chunk<T>(arr: T[], size: number): T[][] {
   const out: T[][] = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 }
 
-export function GalleryItems({ items, theme }: LayoutItemsProps) {
+export function GalleryItems({ items, theme, itemDisplay }: LayoutItemsProps) {
   const { palette, fonts, layout } = theme;
+  const d = itemDisplay ?? DEFAULT_DISPLAY;
   const posterRadius = Math.min(4, layout.radius);
+  const scale = posterScaleFactor(d.posterScale);
+  const posterW = Math.round(POSTER_W * scale);
+  const posterH = Math.round(POSTER_H * scale);
   const rows = chunk(items, PER_ROW);
 
   return (
@@ -25,32 +34,34 @@ export function GalleryItems({ items, theme }: LayoutItemsProps) {
         <Row key={row.map(i => i.guid).join(',')}>
           {row.map(item => (
             <Column key={item.guid} style={COL_STYLE}>
-              {item.posterUrl ? (
-                <Img
-                  src={item.posterUrl}
-                  alt=""
-                  width={POSTER_W}
-                  height={POSTER_H}
-                  style={{
-                    display: 'block',
-                    width: POSTER_W,
-                    height: POSTER_H,
-                    borderRadius: posterRadius,
-                    border: `1px solid ${palette.hairline}`,
-                    background: palette.chipBg,
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: POSTER_W,
-                    height: POSTER_H,
-                    borderRadius: posterRadius,
-                    background: palette.chipBg,
-                    border: `1px dashed ${palette.rule}`,
-                  }}
-                />
-              )}
+              {d.showPoster ? (
+                item.posterUrl ? (
+                  <Img
+                    src={item.posterUrl}
+                    alt=""
+                    width={posterW}
+                    height={posterH}
+                    style={{
+                      display: 'block',
+                      width: posterW,
+                      height: posterH,
+                      borderRadius: posterRadius,
+                      border: `1px solid ${palette.hairline}`,
+                      background: palette.chipBg,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: posterW,
+                      height: posterH,
+                      borderRadius: posterRadius,
+                      background: palette.chipBg,
+                      border: `1px dashed ${palette.rule}`,
+                    }}
+                  />
+                )
+              ) : null}
               <Text
                 style={{
                   margin: '8px 0 0',

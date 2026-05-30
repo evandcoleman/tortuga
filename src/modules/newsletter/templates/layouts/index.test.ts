@@ -1,5 +1,32 @@
 import { describe, it, expect } from 'vitest';
+import { render } from '@react-email/render';
+import { createElement } from 'react';
 import { resolveLayout, DEFAULT_LAYOUT_ID, LAYOUT_OPTIONS, LAYOUTS } from './index';
+import { resolveTheme } from '../themes';
+import { ListItems } from './list';
+
+const theme = resolveTheme('editorial');
+const baseItem = {
+  guid: 'g1', libraryName: 'Movies', title: 'X', mediaType: 'movie',
+  overview: 'o'.repeat(400), rating: 8.1, posterUrl: 'http://x/p.jpg', year: 2020,
+} as any;
+
+describe('ListItems itemDisplay', () => {
+  it('hides the poster when showPoster is false', async () => {
+    const html = await render(createElement(ListItems, {
+      items: [baseItem], theme,
+      itemDisplay: { showPoster: false, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md' },
+    }));
+    expect(html).not.toContain('p.jpg');
+  });
+  it('omits overview text when showOverview is false', async () => {
+    const html = await render(createElement(ListItems, {
+      items: [baseItem], theme,
+      itemDisplay: { showPoster: true, showRating: true, showOverview: false, overviewMaxChars: null, posterScale: 'md' },
+    }));
+    expect(html).not.toContain('oooo');
+  });
+});
 
 describe('layout registry', () => {
   it('resolves a known id', () => {
