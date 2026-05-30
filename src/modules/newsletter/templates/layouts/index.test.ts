@@ -4,12 +4,14 @@ import { createElement } from 'react';
 import { resolveLayout, DEFAULT_LAYOUT_ID, LAYOUT_OPTIONS, LAYOUTS } from './index';
 import { resolveTheme } from '../themes';
 import { ListItems } from './list';
+import type { EnrichedItem } from '../../types';
 
 const theme = resolveTheme('editorial');
-const baseItem = {
+const baseItem: EnrichedItem = {
   guid: 'g1', libraryName: 'Movies', title: 'X', mediaType: 'movie',
-  overview: 'o'.repeat(400), rating: 8.1, posterUrl: 'http://x/p.jpg', year: 2020,
-} as any;
+  addedAt: new Date('2026-05-01T00:00:00Z'),
+  overview: 'o'.repeat(400), rating: 8.1, posterUrl: 'http://x/p.jpg',
+};
 
 describe('ListItems itemDisplay', () => {
   it('hides the poster when showPoster is false', async () => {

@@ -143,10 +143,10 @@ describe('DigestEmail', () => {
 });
 
 describe('DigestEmail appearance', () => {
-  const items = [
-    { guid: 'a', libraryName: 'Movies', title: 'Alpha', mediaType: 'movie', overview: 'x', rating: 0, posterUrl: '', year: 2020 },
-    { guid: 'b', libraryName: 'TV', title: 'Beta', mediaType: 'show', overview: 'y', rating: 0, posterUrl: '', year: 2021 },
-  ] as any[];
+  const items: EnrichedItem[] = [
+    { guid: 'a', libraryName: 'Movies', title: 'Alpha', mediaType: 'movie', addedAt: new Date('2026-05-20T00:00:00Z'), overview: 'x', rating: 0, posterUrl: '' },
+    { guid: 'b', libraryName: 'TV', title: 'Beta', mediaType: 'show', addedAt: new Date('2026-05-21T00:00:00Z'), overview: 'y', rating: 0, posterUrl: '' },
+  ];
 
   const base = { items, unsubscribeUrl: 'http://u/x', appName: 'Plex', windowStart: new Date('2026-05-20'), windowEnd: new Date('2026-05-27') };
 
