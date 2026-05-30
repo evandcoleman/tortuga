@@ -169,3 +169,17 @@ export function resolveTheme(id?: string | null): Theme {
 }
 
 export const THEME_OPTIONS = Object.values(THEMES).map(t => ({ value: t.id, label: t.label }));
+
+import type { ThemeOverrides } from '../appearance/schema';
+
+export function resolveThemeWithOverrides(id?: string | null, overrides?: ThemeOverrides): Theme {
+  const base = resolveTheme(id);
+  if (!overrides) return base;
+  return {
+    ...base,
+    colorScheme: overrides.colorScheme ?? base.colorScheme,
+    fonts: { ...base.fonts, ...(overrides.fonts ?? {}) },
+    palette: { ...base.palette, ...(overrides.palette ?? {}) },
+    layout: { ...base.layout, ...(overrides.layout ?? {}) },
+  };
+}

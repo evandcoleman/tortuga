@@ -33,3 +33,27 @@ describe('themes', () => {
     expect(THEME_OPTIONS.find(o => o.value === DEFAULT_THEME_ID)).toBeTruthy();
   });
 });
+
+import { resolveThemeWithOverrides } from './themes';
+
+describe('resolveThemeWithOverrides', () => {
+  it('returns the base theme unchanged when no overrides', () => {
+    expect(resolveThemeWithOverrides('editorial')).toEqual(resolveTheme('editorial'));
+  });
+  it('deep-merges palette and layout, leaving other fields intact', () => {
+    const base = resolveTheme('editorial');
+    const t = resolveThemeWithOverrides('editorial', { palette: { accent: '#123456' }, layout: { radius: 12 } });
+    expect(t.palette.accent).toBe('#123456');
+    expect(t.palette.ink).toBe(base.palette.ink);         // untouched
+    expect(t.layout.radius).toBe(12);
+    expect(t.layout.ruleWidth).toBe(base.layout.ruleWidth); // untouched
+  });
+  it('overrides fonts and colorScheme', () => {
+    const t = resolveThemeWithOverrides('editorial', { colorScheme: 'dark', fonts: { heading: 'Georgia, serif' } });
+    expect(t.colorScheme).toBe('dark');
+    expect(t.fonts.heading).toBe('Georgia, serif');
+  });
+  it('falls back to default theme for unknown id', () => {
+    expect(resolveThemeWithOverrides('nope').id).toBe(resolveTheme(null).id);
+  });
+});
