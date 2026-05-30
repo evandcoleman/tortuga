@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AppearanceSchema } from '@/modules/newsletter/appearance/schema';
 
 export const EnvSchema = z.object({
   TAUTULLI_URL: z.string().url(),
@@ -60,6 +61,7 @@ export const NewsletterConfigSchema = z.object({
   featured: z.object({ enabled: z.boolean().default(false) }).default(() => ({ enabled: false })),
   theme: z.string().default('editorial'),
   layout: z.string().default('list'),
+  appearance: AppearanceSchema.optional(),
   plex: z.object({
     server_id: z.string().min(1),
   }).optional(),
