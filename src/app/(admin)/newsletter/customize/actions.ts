@@ -180,6 +180,7 @@ export async function renderAppearancePreview(
         themeId: safeTheme,
         layoutId: safeLayout,
         unsubscribeUrl: '#',
+        appearance: parsed.data,
       }),
     );
 
