@@ -59,7 +59,7 @@ export function ItemDisplayEditor({ value, onChange }: ItemDisplayEditorProps) {
             set('overview_max_chars', raw === '' ? undefined : parseInt(raw, 10));
           }}
           disabled={value.show_overview === false}
-          className="w-full rounded border border-line bg-white px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold disabled:opacity-40"
+          className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold disabled:opacity-40"
         />
       </div>
 
@@ -118,7 +118,7 @@ export function HeaderEditor({ value, onChange }: HeaderEditorProps) {
           placeholder="e.g. Plex · Weekly"
           maxLength={120}
           onChange={e => set('eyebrow', e.target.value || undefined)}
-          className="w-full rounded border border-line bg-white px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold"
+          className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold"
         />
       </div>
 
@@ -132,7 +132,7 @@ export function HeaderEditor({ value, onChange }: HeaderEditorProps) {
           placeholder="e.g. Fresh Picks"
           maxLength={160}
           onChange={e => set('title', e.target.value || undefined)}
-          className="w-full rounded border border-line bg-white px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold"
+          className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold"
         />
       </div>
 
@@ -178,7 +178,7 @@ export function FooterEditor({ value, onChange }: FooterEditorProps) {
           maxLength={500}
           rows={2}
           onChange={e => set('text', e.target.value || undefined)}
-          className="w-full rounded border border-line bg-white px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold resize-none"
+          className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold resize-none"
         />
       </div>
       <CheckRow
