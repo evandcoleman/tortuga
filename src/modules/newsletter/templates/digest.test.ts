@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@react-email/render';
+import { createElement } from 'react';
 import { DigestEmail, formatDateRange } from './digest';
 import type { EnrichedItem } from '../types';
 
@@ -138,5 +139,49 @@ describe('DigestEmail', () => {
     expect(html).toContain('width="88"');
     expect(html).not.toContain('width="150"');
     expect(html).not.toContain('width="584"');
+  });
+});
+
+describe('DigestEmail appearance', () => {
+  const items = [
+    { guid: 'a', libraryName: 'Movies', title: 'Alpha', mediaType: 'movie', overview: 'x', rating: 0, posterUrl: '', year: 2020 },
+    { guid: 'b', libraryName: 'TV', title: 'Beta', mediaType: 'show', overview: 'y', rating: 0, posterUrl: '', year: 2021 },
+  ] as any[];
+
+  const base = { items, unsubscribeUrl: 'http://u/x', appName: 'Plex', windowStart: new Date('2026-05-20'), windowEnd: new Date('2026-05-27') };
+
+  it('renders identically when appearance is undefined (parity)', async () => {
+    const a = await render(createElement(DigestEmail, base));
+    const b = await render(createElement(DigestEmail, { ...base, appearance: {} }));
+    expect(a).toBe(b);
+  });
+
+  it('hides a block when disabled', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      appearance: { blocks: [{ id: 'footer', enabled: false }] },
+    }));
+    expect(html).toContain('Unsubscribe'); // unsubscribe is never removable
+    // The standalone app-label paragraph (rendered as `>Plex</p>`) is gone.
+    // Note: the unsubscribe line still names the app ("access to Plex."), so we
+    // target the label paragraph's exact `>Plex</p>` marker rather than `>Plex<`,
+    // which also appears in the unsubscribe sentence.
+    expect(html).not.toContain('>Plex</p>'); // app-label text removed
+  });
+
+  it('applies a custom header title and hides the count', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      appearance: { header: { title: 'Fresh Picks', show_count: false, show_date_range: true } },
+    }));
+    expect(html).toContain('Fresh Picks');
+  });
+
+  it('reorders and renames library sections', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      appearance: { libraries: [{ name: 'TV', enabled: true, title: 'Shows' }, { name: 'Movies', enabled: true }] },
+    }));
+    expect(html.indexOf('Shows')).toBeLessThan(html.indexOf('Movies'));
   });
 });
