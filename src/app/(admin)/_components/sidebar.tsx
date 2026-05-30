@@ -7,13 +7,14 @@ type NavItem = {
   href: string;
   label: string;
   exact?: boolean;
-  icon: 'dashboard' | 'mail' | 'eye' | 'history' | 'users' | 'settings';
+  icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings';
 };
 
 const items: ReadonlyArray<NavItem> = [
   { href: '/', label: 'Dashboard', exact: true, icon: 'dashboard' },
   { href: '/newsletter', label: 'Newsletter', exact: true, icon: 'mail' },
   { href: '/newsletter/preview', label: 'Preview', icon: 'eye' },
+  { href: '/newsletter/customize', label: 'Customize', icon: 'customize' },
   { href: '/newsletter/history', label: 'History', icon: 'history' },
   { href: '/newsletter/recipients', label: 'Recipients', icon: 'users' },
   { href: '/settings', label: 'Settings', exact: true, icon: 'settings' },
@@ -184,6 +185,17 @@ function Icon({ name, className = '' }: { name: NavItem['icon']; className?: str
         <svg {...common}>
           <path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
           <circle cx="12" cy="12" r="2.5" />
+        </svg>
+      );
+    case 'customize':
+      return (
+        <svg {...common}>
+          <line x1="4" y1="6" x2="20" y2="6" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="18" x2="20" y2="18" />
+          <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none" />
+          <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none" />
+          <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none" />
         </svg>
       );
     case 'history':

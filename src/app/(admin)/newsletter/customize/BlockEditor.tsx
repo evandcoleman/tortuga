@@ -87,7 +87,7 @@ function SortableRow({ block, onToggle }: SortableRowProps) {
         transition,
       }}
       className={[
-        'mb-2 flex items-center gap-3 rounded-lg border border-line bg-white px-3 py-2.5',
+        'mb-2 flex items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2.5',
         isDragging ? 'opacity-50 shadow-lg' : '',
       ]
         .filter(Boolean)
