@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState, useTransition } from 'react';
+import Link from 'next/link';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import type { ConnectionTestsResult } from '@/kernel/integrations/connection-tests';
 import { Button, Card, CardHeader } from '../_components/ui';
@@ -95,6 +96,14 @@ export function SettingsForm({ config }: { config: NewsletterConfig }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <SelectField name="theme" label="Theme" defaultValue={config.theme} options={THEME_OPTIONS} hint="Colors and typography." />
           <SelectField name="layout" label="Layout" defaultValue={config.layout} options={LAYOUT_OPTIONS} hint="How items are arranged." />
+        </div>
+        <div className="mt-4">
+          <Link
+            href="/newsletter/customize"
+            className="text-[13px] font-medium text-gold transition hover:text-gold-hi"
+          >
+            Customize appearance →
+          </Link>
         </div>
       </Card>
 
