@@ -155,6 +155,124 @@ export const newsprintTheme: Theme = {
   },
 };
 
+export const cinemaNoirTheme: Theme = {
+  id: 'cinema-noir',
+  label: 'Cinema Noir',
+  colorScheme: 'dark',
+  fonts: { heading: NARROW, body: SANS },
+  palette: {
+    paper: '#0d0f12',
+    ink: '#eef0f2',
+    muted: '#8a909a',
+    rule: '#23272e',
+    hairline: '#1a1d22',
+    accent: '#c0303a',
+    onAccent: '#fdecec',
+    cardBg: '#15181d',
+    chipBg: '#22262d',
+    chipFg: '#e0656d',
+  },
+  layout: {
+    radius: 4,
+    cardBorderWidth: 1,
+    cardShadow: '0 1px 0 rgba(255,255,255,0.03)',
+    ruleWidth: 1,
+    headingWeight: 700,
+    headingLetterSpacing: '-0.01em',
+    eyebrowLetterSpacing: 4,
+    introItalic: true,
+  },
+};
+
+export const nocturneTheme: Theme = {
+  id: 'nocturne',
+  label: 'Nocturne',
+  colorScheme: 'dark',
+  fonts: { heading: SANS, body: SANS },
+  palette: {
+    paper: '#0c0f16',
+    ink: '#e7ecf4',
+    muted: '#8a93a6',
+    rule: '#222838',
+    hairline: '#1a1f2c',
+    accent: '#aab8cc',
+    onAccent: '#0c0f16',
+    cardBg: '#141925',
+    chipBg: '#1c2435',
+    chipFg: '#bcc8da',
+  },
+  layout: {
+    radius: 8,
+    cardBorderWidth: 1,
+    cardShadow: '0 1px 0 rgba(255,255,255,0.04)',
+    ruleWidth: 1,
+    headingWeight: 650,
+    headingLetterSpacing: '-0.02em',
+    eyebrowLetterSpacing: 4,
+    introItalic: false,
+  },
+};
+
+export const atelierTheme: Theme = {
+  id: 'atelier',
+  label: 'Atelier',
+  colorScheme: 'light',
+  fonts: { heading: SANS, body: SERIF },
+  palette: {
+    paper: '#fcfbf9',
+    ink: '#1a1816',
+    muted: '#7a736b',
+    rule: '#2b2723',
+    hairline: '#eae9e4',
+    accent: '#8f5d50',
+    onAccent: '#ffffff',
+    cardBg: '#ffffff',
+    chipBg: '#f4f0ec',
+    chipFg: '#2b2723',
+  },
+  layout: {
+    radius: 0,
+    cardBorderWidth: 1,
+    ruleWidth: 2,
+    headingWeight: 700,
+    headingLetterSpacing: '-0.02em',
+    eyebrowLetterSpacing: 5,
+    introItalic: true,
+  },
+};
+
+export const travertineTheme: Theme = {
+  id: 'travertine',
+  label: 'Travertine',
+  colorScheme: 'light',
+  fonts: {
+    heading: '"Iowan Old Style","Palatino Linotype","Palatino","Book Antiqua","Georgia","Times New Roman",serif',
+    body: '"Avenir Next","Avenir","Segoe UI","Helvetica Neue","Helvetica","Arial",sans-serif',
+  },
+  palette: {
+    paper: '#f3ece0',
+    ink: '#3a2a1e',
+    muted: '#8a7a68',
+    rule: '#ddd1bf',
+    hairline: '#e7ddcc',
+    accent: '#b5562f',
+    onAccent: '#fbf6ee',
+    cardBg: '#faf4e9',
+    chipBg: '#ecdccb',
+    chipFg: '#8f3d1f',
+  },
+  layout: {
+    radius: 5,
+    cardBorderWidth: 1,
+    cardShadow: '0 1px 2px rgba(58,42,30,0.05)',
+    ruleWidth: 1,
+    headingWeight: 600,
+    headingLetterSpacing: '-0.01em',
+    eyebrowLetterSpacing: 4,
+    introItalic: true,
+  },
+};
+
 export const DEFAULT_THEME_ID = 'editorial';
 
 export const THEMES: Record<string, Theme> = {
@@ -162,6 +280,10 @@ export const THEMES: Record<string, Theme> = {
   [swissTheme.id]: swissTheme,
   [darkLuxuryTheme.id]: darkLuxuryTheme,
   [newsprintTheme.id]: newsprintTheme,
+  [cinemaNoirTheme.id]: cinemaNoirTheme,
+  [nocturneTheme.id]: nocturneTheme,
+  [atelierTheme.id]: atelierTheme,
+  [travertineTheme.id]: travertineTheme,
 };
 
 export function resolveTheme(id?: string | null): Theme {

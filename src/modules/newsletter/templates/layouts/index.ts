@@ -6,6 +6,10 @@ import { ListItems } from './list';
 import { GalleryItems } from './gallery';
 import { CompactItems } from './compact';
 import { MagazineItems } from './magazine';
+import { SpotlightItems } from './spotlight';
+import { TimelineItems } from './timeline';
+import { LedgerItems } from './ledger';
+import { IndexTocItems } from './index-toc';
 
 export { posterScaleFactor } from '../../appearance/resolve';
 export type { ResolvedItemDisplay } from '../../appearance/resolve';
@@ -26,6 +30,10 @@ export const listLayout: NewsletterLayout = { id: 'list', label: 'List', Items: 
 export const galleryLayout: NewsletterLayout = { id: 'gallery', label: 'Gallery', Items: GalleryItems };
 export const compactLayout: NewsletterLayout = { id: 'compact', label: 'Compact', Items: CompactItems };
 export const magazineLayout: NewsletterLayout = { id: 'magazine', label: 'Magazine', Items: MagazineItems };
+export const spotlightLayout: NewsletterLayout = { id: 'spotlight', label: 'Spotlight', Items: SpotlightItems };
+export const timelineLayout: NewsletterLayout = { id: 'timeline', label: 'Timeline', Items: TimelineItems };
+export const ledgerLayout: NewsletterLayout = { id: 'ledger', label: 'Ledger', Items: LedgerItems };
+export const indexTocLayout: NewsletterLayout = { id: 'index-toc', label: 'Index / TOC', Items: IndexTocItems };
 
 export const DEFAULT_LAYOUT_ID = 'list';
 
@@ -34,6 +42,10 @@ export const LAYOUTS: Record<string, NewsletterLayout> = {
   [galleryLayout.id]: galleryLayout,
   [compactLayout.id]: compactLayout,
   [magazineLayout.id]: magazineLayout,
+  [spotlightLayout.id]: spotlightLayout,
+  [timelineLayout.id]: timelineLayout,
+  [ledgerLayout.id]: ledgerLayout,
+  [indexTocLayout.id]: indexTocLayout,
 };
 
 export function resolveLayout(id?: string | null): NewsletterLayout {
