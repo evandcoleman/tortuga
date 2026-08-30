@@ -1,17 +1,12 @@
 'use client';
 
-import { useActionState, useState, useTransition } from 'react';
-import Link from 'next/link';
+import { useActionState } from 'react';
 import type { NewsletterConfig } from '@/kernel/config/schema';
-import type { ConnectionTestsResult } from '@/kernel/integrations/connection-tests';
 import type { MaintainerrCollection } from '@/kernel/integrations/maintainerr';
-import { Button, Card, CardHeader } from '../_components/ui';
-import { saveSettings, testConnections, type SaveState } from './actions';
-import { ConnectionStatus } from './ConnectionStatus';
-import { TextField, NumberField, TextareaField, SelectField, CheckboxField } from './fields';
+import { Button, Card, CardHeader } from '../../_components/ui';
+import { TextField, NumberField, TextareaField, SelectField, CheckboxField } from '../fields';
+import { saveContentSettings, type SaveState } from './actions';
 import { missingExcludedIds } from './leaving-exclusions';
-import { THEME_OPTIONS } from '@/modules/newsletter/templates/themes';
-import { LAYOUT_OPTIONS } from '@/modules/newsletter/templates/layouts';
 
 const initial: SaveState = { status: 'idle' };
 
@@ -19,78 +14,19 @@ export type LeavingCollectionsResult =
   | { ok: true; collections: MaintainerrCollection[] }
   | { ok: false };
 
-export function SettingsForm({
+export function ContentForm({
   config,
   leavingCollections,
 }: {
   config: NewsletterConfig;
-  /** null when MAINTAINERR_URL is unset; { ok: false } when the live fetch failed. */
+  /** null when Maintainerr isn't configured; { ok: false } when the live fetch failed. */
   leavingCollections: LeavingCollectionsResult | null;
 }) {
-  const [state, action, pending] = useActionState(saveSettings, initial);
+  const [state, action, pending] = useActionState(saveContentSettings, initial);
   const err = state.status === 'error' ? state.errors : {};
-
-  const [testResults, setTestResults] = useState<ConnectionTestsResult | null>(null);
-  const [testError, setTestError] = useState(false);
-  const [isTesting, startTesting] = useTransition();
-
-  const runTests = () => {
-    setTestError(false);
-    startTesting(async () => {
-      try {
-        setTestResults(await testConnections());
-      } catch {
-        setTestError(true);
-      }
-    });
-  };
 
   return (
     <form action={action} className="grid gap-5">
-      {/* Round-trip config the UI doesn't surface, so saving never drops it. */}
-      <input type="hidden" name="featured.enabled" value={config.featured.enabled ? 'on' : ''} />
-      <Card>
-        <CardHeader title="Schedule" description="When the digest is generated and sent." />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField name="schedule" label="Cron" defaultValue={config.schedule} error={err['schedule']} hint="e.g. 0 9 * * SUN" />
-          <TextField name="timezone" label="Timezone" defaultValue={config.timezone} error={err['timezone']} />
-          <NumberField name="lookback_days" label="Lookback days" defaultValue={config.lookback_days} min={1} error={err['lookback_days']} />
-        </div>
-        <div className="mt-2">
-          <CheckboxField name="schedule_enabled" label="Scheduled sends enabled" defaultChecked={config.schedule_enabled} hint="Off pauses the cron without losing settings." />
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader title="Sender & Email" description="Identity and delivery provider." />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField name="from.email" label="From email" type="email" defaultValue={config.from.email} error={err['from.email']} />
-          <TextField name="from.name" label="From name" defaultValue={config.from.name} error={err['from.name']} />
-          <TextField name="reply_to" label="Reply-to (optional)" type="email" defaultValue={config.reply_to ?? ''} error={err['reply_to']} />
-          <SelectField name="email.provider" label="Provider" defaultValue={config.email.provider}
-            options={[{ value: 'resend', label: 'Resend' }, { value: 'mailgun', label: 'Mailgun' }]} />
-          <TextField name="email.mailgun.domain" label="Mailgun domain" defaultValue={config.email.mailgun?.domain ?? ''} error={err['email.mailgun.domain']} hint="Required when provider is Mailgun." />
-          <SelectField name="email.mailgun.region" label="Mailgun region" defaultValue={config.email.mailgun?.region ?? 'us'}
-            options={[{ value: 'us', label: 'US' }, { value: 'eu', label: 'EU' }]} />
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader
-          title="Integration Tests"
-          description="Verify Tautulli, TMDB, and the email provider with live checks. No email is sent."
-          action={
-            <Button type="button" variant="secondary" onClick={runTests} disabled={isTesting} aria-busy={isTesting}>
-              {isTesting ? 'Testing…' : 'Test connections'}
-            </Button>
-          }
-        />
-        <ConnectionStatus results={testResults} pending={isTesting} />
-        {testError ? (
-          <p className="mt-3 text-[13px] text-danger">Could not run the tests. Try again.</p>
-        ) : null}
-      </Card>
-
       <Card>
         <CardHeader title="Filters" description="What content makes it into the digest." />
         <div className="grid gap-4 sm:grid-cols-2">
@@ -105,36 +41,6 @@ export function SettingsForm({
       </Card>
 
       <Card>
-        <CardHeader title="Appearance" description="Visual theme and layout for the newsletter email." />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SelectField name="theme" label="Theme" defaultValue={config.theme} options={THEME_OPTIONS} hint="Colors and typography." />
-          <SelectField name="layout" label="Layout" defaultValue={config.layout} options={LAYOUT_OPTIONS} hint="How items are arranged." />
-        </div>
-        <div className="mt-4">
-          <Link
-            href="/newsletter/customize"
-            className="text-[13px] font-medium text-gold transition hover:text-gold-hi"
-          >
-            Customize appearance →
-          </Link>
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader title="Plex" description="Connects the newsletter to your Plex server for deep-links to titles." />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField
-            name="plex.server_id"
-            label="Server ID (optional)"
-            defaultValue={config.plex?.server_id ?? ''}
-            error={err['plex.server_id']}
-            placeholder="e.g. a1b2c3d4e5f6…"
-            hint="Powers “Open in Plex” deep-links in the email. Find it in your Plex server under Settings → Manage → Remote Access (the ~40-character Server ID). Leave blank to skip deep-links."
-          />
-        </div>
-      </Card>
-
-      <Card>
         <CardHeader
           title="Leaving soon (Maintainerr)"
           description="Surface a section for media Maintainerr will delete soon."
@@ -142,7 +48,7 @@ export function SettingsForm({
         {leavingCollections === null ? (
           <>
             <p className="text-[13px] text-muted">
-              Set <code className="text-[12px] text-fg">MAINTAINERR_URL</code> to enable this feature.
+              Connect Maintainerr in <span className="text-fg">Settings → Services</span> to enable this feature.
             </p>
             {/* Round-trip config the UI doesn't surface here, so saving other
                 settings never drops it. */}
@@ -263,7 +169,7 @@ export function SettingsForm({
       </Card>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" variant="primary" disabled={pending}>{pending ? 'Saving…' : 'Save settings'}</Button>
+        <Button type="submit" variant="primary" disabled={pending}>{pending ? 'Saving…' : 'Save content settings'}</Button>
         {state.status === 'success' ? <span className="text-[13px] text-success">Saved and reloaded.</span> : null}
         {state.status === 'error' ? <span className="text-[13px] text-danger">Fix the highlighted fields.</span> : null}
       </div>

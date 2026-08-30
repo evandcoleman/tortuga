@@ -22,6 +22,12 @@ const DAY = 86_400_000;
 export default function Dashboard() {
   const ctx = getAppContext();
 
+  const missingServices: Array<{ label: string; href: string }> = [
+    ...(!ctx.tautulli ? [{ label: 'Tautulli', href: '/settings/services' }] : []),
+    ...(!ctx.tmdb ? [{ label: 'TMDB', href: '/settings/services' }] : []),
+    ...(!ctx.email ? [{ label: 'Email provider', href: '/settings/email' }] : []),
+  ];
+
   const recent = ctx.db
     .select()
     .from(digests)
@@ -60,6 +66,26 @@ export default function Dashboard() {
           </>
         }
       />
+
+      {missingServices.length > 0 ? (
+        <div className="mb-8 rounded-lg border border-warning/30 bg-warning/8 px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[13.5px] font-medium text-fg">Finish setup to unlock the full pipeline</div>
+              <p className="mt-1 text-[12.5px] text-muted">
+                Not configured yet: {missingServices.map(s => s.label).join(', ')}.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[...new Map(missingServices.map(s => [s.href, s])).values()].map(s => (
+                <Link key={s.href} href={s.href}>
+                  <Button variant="secondary">Configure {s.label === 'Email provider' ? 'email' : 'services'} →</Button>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
@@ -154,7 +180,7 @@ export default function Dashboard() {
             <Step n={2} title="TMDB" subtitle="Enriches with posters, synopsis, ratings." />
             <Step n={3} title="Filter" subtitle="Applies allow/blocklists from config." />
             <Step n={4} title="Render" subtitle="Builds the HTML email." />
-            <Step n={5} title="Send" subtitle={`via ${ctx.email.name}.`} />
+            <Step n={5} title="Send" subtitle={ctx.email ? `via ${ctx.email.name}.` : "No provider configured."} />
           </ol>
         </Card>
       </section>
@@ -166,7 +192,7 @@ export default function Dashboard() {
             <Mini label="Digests" value={totalDigests} />
             <Mini label="Sends" value={totalSends} />
             <Mini label="Recipients" value={recipients.length} />
-            <Mini label="Provider" value={ctx.email.name} />
+            <Mini label="Provider" value={ctx.email?.name ?? "Not set"} />
           </div>
         </Card>
       </section>

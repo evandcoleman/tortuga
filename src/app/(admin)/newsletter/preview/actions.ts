@@ -106,6 +106,9 @@ export async function sendTestDigest(
   if (!row) {
     return { success: false, error: 'No preview available — generate a fresh preview first.' };
   }
+  if (!ctx.email) {
+    return { success: false, error: 'Email provider is not configured. Configure it in Settings → Email.' };
+  }
 
   return renderAndSendTestDigest({
     digestId: row.id,

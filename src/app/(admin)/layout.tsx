@@ -24,7 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="flex min-h-screen bg-canvas text-fg">
       <Sidebar
         userEmail={userEmail}
-        providerName={ctx.email.name}
+        providerName={ctx.email?.name}
         authMode={mode}
         signOutAction={mode === 'session' ? doSignOut : undefined}
       />

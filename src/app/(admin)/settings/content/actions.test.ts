@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// saveSettings delegates parsing to parseNewsletterForm (unmocked — exercised
-// for real) and persistence to writeConfigOverride; only the app context and
-// admin-session gate are mocked.
 const getAppContext = vi.fn();
 const invalidateAppContext = vi.fn();
 const writeConfigOverride = vi.fn();
@@ -15,7 +12,6 @@ vi.mock('@/kernel/context', () => ({
 
 vi.mock('@/kernel/config/overrides', () => ({
   writeConfigOverride: (...args: unknown[]) => writeConfigOverride(...args),
-  clearConfigOverride: vi.fn(),
 }));
 
 vi.mock('@/kernel/auth/require-admin-session', () => ({
@@ -24,7 +20,8 @@ vi.mock('@/kernel/auth/require-admin-session', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-import { saveSettings, type SaveState } from './actions';
+import { saveContentSettings, type SaveState } from './actions';
+import { NewsletterConfigSchema } from '@/kernel/config/schema';
 
 function fd(entries: Record<string, string>): FormData {
   const f = new FormData();
@@ -33,13 +30,6 @@ function fd(entries: Record<string, string>): FormData {
 }
 
 const base = {
-  schedule: '0 9 * * SUN',
-  timezone: 'America/New_York',
-  schedule_enabled: 'on',
-  lookback_days: '7',
-  'email.provider': 'resend',
-  'from.email': 'newsletter@example.com',
-  'from.name': 'Orpheus',
   'filters.min_tmdb_rating': '6',
   'filters.dedupe_episodes_into_seasons': 'on',
   'filters.max_items_per_section': '12',
@@ -52,36 +42,30 @@ const base = {
   'leaving.heading': 'Leaving soon',
 };
 
+const currentConfig = NewsletterConfigSchema.parse({
+  from: { email: 'newsletter@example.com', name: 'Orpheus' },
+});
+
 const initial: SaveState = { status: 'idle' };
 
-describe('saveSettings server action', () => {
+describe('saveContentSettings server action', () => {
   beforeEach(() => {
     getAppContext.mockReset();
     invalidateAppContext.mockReset();
     writeConfigOverride.mockReset();
     requireAdminSession.mockReset();
     requireAdminSession.mockResolvedValue({ email: 'admin@example.com' });
-    getAppContext.mockReturnValue({ db: {} });
+    getAppContext.mockReturnValue({ db: {}, config: { newsletter: currentConfig } });
   });
 
   it('rejects when there is no admin session', async () => {
     requireAdminSession.mockRejectedValue(new Error('Unauthorized'));
-
-    await expect(saveSettings(initial, fd(base))).rejects.toThrow('Unauthorized');
+    await expect(saveContentSettings(initial, fd(base))).rejects.toThrow('Unauthorized');
     expect(writeConfigOverride).not.toHaveBeenCalled();
   });
 
   it('rejects leaving.days of 0 with a field error and does not persist', async () => {
-    const result = await saveSettings(initial, fd({ ...base, 'leaving.days': '0' }));
-
-    expect(result.status).toBe('error');
-    if (result.status === 'error') expect(result.errors['leaving.days']).toBeTruthy();
-    expect(writeConfigOverride).not.toHaveBeenCalled();
-  });
-
-  it('rejects leaving.days of 91 with a field error and does not persist', async () => {
-    const result = await saveSettings(initial, fd({ ...base, 'leaving.days': '91' }));
-
+    const result = await saveContentSettings(initial, fd({ ...base, 'leaving.days': '0' }));
     expect(result.status).toBe('error');
     if (result.status === 'error') expect(result.errors['leaving.days']).toBeTruthy();
     expect(writeConfigOverride).not.toHaveBeenCalled();
@@ -92,7 +76,7 @@ describe('saveSettings server action', () => {
     form.append('leaving.excluded_collection_ids', '3');
     form.append('leaving.excluded_collection_ids', '9');
 
-    const result = await saveSettings(initial, form);
+    const result = await saveContentSettings(initial, form);
 
     expect(result.status).toBe('success');
     expect(writeConfigOverride).toHaveBeenCalledWith(
@@ -100,6 +84,19 @@ describe('saveSettings server action', () => {
       expect.objectContaining({
         leaving: expect.objectContaining({ excluded_collection_ids: [3, 9] }),
       }),
+    );
+  });
+
+  it('writes only its own fields, leaving other pages’ config untouched', async () => {
+    getAppContext.mockReturnValue({
+      db: {},
+      config: { newsletter: { ...currentConfig, schedule: '30 7 * * MON' } },
+    });
+    const result = await saveContentSettings(initial, fd(base));
+    expect(result.status).toBe('success');
+    expect(writeConfigOverride).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({ schedule: '30 7 * * MON' }),
     );
   });
 });

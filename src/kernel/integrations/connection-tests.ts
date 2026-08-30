@@ -1,6 +1,4 @@
-import type { TautulliClient } from './tautulli';
-import type { TmdbClient } from './tmdb';
-import type { EmailProvider } from '@/kernel/email/types';
+import { createMaintainerrClient } from './maintainerr';
 
 /** Result of a single connectivity check. Never carries secrets or raw provider output. */
 export interface ConnectionTestResult {
@@ -8,11 +6,7 @@ export interface ConnectionTestResult {
   message: string;
 }
 
-export interface ConnectionTestsResult {
-  tautulli: ConnectionTestResult;
-  tmdb: ConnectionTestResult;
-  email: ConnectionTestResult;
-}
+const TIMEOUT_MS = 5000;
 
 /**
  * Convert an unknown thrown value into a safe, user-facing reason fragment.
@@ -55,68 +49,109 @@ function isLikelyNetworkError(error: unknown): boolean {
   );
 }
 
-/**
- * Verify Tautulli reachability + auth with a minimal, side-effect-free call.
- * getUsers is the cheapest authenticated read.
- */
-export async function testTautulli(client: TautulliClient): Promise<ConnectionTestResult> {
+class HttpStatusError extends Error {
+  constructor(public readonly status: number) {
+    super(`HTTP ${status}`);
+  }
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
+  return fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+}
+
+/** Verify Tautulli reachability + auth via `get_server_info` — a minimal, side-effect-free call. */
+export async function testTautulliConnection(url: string, apiKey: string): Promise<ConnectionTestResult> {
   try {
-    const users = await client.getUsers();
-    return { ok: true, message: `Connected — ${users.length} Plex user(s) visible.` };
+    const u = new URL('/api/v2', url);
+    u.searchParams.set('apikey', apiKey);
+    u.searchParams.set('cmd', 'get_server_info');
+    const res = await fetchWithTimeout(u.toString());
+    if (!res.ok) throw new HttpStatusError(res.status);
+    const json = (await res.json()) as { response: { result: string } };
+    if (json.response.result !== 'success') throw new HttpStatusError(401);
+    return { ok: true, message: 'Connected — Tautulli server reachable.' };
   } catch (error: unknown) {
     return { ok: false, message: `Tautulli connection failed: ${sanitizeFailure(error)}.` };
   }
 }
 
-/**
- * Verify TMDB reachability + auth with a cheap search that has no side effects.
- * A null result still proves the credentials and endpoint work.
- */
-export async function testTmdb(client: TmdbClient): Promise<ConnectionTestResult> {
+/** Verify TMDB reachability + auth via `/configuration` — a cheap, side-effect-free read. */
+export async function testTmdbConnection(apiKey: string): Promise<ConnectionTestResult> {
   try {
-    await client.searchMovie({ title: 'test' });
+    const res = await fetchWithTimeout('https://api.themoviedb.org/3/configuration', {
+      headers: { accept: 'application/json', authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new HttpStatusError(res.status);
     return { ok: true, message: 'Connected — TMDB credentials accepted.' };
   } catch (error: unknown) {
     return { ok: false, message: `TMDB connection failed: ${sanitizeFailure(error)}.` };
   }
 }
 
-/**
- * Verify the email provider is configured. Construction validates that the
- * required keys/domain are present without sending any email. We accept a
- * pre-built provider or a factory that may throw on missing config.
- */
-export function testEmailProvider(
-  build: () => EmailProvider,
-): ConnectionTestResult {
+/** Verify Maintainerr reachability via `/api/collections`. */
+export async function testMaintainerrConnection(url: string): Promise<ConnectionTestResult> {
   try {
-    const provider = build();
-    return {
-      ok: true,
-      message: `Configured — ${provider.name} provider ready (no test email sent).`,
-    };
+    const client = createMaintainerrClient({ url });
+    const collections = await client.getCollections(AbortSignal.timeout(TIMEOUT_MS));
+    return { ok: true, message: `Connected — ${collections.length} collection(s) visible.` };
   } catch (error: unknown) {
-    return {
-      ok: false,
-      message: `Email provider not configured: ${sanitizeEmailFailure(error)}.`,
-    };
+    return { ok: false, message: `Maintainerr connection failed: ${sanitizeFailure(error)}.` };
   }
 }
 
-/**
- * Email factory errors are our own thrown Error messages (e.g. "RESEND_API_KEY
- * required..."). Map them to non-leaky guidance instead of echoing env var names.
- */
-export function sanitizeEmailFailure(error: unknown): string {
-  const message = error instanceof Error ? error.message : '';
-  if (/mailgun/i.test(message) && /domain/i.test(message)) {
-    return 'set the Mailgun sending domain in Settings';
+/** Verify a Resend API key by listing domains — no email is sent. */
+export async function testResendConnection(apiKey: string): Promise<ConnectionTestResult> {
+  try {
+    const res = await fetchWithTimeout('https://api.resend.com/domains', {
+      headers: { authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new HttpStatusError(res.status);
+    return { ok: true, message: 'Connected — Resend API key accepted.' };
+  } catch (error: unknown) {
+    return { ok: false, message: `Resend connection failed: ${sanitizeFailure(error)}.` };
   }
-  if (/mailgun/i.test(message)) {
-    return 'set the Mailgun API and webhook signing keys';
+}
+
+/** Verify a Mailgun API key against the account's domain list — no email is sent. */
+export async function testMailgunConnection(
+  apiKey: string,
+  region: 'us' | 'eu' = 'us',
+): Promise<ConnectionTestResult> {
+  try {
+    const base = region === 'eu' ? 'https://api.eu.mailgun.net' : 'https://api.mailgun.net';
+    const auth = Buffer.from(`api:${apiKey}`).toString('base64');
+    const res = await fetchWithTimeout(`${base}/v3/domains`, {
+      headers: { authorization: `Basic ${auth}` },
+    });
+    if (!res.ok) throw new HttpStatusError(res.status);
+    return { ok: true, message: 'Connected — Mailgun API key accepted.' };
+  } catch (error: unknown) {
+    return { ok: false, message: `Mailgun connection failed: ${sanitizeFailure(error)}.` };
   }
-  if (/resend/i.test(message)) {
-    return 'set the Resend API key';
+}
+
+/** Verify an Anthropic API key by listing available models — no completion is generated. */
+export async function testAnthropicConnection(apiKey: string): Promise<ConnectionTestResult> {
+  try {
+    const res = await fetchWithTimeout('https://api.anthropic.com/v1/models', {
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    });
+    if (!res.ok) throw new HttpStatusError(res.status);
+    return { ok: true, message: 'Connected — Anthropic API key accepted.' };
+  } catch (error: unknown) {
+    return { ok: false, message: `Anthropic connection failed: ${sanitizeFailure(error)}.` };
   }
-  return 'check the provider credentials and settings';
+}
+
+/** Verify an OpenAI API key by listing available models — no completion is generated. */
+export async function testOpenaiConnection(apiKey: string): Promise<ConnectionTestResult> {
+  try {
+    const res = await fetchWithTimeout('https://api.openai.com/v1/models', {
+      headers: { authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok) throw new HttpStatusError(res.status);
+    return { ok: true, message: 'Connected — OpenAI API key accepted.' };
+  } catch (error: unknown) {
+    return { ok: false, message: `OpenAI connection failed: ${sanitizeFailure(error)}.` };
+  }
 }

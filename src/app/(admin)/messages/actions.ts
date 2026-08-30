@@ -65,6 +65,9 @@ export async function previewAnnouncement(subject: string, body: string): Promis
   }
 
   const ctx = getAppContext();
+  if (!ctx.email) {
+    return { success: false, error: 'Email provider is not configured. Configure it in Settings → Email.' };
+  }
   try {
     const result = await sendAnnouncement(
       {
@@ -99,6 +102,9 @@ export async function sendTestAnnouncement(subject: string, body: string): Promi
   const testRecipient = identity.email ?? ctx.env.ADMIN_EMAIL ?? null;
   if (!testRecipient) {
     return { success: false, error: 'No admin email available for test send' };
+  }
+  if (!ctx.email) {
+    return { success: false, error: 'Email provider is not configured. Configure it in Settings → Email.' };
   }
 
   try {
@@ -149,6 +155,9 @@ export async function sendAnnouncementToRecipients(
   }
 
   const ctx = getAppContext();
+  if (!ctx.email) {
+    return { success: false, error: 'Email provider is not configured. Configure it in Settings → Email.' };
+  }
   try {
     const result = await sendAnnouncement(
       {

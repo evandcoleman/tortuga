@@ -16,13 +16,77 @@ function Wrap({ label, hint, error, children }: { label: string; hint?: string; 
   );
 }
 
-export function TextField({ name, label, defaultValue = '', hint, error, type = 'text', placeholder }: {
-  name: string; label: string; defaultValue?: string; hint?: string; error?: string; type?: string; placeholder?: string;
+export function TextField({ name, label, defaultValue = '', hint, error, type = 'text', placeholder, disabled }: {
+  name: string; label: string; defaultValue?: string; hint?: string; error?: string; type?: string; placeholder?: string; disabled?: boolean;
 }) {
   return (
     <Wrap label={label} hint={hint} error={error}>
-      <input className={inputCls} name={name} type={type} defaultValue={defaultValue} placeholder={placeholder} />
+      <input
+        className={`${inputCls} ${disabled ? 'cursor-not-allowed opacity-60' : ''}`}
+        name={name}
+        type={type}
+        defaultValue={defaultValue}
+        placeholder={placeholder}
+        disabled={disabled}
+      />
     </Wrap>
+  );
+}
+
+/**
+ * Text field for a non-secret managed value (e.g. a service URL) that may be
+ * sourced from an env var. When `source === 'env'` the input is disabled and
+ * annotated with the env var name — a DB value may exist underneath but is
+ * inert, so it's never shown alongside the note.
+ */
+export function ManagedTextField({ name, label, value, source, envVar, error, placeholder }: {
+  name: string; label: string; value: string; source: 'env' | 'db' | undefined; envVar: string; error?: string; placeholder?: string;
+}) {
+  const isEnv = source === 'env';
+  return (
+    <TextField
+      name={name}
+      label={label}
+      defaultValue={isEnv ? '' : value}
+      placeholder={isEnv ? value : placeholder}
+      hint={isEnv ? `Set via ${envVar}` : undefined}
+      error={error}
+      disabled={isEnv}
+    />
+  );
+}
+
+/**
+ * Secret field per the settings spec: an env-sourced secret is disabled with a
+ * note and never rendered (not even as a placeholder); a DB-stored secret shows
+ * a masked "saved" placeholder — blank submit keeps it, typing replaces it, and
+ * the paired "Clear" checkbox (submitted as `${name}__clear`) deletes it. The
+ * actual secret value is never sent to the client in either case.
+ */
+export function SecretField({ name, label, source, envVar, hint }: {
+  name: string; label: string; source: 'env' | 'db' | undefined; envVar: string; hint?: string;
+}) {
+  const isEnv = source === 'env';
+  const isSet = source === 'db';
+  return (
+    <div>
+      <Wrap label={label} hint={isEnv ? `Set via ${envVar}` : hint}>
+        <input
+          className={`${inputCls} ${isEnv ? 'cursor-not-allowed opacity-60' : ''}`}
+          name={name}
+          type="password"
+          autoComplete="off"
+          placeholder={isEnv ? '••••••••' : isSet ? '•••••••• saved' : ''}
+          disabled={isEnv}
+        />
+      </Wrap>
+      {isSet && !isEnv ? (
+        <label className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-muted">
+          <input type="checkbox" name={`${name}__clear`} className="h-3 w-3 rounded border-line accent-danger" />
+          Clear saved value
+        </label>
+      ) : null}
+    </div>
   );
 }
 

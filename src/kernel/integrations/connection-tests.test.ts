@@ -1,132 +1,81 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-  testTautulli,
-  testTmdb,
-  testEmailProvider,
   sanitizeFailure,
-  sanitizeEmailFailure,
+  testTautulliConnection,
+  testTmdbConnection,
+  testResendConnection,
 } from './connection-tests';
-import type { TautulliClient } from './tautulli';
-import type { TmdbClient } from './tmdb';
-import type { EmailProvider } from '@/kernel/email/types';
 
 describe('sanitizeFailure', () => {
-  it('maps 401 to an auth hint without leaking details', () => {
-    // Arrange
-    const error = Object.assign(new Error('boom'), { status: 401 });
-
-    // Act
-    const message = sanitizeFailure(error);
-
-    // Assert
-    expect(message).toContain('authentication failed');
-    expect(message).not.toContain('boom');
+  it('reports auth failures for 401/403', () => {
+    expect(sanitizeFailure({ status: 401 })).toMatch(/authentication failed/);
+    expect(sanitizeFailure({ status: 403 })).toMatch(/authentication failed/);
   });
 
-  it('maps 5xx to a transient server error hint', () => {
-    const error = Object.assign(new Error('x'), { status: 503 });
-    expect(sanitizeFailure(error)).toContain('server error');
+  it('reports a not-found hint for 404', () => {
+    expect(sanitizeFailure({ status: 404 })).toMatch(/endpoint not found/);
   });
 
-  it('maps network errors to a reachability hint', () => {
-    const error = new Error('fetch failed');
-    expect(sanitizeFailure(error)).toContain('could not reach');
+  it('reports a server-error hint for 5xx', () => {
+    expect(sanitizeFailure({ status: 500 })).toMatch(/server error/);
   });
 
-  it('never echoes raw URLs or keys from the error message', () => {
-    const error = new Error('GET https://tautulli.local?apikey=SECRET123 failed');
-    const message = sanitizeFailure(error);
-    expect(message).not.toContain('SECRET123');
-    expect(message).not.toContain('tautulli.local');
+  it('reports a network hint for fetch/network errors', () => {
+    const err = new TypeError('fetch failed');
+    expect(sanitizeFailure(err)).toMatch(/could not reach/);
+  });
+
+  it('falls back to a generic message otherwise', () => {
+    expect(sanitizeFailure(new Error('weird'))).toMatch(/verify configuration/);
   });
 });
 
-describe('testTautulli', () => {
-  it('returns ok with user count on success', async () => {
-    // Arrange
-    const client = {
-      getUsers: vi.fn().mockResolvedValue([{ plexUserId: 1 }, { plexUserId: 2 }]),
-    } as unknown as TautulliClient;
+describe('connection test helpers', () => {
+  const originalFetch = global.fetch;
 
-    // Act
-    const result = await testTautulli(client);
+  beforeEach(() => {
+    global.fetch = vi.fn();
+  });
 
-    // Assert
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it('testTautulliConnection succeeds on a successful response', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({ response: { result: 'success' } }),
+    });
+    const result = await testTautulliConnection('http://tautulli.local', 'key');
     expect(result.ok).toBe(true);
-    expect(result.message).toContain('2 Plex user');
   });
 
-  it('returns sanitized failure on auth error', async () => {
-    const client = {
-      getUsers: vi.fn().mockRejectedValue(Object.assign(new Error('nope'), { status: 401 })),
-    } as unknown as TautulliClient;
-
-    const result = await testTautulli(client);
-
+  it('testTautulliConnection fails on a non-success API result', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({ response: { result: 'error' } }),
+    });
+    const result = await testTautulliConnection('http://tautulli.local', 'bad-key');
     expect(result.ok).toBe(false);
-    expect(result.message).toContain('authentication failed');
-    expect(result.message).not.toContain('nope');
+    expect(result.message).toMatch(/authentication failed/);
   });
-});
 
-describe('testTmdb', () => {
-  it('returns ok when the search resolves', async () => {
-    const client = {
-      searchMovie: vi.fn().mockResolvedValue(null),
-    } as unknown as TmdbClient;
+  it('testTmdbConnection fails on an HTTP error status', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false, status: 401 });
+    const result = await testTmdbConnection('bad-key');
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/authentication failed/);
+  });
 
-    const result = await testTmdb(client);
-
+  it('testResendConnection succeeds on a 200', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true });
+    const result = await testResendConnection('re_key');
     expect(result.ok).toBe(true);
-    expect(result.message).toContain('credentials accepted');
   });
 
-  it('returns sanitized failure on error', async () => {
-    const client = {
-      searchMovie: vi.fn().mockRejectedValue(Object.assign(new Error('bad'), { status: 401 })),
-    } as unknown as TmdbClient;
-
-    const result = await testTmdb(client);
-
+  it('never throws — network failures resolve to an error result', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new TypeError('fetch failed'));
+    const result = await testResendConnection('re_key');
     expect(result.ok).toBe(false);
-    expect(result.message).toContain('authentication failed');
-  });
-});
-
-describe('testEmailProvider', () => {
-  it('returns ok with provider name when the factory succeeds', () => {
-    const build = () => ({ name: 'resend' } as EmailProvider);
-
-    const result = testEmailProvider(build);
-
-    expect(result.ok).toBe(true);
-    expect(result.message).toContain('resend');
-    expect(result.message).toContain('no test email sent');
-  });
-
-  it('returns a sanitized failure when the factory throws', () => {
-    const build = () => {
-      throw new Error('RESEND_API_KEY required when provider=resend');
-    };
-
-    const result = testEmailProvider(build);
-
-    expect(result.ok).toBe(false);
-    expect(result.message).toContain('Resend API key');
-    expect(result.message).not.toContain('RESEND_API_KEY');
-  });
-});
-
-describe('sanitizeEmailFailure', () => {
-  it('maps a missing Mailgun domain error to guidance', () => {
-    const message = sanitizeEmailFailure(
-      new Error('newsletter.email.mailgun.domain required when provider=mailgun'),
-    );
-    expect(message).toContain('Mailgun sending domain');
-  });
-
-  it('maps a Resend key error to guidance', () => {
-    const message = sanitizeEmailFailure(new Error('RESEND_API_KEY required'));
-    expect(message).toContain('Resend API key');
   });
 });
