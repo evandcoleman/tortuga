@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { AppearanceSchema } from '@/modules/newsletter/appearance/schema';
 
 export const EnvSchema = z.object({
-  TAUTULLI_URL: z.string().url(),
-  TAUTULLI_API_KEY: z.string().min(1),
-  TMDB_API_KEY: z.string().min(1),
+  TAUTULLI_URL: z.union([z.literal('').transform(() => undefined), z.string().url()]).optional(),
+  TAUTULLI_API_KEY: z.string().min(1).optional(),
+  TMDB_API_KEY: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
   APP_URL: z.string().url(),
   SESSION_SECRET: z.string().min(32),

@@ -11,15 +11,16 @@ import { createEmailProvider } from './email/factory';
 import type { EmailProvider } from './email/types';
 import { resolveLlmClient, type LlmClient } from './integrations/llm';
 import { readConfigOverride } from './config/overrides';
+import { readServiceSettings } from './config/service-settings';
 
 export interface AppContext {
   env: Env;
   config: YamlConfig;
   db: Db;
-  tautulli: TautulliClient;
-  tmdb: TmdbClient;
+  tautulli: TautulliClient | null;
+  tmdb: TmdbClient | null;
   maintainerr?: MaintainerrClient;
-  email: EmailProvider;
+  email: EmailProvider | null;
   llm: LlmClient | null;
   scheduler: Scheduler;
 }
@@ -39,11 +40,29 @@ export function getAppContext(): AppContext {
       bootstrapAdminUser(db, { email: env.ADMIN_EMAIL!, password: env.ADMIN_PASSWORD! })
     ).catch(err => createLogger('context').error({ err }, 'admin bootstrap failed'));
   }
-  const tautulli = createTautulliClient({ url: env.TAUTULLI_URL, apiKey: env.TAUTULLI_API_KEY });
-  const tmdb = createTmdbClient({ apiKey: env.TMDB_API_KEY });
-  const maintainerr = env.MAINTAINERR_URL ? createMaintainerrClient({ url: env.MAINTAINERR_URL }) : undefined;
-  const email = createEmailProvider(env, config.newsletter.email);
-  const llm = resolveLlmClient(env, config.newsletter);
+  const settings = readServiceSettings(db, env);
+  const tautulliUrl = settings['tautulli.url'].value;
+  const tautulliApiKey = settings['tautulli.api_key'].value;
+  const tautulli = tautulliUrl && tautulliApiKey
+    ? createTautulliClient({ url: tautulliUrl, apiKey: tautulliApiKey })
+    : null;
+  const tmdbApiKey = settings['tmdb.api_key'].value;
+  const tmdb = tmdbApiKey ? createTmdbClient({ apiKey: tmdbApiKey }) : null;
+  const maintainerrUrl = settings['maintainerr.url'].value;
+  const maintainerr = maintainerrUrl ? createMaintainerrClient({ url: maintainerrUrl }) : undefined;
+  const email = createEmailProvider(
+    {
+      resendApiKey: settings['resend.api_key'].value,
+      resendWebhookSecret: settings['resend.webhook_secret'].value,
+      mailgunApiKey: settings['mailgun.api_key'].value,
+      mailgunWebhookSigningKey: settings['mailgun.webhook_signing_key'].value,
+    },
+    config.newsletter.email,
+  );
+  const llm = resolveLlmClient(
+    { anthropicApiKey: settings['anthropic.api_key'].value, openaiApiKey: settings['openai.api_key'].value },
+    config.newsletter,
+  );
   const scheduler = createScheduler();
   cached = { env, config, db, tautulli, tmdb, maintainerr, email, llm, scheduler };
   return cached;

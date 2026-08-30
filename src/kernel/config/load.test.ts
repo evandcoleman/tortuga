@@ -20,7 +20,7 @@ describe('loadEnv', () => {
     expect(env.DATABASE_URL).toBe('file:/config/tortuga.db');
   });
   it('throws on missing required vars', () => {
-    expect(() => loadEnv({})).toThrow(/TAUTULLI_URL/);
+    expect(() => loadEnv({})).toThrow(/APP_URL/);
   });
 });
 

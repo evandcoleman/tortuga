@@ -11,6 +11,7 @@ import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
 import { deliverToRecipients } from '@/kernel/email/deliver';
 import type { NewsletterConfig } from '@/kernel/config/schema';
+import { ServiceNotConfiguredError } from '@/kernel/config/service-settings';
 import { createLogger } from '@/kernel/logging/logger';
 
 import { digests, recipientsCache } from '../schema';
@@ -48,10 +49,10 @@ function withPlexLinks<T extends EnrichedItem>(items: T[], serverId: string | un
 
 export interface RunDigestOpts {
   db: Db;
-  tautulli: TautulliClient;
-  tmdb: TmdbClient;
+  tautulli: TautulliClient | null;
+  tmdb: TmdbClient | null;
   maintainerr?: MaintainerrClient;
-  provider: EmailProvider;
+  provider: EmailProvider | null;
   config: NewsletterConfig;
   appUrl: string;
   sessionSecret: string;
@@ -72,6 +73,10 @@ export async function runDigest(opts: RunDigestOpts) {
   }).run();
 
   try {
+    if (!opts.tautulli) throw new ServiceNotConfiguredError('tautulli', 'Tautulli is not configured');
+    if (!opts.tmdb) throw new ServiceNotConfiguredError('tmdb', 'TMDB is not configured');
+    if (!opts.provider) throw new ServiceNotConfiguredError('email', 'Email provider is not configured');
+
     await syncRecipients(opts.db, opts.tautulli);
 
     const raw = await opts.tautulli.getRecentlyAdded({ since: windowStart, count: 200 });
@@ -213,7 +218,7 @@ export async function runDigest(opts: RunDigestOpts) {
 
     return { id: digestId, status: anySent ? 'sent' as const : 'failed' as const, itemCount: filtered.length };
   } catch (err) {
-    log.error({ digest_id: digestId, provider: opts.provider.name, err }, 'digest run failed');
+    log.error({ digest_id: digestId, provider: opts.provider?.name, err }, 'digest run failed');
     opts.db.update(digests).set({
       status: 'failed', ranAt: new Date(),
       error: err instanceof Error ? `${err.message}\n${err.stack ?? ''}` : String(err),

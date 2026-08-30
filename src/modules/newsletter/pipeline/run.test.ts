@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
+import { ServiceNotConfiguredError } from '@/kernel/config/service-settings';
 import { runDigest } from './run';
 import { getThemedPreviews } from './preview-cache';
 import { THEMES } from '../templates/themes';
@@ -161,6 +162,59 @@ describe('runDigest', () => {
       scheduledAt: new Date('2026-05-15T13:00:00Z'), llm: llm as any,
     });
     expect(result.status).toBe('sent');
+  });
+
+  describe('unconfigured services', () => {
+    it('fails gracefully with a digest row status=failed naming the service when tautulli is null', async () => {
+      const db = createDb(':memory:');
+      applyMigrations(db);
+      const { tmdb, provider } = fakes();
+      await expect(
+        runDigest({
+          db, tautulli: null, tmdb: tmdb as any, provider: provider as any,
+          config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+          scheduledAt: new Date('2026-05-21T13:00:00Z'),
+        }),
+      ).rejects.toBeInstanceOf(ServiceNotConfiguredError);
+
+      const [row] = db.select().from(digests).all();
+      expect(row.status).toBe('failed');
+      expect(row.error).toMatch(/Tautulli is not configured/);
+    });
+
+    it('fails gracefully naming tmdb when tmdb is null', async () => {
+      const db = createDb(':memory:');
+      applyMigrations(db);
+      const { tautulli, provider } = fakes();
+      await expect(
+        runDigest({
+          db, tautulli: tautulli as any, tmdb: null, provider: provider as any,
+          config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+          scheduledAt: new Date('2026-05-22T13:00:00Z'),
+        }),
+      ).rejects.toBeInstanceOf(ServiceNotConfiguredError);
+
+      const [row] = db.select().from(digests).all();
+      expect(row.status).toBe('failed');
+      expect(row.error).toMatch(/TMDB is not configured/);
+    });
+
+    it('fails gracefully naming email when the provider is null', async () => {
+      const db = createDb(':memory:');
+      applyMigrations(db);
+      const { tautulli, tmdb } = fakes();
+      await expect(
+        runDigest({
+          db, tautulli: tautulli as any, tmdb: tmdb as any, provider: null,
+          config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+          scheduledAt: new Date('2026-05-23T13:00:00Z'),
+        }),
+      ).rejects.toBeInstanceOf(ServiceNotConfiguredError);
+
+      const [row] = db.select().from(digests).all();
+      expect(row.status).toBe('failed');
+      expect(row.error).toMatch(/Email provider is not configured/);
+    });
   });
 
   describe('leaving-soon', () => {

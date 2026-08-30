@@ -18,3 +18,9 @@ export const configOverrides = sqliteTable('config_overrides', {
   value: text('value').notNull(), // JSON of the full newsletter config
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
+
+export const serviceSettings = sqliteTable('service_settings', {
+  key: text('key').primaryKey(), // e.g. 'tautulli.url'
+  value: text('value').notNull(), // AES-256-GCM encrypted, base64(iv‖tag‖ciphertext)
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+});

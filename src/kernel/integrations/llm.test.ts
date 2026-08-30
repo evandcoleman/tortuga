@@ -46,24 +46,24 @@ describe('createLlmClient', () => {
 });
 
 describe('resolveLlmClient', () => {
-  const env = (over: Record<string, string | undefined> = {}) => ({
-    ANTHROPIC_API_KEY: undefined, OPENAI_API_KEY: undefined, ...over,
+  const keys = (over: Record<string, string | undefined> = {}) => ({
+    anthropicApiKey: undefined, openaiApiKey: undefined, ...over,
   }) as any;
   const cfg = (over: Record<string, unknown> = {}) => ({
     commentary: { enabled: false, provider: 'anthropic', model: '', voice: '', ...over },
   }) as any;
 
   it('returns null when commentary is disabled', () => {
-    expect(resolveLlmClient(env(), cfg())).toBeNull();
+    expect(resolveLlmClient(keys(), cfg())).toBeNull();
   });
 
   it('throws when enabled but the provider key is missing', () => {
-    expect(() => resolveLlmClient(env(), cfg({ enabled: true, provider: 'openai' })))
+    expect(() => resolveLlmClient(keys(), cfg({ enabled: true, provider: 'openai' })))
       .toThrow(/OPENAI_API_KEY/);
   });
 
   it('builds a client when enabled and key present', () => {
-    const c = resolveLlmClient(env({ ANTHROPIC_API_KEY: 'sk-ant' }), cfg({ enabled: true }));
+    const c = resolveLlmClient(keys({ anthropicApiKey: 'sk-ant' }), cfg({ enabled: true }));
     expect(c).not.toBeNull();
     expect(typeof c!.generateText).toBe('function');
   });

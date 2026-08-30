@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { getAppContext, invalidateAppContext, resetAppContextForTests } from './context';
 import { writeConfigOverride } from './config/overrides';
 import { NewsletterConfigSchema } from './config/schema';
+import { writeServiceSettings } from './config/service-settings';
 
 let dir: string;
 
@@ -74,5 +75,48 @@ describe('getAppContext config resolution', () => {
     resetAppContextForTests();
     expect(getAppContext().maintainerr).toBeDefined();
     delete process.env.MAINTAINERR_URL;
+  });
+});
+
+describe('getAppContext service settings resolution', () => {
+  beforeEach(() => {
+    // These tests exercise the env-unset / db-configured / env-beats-db matrix, so
+    // clear the always-set env values from the outer beforeEach.
+    delete process.env.TAUTULLI_URL;
+    delete process.env.TAUTULLI_API_KEY;
+    delete process.env.TMDB_API_KEY;
+    delete process.env.RESEND_API_KEY;
+    resetAppContextForTests();
+  });
+
+  it('leaves tautulli/tmdb/email null when nothing is configured', () => {
+    const ctx = getAppContext();
+    expect(ctx.tautulli).toBeNull();
+    expect(ctx.tmdb).toBeNull();
+    expect(ctx.email).toBeNull();
+  });
+
+  it('builds a tautulli client from db-configured settings', async () => {
+    const ctx = getAppContext();
+    writeServiceSettings(
+      ctx.db,
+      { 'tautulli.url': 'http://tautulli.db.local', 'tautulli.api_key': 'db-key' },
+      ctx.env,
+    );
+    await invalidateAppContext();
+    expect(getAppContext().tautulli).not.toBeNull();
+  });
+
+  it('env value wins over a db value for the same field', async () => {
+    const ctx = getAppContext();
+    writeServiceSettings(
+      ctx.db,
+      { 'tmdb.api_key': 'db-key' },
+      ctx.env,
+    );
+    process.env.TMDB_API_KEY = 'env-key';
+    await invalidateAppContext();
+    expect(getAppContext().tmdb).not.toBeNull();
+    delete process.env.TMDB_API_KEY;
   });
 });

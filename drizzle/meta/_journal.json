@@ -43,6 +43,13 @@
       "when": 1788053748245,
       "tag": "0005_flashy_psynapse",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1788131698221,
+      "tag": "0006_glamorous_mandrill",
+      "breakpoints": true
     }
   ]
 }

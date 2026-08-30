@@ -30,11 +30,15 @@ export async function GET() {
     try { ctx.db.$client.prepare('select 1').all(); checks.db = 'ok'; }
     catch { checks.db = 'fail'; }
 
-    try { await ctx.tautulli.getUsers(); checks.tautulli = 'ok'; }
-    catch { checks.tautulli = 'fail'; }
+    if (!ctx.tautulli) {
+      checks.tautulli = 'fail';
+    } else {
+      try { await ctx.tautulli.getUsers(); checks.tautulli = 'ok'; }
+      catch { checks.tautulli = 'fail'; }
+    }
 
-    // Email provider is instantiated but not pinged — just report its name.
-    const emailProvider = ctx.email.name;
+    // Email provider is instantiated but not pinged — just report its name (or null if unconfigured).
+    const emailProvider = ctx.email?.name ?? null;
 
     const jobs: SchedulerJob[] = ctx.scheduler.list().map(job => ({
       name: job.name,

@@ -1,4 +1,4 @@
-import type { Env, NewsletterConfig } from '../config/schema';
+import type { NewsletterConfig } from '../config/schema';
 import { LlmError } from './errors';
 import { fetchWithRetry } from './http';
 
@@ -75,14 +75,20 @@ export function createLlmClient(opts: LlmOpts): LlmClient {
   };
 }
 
+/** Effective (env-or-db resolved) API keys for the LLM providers commentary can use. */
+export interface LlmProviderKeys {
+  anthropicApiKey?: string;
+  openaiApiKey?: string;
+}
+
 export function resolveLlmClient(
-  env: Env,
+  keys: LlmProviderKeys,
   newsletter: NewsletterConfig,
   fetcher?: typeof fetch,
 ): LlmClient | null {
   const c = newsletter.commentary;
   if (!c?.enabled) return null;
-  const apiKey = c.provider === 'anthropic' ? env.ANTHROPIC_API_KEY : env.OPENAI_API_KEY;
+  const apiKey = c.provider === 'anthropic' ? keys.anthropicApiKey : keys.openaiApiKey;
   if (!apiKey) {
     const key = c.provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY';
     throw new Error(`newsletter.commentary.enabled is true but ${key} is not set`);

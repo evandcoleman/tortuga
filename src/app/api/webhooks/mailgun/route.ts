@@ -12,7 +12,8 @@ const TERMINAL_TYPES = new Set(['delivered', 'bounced', 'complained', 'failed'])
 
 export async function POST(req: Request) {
   const ctx = getAppContext();
-  if (ctx.email.name !== 'mailgun') {
+  const email = ctx.email;
+  if (!email || email.name !== 'mailgun') {
     return NextResponse.json({ error: 'mailgun webhooks not enabled for this deploy' }, { status: 404 });
   }
   const body = await req.text();
@@ -21,10 +22,10 @@ export async function POST(req: Request) {
     log.warn('webhook received but MAILGUN_WEBHOOK_SIGNING_KEY unset');
     return NextResponse.json({ error: 'not configured' }, { status: 401 });
   }
-  if (!ctx.email.verifyWebhook({ body, headers: req.headers, secret })) {
+  if (!email.verifyWebhook({ body, headers: req.headers, secret })) {
     return NextResponse.json({ error: 'invalid signature' }, { status: 401 });
   }
-  const event = ctx.email.parseEvent(body);
+  const event = email.parseEvent(body);
   ctx.db.insert(sendEvents).values({
     id: createId(),
     sendId: null,
