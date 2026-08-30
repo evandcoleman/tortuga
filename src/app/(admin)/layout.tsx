@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { auth, signOut } from '@/kernel/auth/auth';
+import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { getAppContext } from '@/kernel/context';
 import { Sidebar } from './_components/sidebar';
 
@@ -15,6 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   async function doSignOut() {
     'use server';
+    await requireAdminSession();
     await signOut({ redirectTo: '/login' });
   }
 

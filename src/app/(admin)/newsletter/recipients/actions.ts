@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getAppContext, invalidateAppContext } from '@/kernel/context';
+import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { createLogger } from '@/kernel/logging/logger';
 import {
   addManualRecipient,
@@ -34,6 +35,8 @@ export async function addRecipient(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  await requireAdminSession();
+
   const parsed = recipientSchema.safeParse({
     email: formData.get('email'),
     name: formData.get('name'),
@@ -69,6 +72,8 @@ export async function removeRecipient(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  await requireAdminSession();
+
   const parsed = removeSchema.safeParse({ email: formData.get('email') });
   if (!parsed.success) {
     return { status: 'error', error: 'Invalid recipient' };
@@ -94,6 +99,8 @@ export async function importRecipientsCsv(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
+  await requireAdminSession();
+
   const raw = formData.get('csv');
   if (typeof raw !== 'string' || raw.trim().length === 0) {
     return { status: 'error', error: 'Paste at least one email address' };

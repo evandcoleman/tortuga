@@ -5,6 +5,7 @@ import { createElement } from 'react';
 import { render } from '@react-email/render';
 import { desc } from 'drizzle-orm';
 import { getAppContext, invalidateAppContext } from '@/kernel/context';
+import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { writeConfigOverride } from '@/kernel/config/overrides';
 import { AppearanceSchema, type Appearance } from '@/modules/newsletter/appearance/schema';
 import { itemsCache } from '@/modules/newsletter/schema';
@@ -23,6 +24,8 @@ export async function importAppearance(
   | { success: true; appearance: Appearance; theme?: string; layout?: string }
   | { success: false; error: string }
 > {
+  await requireAdminSession();
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -62,6 +65,8 @@ export async function saveAppearance(
   theme: string,
   layout: string,
 ): Promise<{ success: boolean; error?: string }> {
+  await requireAdminSession();
+
   const result = AppearanceSchema.safeParse(appearance);
   if (!result.success) {
     const first = result.error.issues[0];
@@ -143,6 +148,8 @@ export async function renderAppearancePreview(
   theme: string,
   layout: string,
 ): Promise<{ success: true; html: string } | { success: false; error: string }> {
+  await requireAdminSession();
+
   const parsed = AppearanceSchema.safeParse(appearance);
   if (!parsed.success) {
     return { success: false, error: 'Invalid appearance configuration.' };

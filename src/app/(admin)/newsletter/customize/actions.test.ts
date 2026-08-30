@@ -1,7 +1,25 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const requireAdminSession = vi.fn();
+vi.mock('@/kernel/auth/require-admin-session', () => ({
+  requireAdminSession: () => requireAdminSession(),
+  UnauthorizedError: class UnauthorizedError extends Error {},
+}));
+
 import { importAppearance } from './actions';
 
 describe('importAppearance', () => {
+  beforeEach(() => {
+    requireAdminSession.mockReset();
+    requireAdminSession.mockResolvedValue({ email: 'admin@example.com' });
+  });
+
+  it('rejects when there is no admin session', async () => {
+    requireAdminSession.mockRejectedValue(new Error('Unauthorized'));
+
+    await expect(importAppearance('{}')).rejects.toThrow('Unauthorized');
+  });
+
   it('parses a valid appearance JSON', async () => {
     const r = await importAppearance(
       JSON.stringify({

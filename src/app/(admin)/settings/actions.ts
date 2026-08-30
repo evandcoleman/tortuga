@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getAppContext, invalidateAppContext } from '@/kernel/context';
+import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { writeConfigOverride, clearConfigOverride } from '@/kernel/config/overrides';
 import { createEmailProvider } from '@/kernel/email/factory';
 import {
@@ -18,6 +19,8 @@ export type SaveState =
   | { status: 'error'; errors: Record<string, string> };
 
 export async function saveSettings(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  await requireAdminSession();
+
   const result = parseNewsletterForm(formData);
   if (!result.ok) return { status: 'error', errors: result.errors };
 
@@ -37,6 +40,8 @@ export async function saveSettings(_prev: SaveState, formData: FormData): Promis
  * details are sanitized inside the test helpers before reaching the UI.
  */
 export async function testConnections(): Promise<ConnectionTestsResult> {
+  await requireAdminSession();
+
   const ctx = getAppContext();
   const [tautulli, tmdb] = await Promise.all([
     testTautulli(ctx.tautulli),
@@ -49,6 +54,8 @@ export async function testConnections(): Promise<ConnectionTestsResult> {
 }
 
 export async function revertToFileDefault(): Promise<void> {
+  await requireAdminSession();
+
   const ctx = getAppContext();
   clearConfigOverride(ctx.db);
   await invalidateAppContext();

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { and, desc, eq } from 'drizzle-orm';
 import { getAppContext, invalidateAppContext } from '@/kernel/context';
+import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { writeConfigOverride } from '@/kernel/config/overrides';
 import { digests, sends } from '@/modules/newsletter/schema';
 import { runDigest } from '@/modules/newsletter/pipeline/run';
@@ -31,6 +32,8 @@ export type SendNowResult =
  * with a non-zero sentCount means the send was partial.
  */
 export async function sendNowDigest(themeId?: string, layoutId?: string): Promise<SendNowResult> {
+  await requireAdminSession();
+
   const ctx = getAppContext();
   const newsletter =
     themeId && layoutId
@@ -73,6 +76,8 @@ export async function sendNowDigest(themeId?: string, layoutId?: string): Promis
 }
 
 export async function savePreviewDefault(themeId: string, layoutId: string): Promise<void> {
+  await requireAdminSession();
+
   const ctx = getAppContext();
   writeConfigOverride(ctx.db, { ...ctx.config.newsletter, theme: themeId, layout: layoutId });
   await invalidateAppContext();
@@ -86,6 +91,8 @@ export async function sendTestDigest(
   layoutId: string,
   toEmail: string,
 ): Promise<TestDigestResult> {
+  await requireAdminSession();
+
   const ctx = getAppContext();
   const latest = ctx.db
     .select()

@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { desc, eq } from 'drizzle-orm';
 import { getAppContext } from '@/kernel/context';
+import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { runDigest } from '@/modules/newsletter/pipeline/run';
 import { getThemedPreviews } from '@/modules/newsletter/pipeline/preview-cache';
 import { digests, recipientsCache } from '@/modules/newsletter/schema';
@@ -19,6 +20,7 @@ export const dynamic = 'force-dynamic';
 
 async function generate() {
   'use server';
+  await requireAdminSession();
   const ctx = getAppContext();
   await runDigest({
     db: ctx.db,

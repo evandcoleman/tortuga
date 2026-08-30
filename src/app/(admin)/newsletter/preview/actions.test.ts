@@ -19,6 +19,12 @@ vi.mock('@/kernel/context', () => ({
   invalidateAppContext: vi.fn(),
 }));
 
+const requireAdminSession = vi.fn();
+vi.mock('@/kernel/auth/require-admin-session', () => ({
+  requireAdminSession: () => requireAdminSession(),
+  UnauthorizedError: class UnauthorizedError extends Error {},
+}));
+
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 // Minimal Drizzle query-builder stub: select().from().where().orderBy().limit().all()
@@ -71,6 +77,16 @@ describe('sendTestDigest server action', () => {
   beforeEach(() => {
     renderAndSendTestDigest.mockReset();
     getAppContext.mockReset();
+    requireAdminSession.mockReset();
+    requireAdminSession.mockResolvedValue({ email: 'admin@example.com' });
+  });
+
+  it('rejects when there is no admin session', async () => {
+    getAppContext.mockReturnValue(makeCtx([{ id: 'dig-9', renderedSubject: 's' }]));
+    requireAdminSession.mockRejectedValue(new Error('Unauthorized'));
+
+    await expect(sendTestDigest('gold', 'grid', 'me@example.com')).rejects.toThrow('Unauthorized');
+    expect(renderAndSendTestDigest).not.toHaveBeenCalled();
   });
 
   it('delegates to renderAndSendTestDigest with the latest rendered digest and config', async () => {
@@ -142,6 +158,16 @@ describe('sendNowDigest server action', () => {
   beforeEach(() => {
     runDigest.mockReset();
     getAppContext.mockReset();
+    requireAdminSession.mockReset();
+    requireAdminSession.mockResolvedValue({ email: 'admin@example.com' });
+  });
+
+  it('rejects when there is no admin session', async () => {
+    getAppContext.mockReturnValue(makeSendNowCtx([]));
+    requireAdminSession.mockRejectedValue(new Error('Unauthorized'));
+
+    await expect(sendNowDigest()).rejects.toThrow('Unauthorized');
+    expect(runDigest).not.toHaveBeenCalled();
   });
 
   it('runs a real (non-dry-run) digest and reports the sent recipient count', async () => {
