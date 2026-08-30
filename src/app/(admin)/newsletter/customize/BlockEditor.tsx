@@ -23,6 +23,7 @@ const LABELS: Record<BlockId, string> = {
   header: 'Header',
   intro: 'AI intro',
   libraries: 'Library sections',
+  leaving: 'Leaving soon',
   freeform: 'Freeform block',
   actions: 'Action buttons',
   footer: 'Footer',

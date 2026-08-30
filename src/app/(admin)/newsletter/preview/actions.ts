@@ -45,6 +45,7 @@ export async function sendNowDigest(themeId?: string, layoutId?: string): Promis
       db: ctx.db,
       tautulli: ctx.tautulli,
       tmdb: ctx.tmdb,
+      maintainerr: ctx.maintainerr,
       provider: ctx.email,
       llm: ctx.llm,
       config: newsletter,

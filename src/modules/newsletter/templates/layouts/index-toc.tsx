@@ -19,7 +19,7 @@ function padIndex(n: number, total: number): string {
   return String(n).padStart(width, '0');
 }
 
-export function IndexTocItems({ items, theme, itemDisplay }: LayoutItemsProps) {
+export function IndexTocItems({ items, theme, itemDisplay, timezone }: LayoutItemsProps) {
   const { palette } = theme;
   const d = itemDisplay ?? DEFAULT_DISPLAY;
   if (items.length === 0) return null;
@@ -32,6 +32,7 @@ export function IndexTocItems({ items, theme, itemDisplay }: LayoutItemsProps) {
           index={padIndex(i + 1, items.length)}
           theme={theme}
           display={d}
+          timezone={timezone}
         />
       ))}
     </Section>
@@ -43,14 +44,16 @@ function IndexEntry({
   index,
   theme,
   display,
+  timezone,
 }: {
   item: EnrichedItem;
   index: string;
   theme: Theme;
   display: ResolvedItemDisplay;
+  timezone?: string;
 }) {
   const { palette, fonts, layout } = theme;
-  const kicker = itemKicker(item);
+  const kicker = itemKicker(item, timezone);
   const overview = truncate(item.overview, display.overviewMaxChars ?? 160);
   const showsRating = display.showRating && item.rating > 0;
   const title = displayTitle(item);

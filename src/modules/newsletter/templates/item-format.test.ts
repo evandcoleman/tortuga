@@ -1,6 +1,36 @@
 import { describe, it, expect } from 'vitest';
-import { formatEpisodeRange, itemKicker } from './item-format';
+import { formatEpisodeRange, itemKicker, leavesLabel } from './item-format';
 import type { EnrichedItem } from '../types';
+
+describe('itemKicker leaves option', () => {
+  const leavingItem: EnrichedItem = {
+    guid: 'x', title: 'X', mediaType: 'movie', libraryName: 'Movies', addedAt: new Date(),
+    rating: 0, posterUrl: null, overview: '', leavesAt: new Date('2026-09-06T12:00:00Z'), year: 2020,
+  };
+
+  it('includes the Leaves label by default', () => {
+    expect(itemKicker(leavingItem, 'UTC')).toContain('Leaves');
+  });
+
+  it('omits the Leaves label when includeLeaves is false', () => {
+    const kicker = itemKicker(leavingItem, 'UTC', { includeLeaves: false });
+    expect(kicker).not.toContain('Leaves');
+    expect(kicker).toContain('Film');
+  });
+});
+
+describe('leavesLabel', () => {
+  it('formats a date using the given IANA timezone', () => {
+    const date = new Date('2026-09-06T12:00:00Z');
+    expect(leavesLabel(date, 'UTC')).toBe('Leaves Sun, Sep 6');
+  });
+
+  it('falls back to formatting without a timeZone when the timezone is invalid', () => {
+    const date = new Date('2026-09-06T12:00:00Z');
+    expect(() => leavesLabel(date, 'Not/AZone')).not.toThrow();
+    expect(leavesLabel(date, 'Not/AZone')).toBe(leavesLabel(date, undefined));
+  });
+});
 
 describe('formatEpisodeRange', () => {
   it('formats a single number', () => {

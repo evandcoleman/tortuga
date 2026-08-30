@@ -23,6 +23,12 @@ function list(fd: FormData, key: string): string[] {
 function opt(value: string): string | undefined {
   return value === '' ? undefined : value;
 }
+function numList(fd: FormData, key: string): number[] {
+  return fd
+    .getAll(key)
+    .map(v => Number(v))
+    .filter(n => Number.isFinite(n));
+}
 
 export function parseNewsletterForm(fd: FormData): ParseResult {
   const provider = str(fd, 'email.provider') === 'mailgun' ? 'mailgun' : 'resend';
@@ -79,6 +85,20 @@ export function parseNewsletterForm(fd: FormData): ParseResult {
       disclaimer: bool(fd, 'commentary.disclaimer'),
     },
     ...(hasExtras ? { extras: extrasFields } : {}),
+    // `leaving.days` is always present in the real form (either editable or as a
+    // hidden round-trip value), so its presence signals the whole group was
+    // submitted. Omitting the key entirely (rather than parsing zeros) lets the
+    // schema's defaults apply for callers — like older tests — that don't send it.
+    ...(fd.has('leaving.days')
+      ? {
+          leaving: {
+            enabled: bool(fd, 'leaving.enabled'),
+            days: num(fd, 'leaving.days'),
+            excluded_collection_ids: numList(fd, 'leaving.excluded_collection_ids'),
+            heading: str(fd, 'leaving.heading') || 'Leaving soon',
+          },
+        }
+      : {}),
   };
 
   const parsed = NewsletterConfigSchema.safeParse(candidate);

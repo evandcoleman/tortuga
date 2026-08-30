@@ -12,8 +12,30 @@ export interface ResolvedItemDisplay {
 export function resolveBlocks(blocks?: { id: BlockId; enabled: boolean }[]): { id: BlockId; enabled: boolean }[] {
   if (!blocks || blocks.length === 0) return DEFAULT_BLOCK_ORDER.map(id => ({ id, enabled: true }));
   const seen = new Set(blocks.map(b => b.id));
-  const missing = DEFAULT_BLOCK_ORDER.filter(id => !seen.has(id)).map(id => ({ id, enabled: true }));
-  return [...blocks, ...missing];
+  const missing = DEFAULT_BLOCK_ORDER.filter(id => !seen.has(id));
+
+  // Insert each missing block (e.g. a newly introduced kind like `leaving`) right
+  // after the nearest block that precedes it in DEFAULT_BLOCK_ORDER and is already
+  // present, rather than always appending at the very end. This keeps a stored
+  // appearance's custom order intact while placing new blocks in a sensible spot.
+  let result = [...blocks];
+  for (const id of missing) {
+    const defaultIndex = DEFAULT_BLOCK_ORDER.indexOf(id);
+    let insertAfterIndex = -1;
+    for (let i = defaultIndex - 1; i >= 0; i--) {
+      const idx = result.findIndex(b => b.id === DEFAULT_BLOCK_ORDER[i]);
+      if (idx !== -1) {
+        insertAfterIndex = idx;
+        break;
+      }
+    }
+    const entry = { id, enabled: true };
+    result =
+      insertAfterIndex === -1
+        ? [entry, ...result]
+        : [...result.slice(0, insertAfterIndex + 1), entry, ...result.slice(insertAfterIndex + 1)];
+  }
+  return result;
 }
 
 export function resolveItemDisplay(d?: Partial<ItemDisplay>): ResolvedItemDisplay {

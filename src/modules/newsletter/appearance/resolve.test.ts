@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveBlocks, resolveItemDisplay, posterScaleFactor, buildLibrarySections } from './resolve';
-import { DEFAULT_BLOCK_ORDER } from './schema';
+import { DEFAULT_BLOCK_ORDER, type BlockId } from './schema';
 import type { EnrichedItem } from '../types';
 
 const item = (libraryName: string, guid: string): EnrichedItem =>
@@ -15,6 +15,26 @@ describe('resolveBlocks', () => {
     expect(r[0]).toEqual({ id: 'footer', enabled: true });
     expect(r[1]).toEqual({ id: 'header', enabled: false });
     expect(r.map(b => b.id).sort()).toEqual([...DEFAULT_BLOCK_ORDER].sort()); // all present
+  });
+
+  it('inserts a newly introduced block kind after libraries, before freeform, for a stored list that predates it', () => {
+    const stored: { id: BlockId; enabled: boolean }[] = [
+      { id: 'header', enabled: true },
+      { id: 'intro', enabled: true },
+      { id: 'libraries', enabled: true },
+      { id: 'freeform', enabled: true },
+      { id: 'actions', enabled: true },
+      { id: 'footer', enabled: true },
+    ];
+    const r = resolveBlocks(stored);
+    expect(r.map(b => b.id)).toEqual(['header', 'intro', 'libraries', 'leaving', 'freeform', 'actions', 'footer']);
+    expect(r.find(b => b.id === 'leaving')).toEqual({ id: 'leaving', enabled: true });
+  });
+
+  it('defaults to the leaving block enabled, positioned after libraries and before freeform', () => {
+    const r = resolveBlocks();
+    expect(r.map(b => b.id)).toEqual([...DEFAULT_BLOCK_ORDER]);
+    expect(r[r.map(b => b.id).indexOf('libraries') + 1]).toEqual({ id: 'leaving', enabled: true });
   });
 });
 

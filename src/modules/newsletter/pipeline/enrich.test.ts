@@ -71,4 +71,41 @@ describe('enrichItems', () => {
     const out = await enrichItems(db, fakeTmdb as any, [epItem]);
     expect(out[0].episodeNumber).toBe(9);
   });
+
+  it('carries leavesAt through on a fresh enrich', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const leavesAt = new Date('2026-11-01T12:00:00Z');
+    const out = await enrichItems(db, fakeTmdb as any, [{ ...item, guid: 'leaving1', leavesAt }]);
+    expect(out[0].leavesAt).toEqual(leavesAt);
+  });
+
+  it('cache hit without leavesAt on the request yields undefined, even if a prior cached payload had one', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const firstLeavesAt = new Date('2026-11-01T12:00:00Z');
+    await enrichItems(db, fakeTmdb as any, [{ ...item, guid: 'leaving2', leavesAt: firstLeavesAt }]);
+    const out = await enrichItems(db, fakeTmdb as any, [{ ...item, guid: 'leaving2' }]);
+    expect(out[0].leavesAt).toBeUndefined();
+  });
+
+  it('cache hit with leavesAt on the request uses the request value (request is source of truth)', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const firstLeavesAt = new Date('2026-11-01T12:00:00Z');
+    await enrichItems(db, fakeTmdb as any, [{ ...item, guid: 'leaving3', leavesAt: firstLeavesAt }]);
+    const secondLeavesAt = new Date('2026-11-05T12:00:00Z');
+    const out = await enrichItems(db, fakeTmdb as any, [{ ...item, guid: 'leaving3', leavesAt: secondLeavesAt }]);
+    expect(out[0].leavesAt).toEqual(secondLeavesAt);
+  });
+
+  it('never persists leavesAt into the cache payload', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const leavesAt = new Date('2026-11-01T12:00:00Z');
+    await enrichItems(db, fakeTmdb as any, [{ ...item, guid: 'leaving4', leavesAt }]);
+    const [cached] = db.select().from(itemsCache).where(eq(itemsCache.guid, 'leaving4')).all();
+    const payload = JSON.parse(cached.payload);
+    expect(payload).not.toHaveProperty('leavesAt');
+  });
 });

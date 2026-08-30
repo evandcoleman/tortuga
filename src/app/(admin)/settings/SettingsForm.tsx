@@ -4,16 +4,29 @@ import { useActionState, useState, useTransition } from 'react';
 import Link from 'next/link';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import type { ConnectionTestsResult } from '@/kernel/integrations/connection-tests';
+import type { MaintainerrCollection } from '@/kernel/integrations/maintainerr';
 import { Button, Card, CardHeader } from '../_components/ui';
 import { saveSettings, testConnections, type SaveState } from './actions';
 import { ConnectionStatus } from './ConnectionStatus';
 import { TextField, NumberField, TextareaField, SelectField, CheckboxField } from './fields';
+import { missingExcludedIds } from './leaving-exclusions';
 import { THEME_OPTIONS } from '@/modules/newsletter/templates/themes';
 import { LAYOUT_OPTIONS } from '@/modules/newsletter/templates/layouts';
 
 const initial: SaveState = { status: 'idle' };
 
-export function SettingsForm({ config }: { config: NewsletterConfig }) {
+export type LeavingCollectionsResult =
+  | { ok: true; collections: MaintainerrCollection[] }
+  | { ok: false };
+
+export function SettingsForm({
+  config,
+  leavingCollections,
+}: {
+  config: NewsletterConfig;
+  /** null when MAINTAINERR_URL is unset; { ok: false } when the live fetch failed. */
+  leavingCollections: LeavingCollectionsResult | null;
+}) {
   const [state, action, pending] = useActionState(saveSettings, initial);
   const err = state.status === 'error' ? state.errors : {};
 
@@ -119,6 +132,111 @@ export function SettingsForm({ config }: { config: NewsletterConfig }) {
             hint="Powers “Open in Plex” deep-links in the email. Find it in your Plex server under Settings → Manage → Remote Access (the ~40-character Server ID). Leave blank to skip deep-links."
           />
         </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Leaving soon (Maintainerr)"
+          description="Surface a section for media Maintainerr will delete soon."
+        />
+        {leavingCollections === null ? (
+          <>
+            <p className="text-[13px] text-muted">
+              Set <code className="text-[12px] text-fg">MAINTAINERR_URL</code> to enable this feature.
+            </p>
+            {/* Round-trip config the UI doesn't surface here, so saving other
+                settings never drops it. */}
+            <input type="hidden" name="leaving.enabled" value={config.leaving.enabled ? 'on' : ''} />
+            <input type="hidden" name="leaving.days" value={config.leaving.days} />
+            <input type="hidden" name="leaving.heading" value={config.leaving.heading} />
+            {config.leaving.excluded_collection_ids.map(id => (
+              <input key={id} type="hidden" name="leaving.excluded_collection_ids" value={id} />
+            ))}
+          </>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <NumberField
+                name="leaving.days"
+                label="Days before removal"
+                defaultValue={config.leaving.days}
+                min={1}
+                max={90}
+                error={err['leaving.days']}
+                hint="1–90"
+              />
+              <TextField
+                name="leaving.heading"
+                label="Section heading"
+                defaultValue={config.leaving.heading}
+                error={err['leaving.heading']}
+              />
+            </div>
+            <div className="mt-2">
+              <CheckboxField
+                name="leaving.enabled"
+                label="Show the leaving soon section"
+                defaultChecked={config.leaving.enabled}
+              />
+            </div>
+            <div className="mt-4">
+              <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">
+                Excluded collections
+              </span>
+              {!leavingCollections.ok ? (
+                <>
+                  <p className="text-[12px] text-danger">
+                    Could not load collections from Maintainerr. Existing exclusions are kept as-is.
+                  </p>
+                  {config.leaving.excluded_collection_ids.length > 0 ? (
+                    <p className="mt-1 text-[12px] text-muted">
+                      Currently excluded IDs: {config.leaving.excluded_collection_ids.join(', ')}
+                    </p>
+                  ) : null}
+                  {config.leaving.excluded_collection_ids.map(id => (
+                    <input key={id} type="hidden" name="leaving.excluded_collection_ids" value={id} />
+                  ))}
+                </>
+              ) : leavingCollections.collections.length === 0 ? (
+                <>
+                  <p className="text-[12px] text-muted">No Maintainerr collections have removal rules yet.</p>
+                  {config.leaving.excluded_collection_ids.map(id => (
+                    <input key={id} type="hidden" name="leaving.excluded_collection_ids" value={id} />
+                  ))}
+                </>
+              ) : (
+                <>
+                  <ul className="grid gap-1.5">
+                    {leavingCollections.collections.map(c => (
+                      <li key={c.id}>
+                        <label className="flex items-start gap-2.5 py-1">
+                          <input
+                            className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+                            type="checkbox"
+                            name="leaving.excluded_collection_ids"
+                            value={c.id}
+                            defaultChecked={config.leaving.excluded_collection_ids.includes(c.id)}
+                          />
+                          <span className="text-[13.5px] text-fg">
+                            {c.title} <span className="text-muted">· deletes after {c.deleteAfterDays} days</span>
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                  {/* Stored exclusions for collections no longer in the rendered
+                      checklist (deleted, or type changed) still round-trip. */}
+                  {missingExcludedIds(
+                    config.leaving.excluded_collection_ids,
+                    leavingCollections.collections.map(c => c.id),
+                  ).map(id => (
+                    <input key={id} type="hidden" name="leaving.excluded_collection_ids" value={id} />
+                  ))}
+                </>
+              )}
+            </div>
+          </>
+        )}
       </Card>
 
       <Card>

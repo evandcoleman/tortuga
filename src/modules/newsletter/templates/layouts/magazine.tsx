@@ -11,7 +11,7 @@ const DEFAULT_DISPLAY: ResolvedItemDisplay = {
   showPoster: true, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md',
 };
 
-export function MagazineItems({ items, theme, itemDisplay }: LayoutItemsProps) {
+export function MagazineItems({ items, theme, itemDisplay, timezone }: LayoutItemsProps) {
   const { palette, fonts, layout } = theme;
   const d = itemDisplay ?? DEFAULT_DISPLAY;
   const scale = posterScaleFactor(d.posterScale);
@@ -20,7 +20,7 @@ export function MagazineItems({ items, theme, itemDisplay }: LayoutItemsProps) {
   return (
     <>
       {items.map(item => {
-        const kicker = itemKicker(item);
+        const kicker = itemKicker(item, timezone);
         const overview = truncate(item.overview, d.overviewMaxChars ?? 360);
         const showsRating = d.showRating && item.rating > 0;
         return (

@@ -58,6 +58,7 @@ function makeSendNowCtx(sentRows: Array<Record<string, unknown>>) {
     email: { name: 'resend' },
     tautulli: {},
     tmdb: {},
+    maintainerr: { getCollections: vi.fn() },
     llm: null,
     env: { APP_URL: 'https://x.test', SESSION_SECRET: 'secret' },
     config: {
@@ -181,6 +182,11 @@ describe('sendNowDigest server action', () => {
     // Assert
     expect(runDigest).toHaveBeenCalledWith(
       expect.objectContaining({ config: expect.objectContaining({ theme: 'gold', layout: 'grid' }) }),
+    );
+    // The Maintainerr client from the app context must be forwarded so leaving-soon
+    // items can be fetched.
+    expect(runDigest.mock.calls[0][0].maintainerr).toBe(
+      getAppContext.mock.results[0].value.maintainerr,
     );
     // dryRun must NOT be set — this is a live send
     expect(runDigest.mock.calls[0][0].dryRun).toBeUndefined();

@@ -26,6 +26,7 @@ async function generate() {
     db: ctx.db,
     tautulli: ctx.tautulli,
     tmdb: ctx.tmdb,
+    maintainerr: ctx.maintainerr,
     provider: ctx.email,
     llm: ctx.llm,
     config: ctx.config.newsletter,

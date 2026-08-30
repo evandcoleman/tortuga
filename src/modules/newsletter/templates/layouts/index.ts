@@ -18,6 +18,8 @@ export interface LayoutItemsProps {
   items: EnrichedItem[];
   theme: Theme;
   itemDisplay?: ResolvedItemDisplay;
+  /** IANA timezone used to format `item.leavesAt` ("Leaves Sat, Sep 6"). */
+  timezone?: string;
 }
 
 export interface NewsletterLayout {

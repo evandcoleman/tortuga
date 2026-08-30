@@ -16,4 +16,5 @@ export interface EnrichedItem {
   genres?: string[];
   ratingKey?: string;
   plexUrl?: string;
+  leavesAt?: Date;
 }

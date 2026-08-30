@@ -8,13 +8,13 @@ const DEFAULT_DISPLAY: ResolvedItemDisplay = {
   showPoster: true, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md',
 };
 
-export function CompactItems({ items, theme, itemDisplay }: LayoutItemsProps) {
+export function CompactItems({ items, theme, itemDisplay, timezone }: LayoutItemsProps) {
   const { palette, fonts, layout } = theme;
   const d = itemDisplay ?? DEFAULT_DISPLAY;
   return (
     <Section style={{ marginTop: 8 }}>
       {items.map(item => {
-        const kicker = itemKicker(item);
+        const kicker = itemKicker(item, timezone);
         const showsRating = d.showRating && item.rating > 0;
         return (
           <Row key={item.guid} style={{ borderBottom: `1px solid ${palette.hairline}` }}>

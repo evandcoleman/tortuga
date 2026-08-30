@@ -13,7 +13,7 @@ const DEFAULT_DISPLAY: ResolvedItemDisplay = {
   showPoster: true, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md',
 };
 
-export function LedgerItems({ items, theme, itemDisplay }: LayoutItemsProps) {
+export function LedgerItems({ items, theme, itemDisplay, timezone }: LayoutItemsProps) {
   const d = itemDisplay ?? DEFAULT_DISPLAY;
   return (
     <>
@@ -25,6 +25,7 @@ export function LedgerItems({ items, theme, itemDisplay }: LayoutItemsProps) {
           display={d}
           posterLeft={index % 2 === 0}
           withRule={index > 0}
+          timezone={timezone}
         />
       ))}
     </>
@@ -37,11 +38,12 @@ interface LedgerEntryProps {
   display: ResolvedItemDisplay;
   posterLeft: boolean;
   withRule: boolean;
+  timezone?: string;
 }
 
-function LedgerEntry({ item, theme, display, posterLeft, withRule }: LedgerEntryProps) {
+function LedgerEntry({ item, theme, display, posterLeft, withRule, timezone }: LedgerEntryProps) {
   const { palette, fonts, layout } = theme;
-  const kicker = itemKicker(item);
+  const kicker = itemKicker(item, timezone);
   const overview = truncate(item.overview, display.overviewMaxChars ?? 260);
   const showsRating = display.showRating && item.rating > 0;
   const title = displayTitle(item);

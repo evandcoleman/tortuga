@@ -106,4 +106,39 @@ describe('parseNewsletterForm', () => {
     expect(without.ok).toBe(true);
     if (without.ok) expect(without.config.layout).toBe('list');
   });
+
+  it('defaults leaving when the form omits it entirely (e.g. Maintainerr disabled at build time)', () => {
+    const r = parseNewsletterForm(fd(base));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.config.leaving).toEqual({
+        enabled: true, days: 7, excluded_collection_ids: [], heading: 'Leaving soon',
+      });
+    }
+  });
+
+  it('parses leaving fields including a multi-value exclusions checklist', () => {
+    const form = fd({ ...base, 'leaving.enabled': 'on', 'leaving.days': '14', 'leaving.heading': 'Rotating out' });
+    form.append('leaving.excluded_collection_ids', '3');
+    form.append('leaving.excluded_collection_ids', '9');
+    const r = parseNewsletterForm(form);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.config.leaving).toEqual({
+        enabled: true, days: 14, excluded_collection_ids: [3, 9], heading: 'Rotating out',
+      });
+    }
+  });
+
+  it('rejects leaving.days of 0', () => {
+    const r = parseNewsletterForm(fd({ ...base, 'leaving.days': '0' }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors['leaving.days']).toBeTruthy();
+  });
+
+  it('rejects leaving.days of 91', () => {
+    const r = parseNewsletterForm(fd({ ...base, 'leaving.days': '91' }));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors['leaving.days']).toBeTruthy();
+  });
 });

@@ -2,23 +2,11 @@ import { eq } from 'drizzle-orm';
 import type { Db } from '@/kernel/db/client';
 import type { TmdbClient } from '@/kernel/integrations/tmdb';
 import type { TautulliItem } from '@/kernel/integrations/tautulli';
+import { mapWithConcurrency } from '@/kernel/util/concurrency';
 import { itemsCache } from '../schema';
 import type { EnrichedItem } from '../types';
 
 const CONCURRENCY = 5;
-
-async function mapWithConcurrency<I, O>(items: I[], fn: (i: I) => Promise<O>, limit: number): Promise<O[]> {
-  const out: O[] = new Array(items.length);
-  let idx = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (idx < items.length) {
-      const i = idx++;
-      out[i] = await fn(items[i]);
-    }
-  });
-  await Promise.all(workers);
-  return out;
-}
 
 function pickRatingKey(raw: Record<string, unknown>, mediaType: string): string | undefined {
   const v = (k: string) => {
@@ -36,7 +24,7 @@ function pickRatingKey(raw: Record<string, unknown>, mediaType: string): string 
 }
 
 export async function enrichItems(db: Db, tmdb: TmdbClient, items: TautulliItem[]): Promise<EnrichedItem[]> {
-  return mapWithConcurrency(items, async (item) => {
+  return mapWithConcurrency(items, CONCURRENCY, async (item) => {
     const ratingKey = pickRatingKey(item.raw, item.mediaType);
     const rawEpisodeNumber =
       item.raw.media_index !== undefined && item.raw.media_index !== null
@@ -51,6 +39,9 @@ export async function enrichItems(db: Db, tmdb: TmdbClient, items: TautulliItem[
         addedAt: cached[0].addedAt,
         ratingKey: ratingKey ?? prior.ratingKey,
         episodeNumber: episodeNumber ?? prior.episodeNumber,
+        // The request is the source of truth for leavesAt; never resurrect a
+        // stale value from the cached payload (leavesAt is not persisted there).
+        leavesAt: item.leavesAt,
       };
     }
     const isTv = item.mediaType === 'episode' || item.mediaType === 'season' || item.mediaType === 'show';
@@ -76,13 +67,17 @@ export async function enrichItems(db: Db, tmdb: TmdbClient, items: TautulliItem[
           : undefined,
       episodeNumber,
       ratingKey,
+      leavesAt: item.leavesAt,
     };
+    // leavesAt is request-scoped (Maintainerr window state), not a durable
+    // property of the item — never persist it into the cache payload.
+    const { leavesAt: _leavesAt, ...cacheable } = enriched;
     db.insert(itemsCache).values({
       guid: item.guid,
-      payload: JSON.stringify(enriched),
+      payload: JSON.stringify(cacheable),
       addedAt: item.addedAt,
       cachedAt: new Date(),
     }).run();
     return enriched;
-  }, CONCURRENCY);
+  });
 }

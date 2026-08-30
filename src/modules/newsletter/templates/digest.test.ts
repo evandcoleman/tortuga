@@ -142,6 +142,99 @@ describe('DigestEmail', () => {
   });
 });
 
+describe('DigestEmail leaving block', () => {
+  const baseProps = {
+    items,
+    unsubscribeUrl: 'https://x/u',
+    appName: 'Tortuga',
+    windowStart: new Date('2026-05-01T00:00:00Z'),
+    windowEnd: new Date('2026-05-08T00:00:00Z'),
+  };
+
+  const leavingItem: EnrichedItem = {
+    guid: 'leave-1',
+    title: 'The Departing Film',
+    mediaType: 'movie',
+    libraryName: 'Movies',
+    addedAt: new Date('2026-04-01T00:00:00Z'),
+    rating: 8.1,
+    posterUrl: 'https://image.tmdb.org/t/p/w500/x.jpg',
+    overview: 'A summary',
+    leavesAt: new Date('2026-09-06T12:00:00Z'),
+  };
+
+  for (const layoutId of ['list', 'gallery', 'magazine', 'compact', 'timeline']) {
+    it(`renders the leaving heading and exactly one Leaves label per item in the ${layoutId} layout`, async () => {
+      const html = await render(
+        DigestEmail({
+          ...baseProps,
+          layoutId,
+          leavingItems: [leavingItem],
+          leavingHeading: 'On its way out',
+          timezone: 'UTC',
+        }),
+      );
+      expect(html).toContain('On its way out');
+      expect(html).toContain('The Departing Film');
+      expect(html).toContain('Leaves');
+      expect(html).toContain('Sep 6');
+      expect(html.match(/Leaves /g)?.length).toBe(1);
+    });
+  }
+
+  it('formats the Leaves date in the given timezone', async () => {
+    const html = await render(
+      DigestEmail({
+        ...baseProps,
+        leavingItems: [leavingItem],
+        timezone: 'America/Los_Angeles', // 12:00 UTC -> Sep 6 05:00 PDT, still Sep 6
+      }),
+    );
+    expect(html).toContain('Leaves Sun, Sep 6');
+  });
+
+  it('omits the leaving section entirely when the list is empty', async () => {
+    const html = await render(
+      DigestEmail({ ...baseProps, leavingItems: [], leavingHeading: 'On its way out' }),
+    );
+    expect(html).not.toContain('On its way out');
+  });
+
+  it('omits the leaving section when leavingItems is absent', async () => {
+    const html = await render(DigestEmail({ ...baseProps, leavingHeading: 'On its way out' }));
+    expect(html).not.toContain('On its way out');
+  });
+
+  it('hides the leaving block when disabled via appearance, even with items', async () => {
+    const html = await render(
+      DigestEmail({
+        ...baseProps,
+        leavingItems: [leavingItem],
+        leavingHeading: 'On its way out',
+        appearance: { blocks: [{ id: 'leaving', enabled: false }] },
+      }),
+    );
+    expect(html).not.toContain('On its way out');
+  });
+
+  it('defaults to enabled, positioned after the library sections and before freeform/footer', async () => {
+    const html = await render(
+      DigestEmail({
+        ...baseProps,
+        leavingItems: [leavingItem],
+        leavingHeading: 'On its way out',
+        freeformHtml: '<p>Note.</p>',
+      }),
+    );
+    const librariesIdx = html.indexOf('Movies');
+    const leavingIdx = html.indexOf('On its way out');
+    const freeformIdx = html.indexOf('Note.');
+    expect(librariesIdx).toBeGreaterThan(-1);
+    expect(leavingIdx).toBeGreaterThan(librariesIdx);
+    expect(freeformIdx).toBeGreaterThan(leavingIdx);
+  });
+});
+
 describe('DigestEmail appearance', () => {
   const items: EnrichedItem[] = [
     { guid: 'a', libraryName: 'Movies', title: 'Alpha', mediaType: 'movie', addedAt: new Date('2026-05-20T00:00:00Z'), overview: 'x', rating: 0, posterUrl: '' },

@@ -35,6 +35,10 @@ export interface DigestEmailProps {
   personalLink?: DigestLink;
   freeformHtml?: string;
   appearance?: Appearance;
+  leavingItems?: EnrichedItem[];
+  leavingHeading?: string;
+  /** IANA timezone used to format the "Leaves <date>" label on leaving items. */
+  timezone?: string;
 }
 
 export function formatDateRange(start: Date, end: Date): string {
@@ -65,6 +69,9 @@ export function DigestEmail({
   personalLink,
   freeformHtml,
   appearance,
+  leavingItems,
+  leavingHeading,
+  timezone,
 }: DigestEmailProps) {
   const theme = resolveThemeWithOverrides(themeId, appearance?.theme_overrides);
   const itemDisplay = resolveItemDisplay(appearance?.item_display);
@@ -201,11 +208,62 @@ export function DigestEmail({
                 }}
               />
 
-              <SectionLayout.Items items={section.items} theme={theme} itemDisplay={itemDisplay} />
+              <SectionLayout.Items items={section.items} theme={theme} itemDisplay={itemDisplay} timezone={timezone} />
             </Section>
           );
         })}
       </>
+    ) : null;
+
+  const leavingNode =
+    leavingItems && leavingItems.length > 0 ? (
+      (() => {
+        const SectionLayout = resolveLayout(layoutId);
+        return (
+          <>
+            <Hr
+              style={{
+                borderColor: palette.rule,
+                borderStyle: 'solid',
+                borderWidth: `0 0 ${layout.ruleWidth}px`,
+                margin: '28px 0 0',
+              }}
+            />
+            <Section style={{ marginTop: 32 }}>
+              <Row>
+                <Column>
+                  <Text
+                    style={{
+                      margin: 0,
+                      fontSize: 10,
+                      letterSpacing: 3,
+                      textTransform: 'uppercase',
+                      color: palette.muted,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {leavingHeading ?? 'Leaving soon'}
+                  </Text>
+                </Column>
+                <Column align="right">
+                  <Text style={{ margin: 0, fontSize: 11, color: palette.muted }}>
+                    {leavingItems.length} {leavingItems.length === 1 ? 'title' : 'titles'}
+                  </Text>
+                </Column>
+              </Row>
+              <Hr
+                style={{
+                  borderColor: palette.hairline,
+                  borderStyle: 'solid',
+                  borderWidth: '0 0 1px',
+                  margin: '8px 0 0',
+                }}
+              />
+              <SectionLayout.Items items={leavingItems} theme={theme} itemDisplay={itemDisplay} timezone={timezone} />
+            </Section>
+          </>
+        );
+      })()
     ) : null;
 
   const freeformNode = freeformHtml ? (
@@ -315,6 +373,7 @@ export function DigestEmail({
     header: headerNode,
     intro: introNode,
     libraries: librariesNode,
+    leaving: leavingNode,
     freeform: freeformNode,
     actions: actionsNode,
     footer: footerNode,

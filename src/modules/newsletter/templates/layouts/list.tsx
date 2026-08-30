@@ -10,20 +10,30 @@ const DEFAULT_DISPLAY: ResolvedItemDisplay = {
   showPoster: true, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md',
 };
 
-export function ListItems({ items, theme, itemDisplay }: LayoutItemsProps) {
+export function ListItems({ items, theme, itemDisplay, timezone }: LayoutItemsProps) {
   const d = itemDisplay ?? DEFAULT_DISPLAY;
   return (
     <>
       {items.map(item => (
-        <ItemCard key={item.guid} item={item} theme={theme} display={d} />
+        <ItemCard key={item.guid} item={item} theme={theme} display={d} timezone={timezone} />
       ))}
     </>
   );
 }
 
-function ItemCard({ item, theme, display }: { item: EnrichedItem; theme: Theme; display: ResolvedItemDisplay }) {
+function ItemCard({
+  item,
+  theme,
+  display,
+  timezone,
+}: {
+  item: EnrichedItem;
+  theme: Theme;
+  display: ResolvedItemDisplay;
+  timezone?: string;
+}) {
   const { palette, fonts, layout } = theme;
-  const kicker = itemKicker(item);
+  const kicker = itemKicker(item, timezone);
   const overview = truncate(item.overview, display.overviewMaxChars ?? 220);
   const showsRating = display.showRating && item.rating > 0;
   const title = displayTitle(item);

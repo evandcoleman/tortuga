@@ -1,7 +1,33 @@
 import type { EnrichedItem } from '../types';
 
-export function itemKicker(item: EnrichedItem): string | null {
+// Formats an item's Maintainerr removal date as "Leaves <weekday>, <Mon D>" in the
+// given IANA timezone (falls back to the runtime default when omitted).
+export function leavesLabel(date: Date, timezone?: string): string {
+  const opts: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+  let formatted: string;
+  try {
+    formatted = new Intl.DateTimeFormat('en-US', { ...opts, timeZone: timezone }).format(date);
+  } catch (err) {
+    if (err instanceof RangeError) {
+      // Invalid IANA timezone (e.g. bad config value slipped through) — fall
+      // back to the runtime default rather than failing the whole digest.
+      formatted = new Intl.DateTimeFormat('en-US', opts).format(date);
+    } else {
+      throw err;
+    }
+  }
+  return `Leaves ${formatted}`;
+}
+
+export interface ItemKickerOptions {
+  /** Set false when the caller renders the "Leaves …" label elsewhere (e.g. the timeline rail), to avoid printing it twice. */
+  includeLeaves?: boolean;
+}
+
+export function itemKicker(item: EnrichedItem, timezone?: string, options?: ItemKickerOptions): string | null {
+  const includeLeaves = options?.includeLeaves ?? true;
   const bits: string[] = [];
+  if (includeLeaves && item.leavesAt) bits.push(leavesLabel(item.leavesAt, timezone));
   if (item.mediaType === 'movie') bits.push('Film');
   if (item.mediaType === 'show') bits.push('Series');
 

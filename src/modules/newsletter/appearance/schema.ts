@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isSafeColor, isSafeFontStack, isSafeLetterSpacing } from './sanitize';
 
-export const DEFAULT_BLOCK_ORDER = ['header', 'intro', 'libraries', 'freeform', 'actions', 'footer'] as const;
+export const DEFAULT_BLOCK_ORDER = ['header', 'intro', 'libraries', 'leaving', 'freeform', 'actions', 'footer'] as const;
 export type BlockId = (typeof DEFAULT_BLOCK_ORDER)[number];
 
 const safeColor = z.string().refine(isSafeColor, { message: 'unsafe or invalid color' });

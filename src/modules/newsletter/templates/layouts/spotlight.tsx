@@ -13,7 +13,7 @@ const DEFAULT_DISPLAY: ResolvedItemDisplay = {
   showPoster: true, showRating: true, showOverview: true, overviewMaxChars: null, posterScale: 'md',
 };
 
-export function SpotlightItems({ items, theme, itemDisplay }: LayoutItemsProps) {
+export function SpotlightItems({ items, theme, itemDisplay, timezone }: LayoutItemsProps) {
   const d = itemDisplay ?? DEFAULT_DISPLAY;
   if (items.length === 0) return null;
 
@@ -21,15 +21,25 @@ export function SpotlightItems({ items, theme, itemDisplay }: LayoutItemsProps) 
 
   return (
     <>
-      <HeroFeature item={hero} theme={theme} display={d} />
-      {rest.length > 0 ? <Rundown items={rest} theme={theme} display={d} /> : null}
+      <HeroFeature item={hero} theme={theme} display={d} timezone={timezone} />
+      {rest.length > 0 ? <Rundown items={rest} theme={theme} display={d} timezone={timezone} /> : null}
     </>
   );
 }
 
-function HeroFeature({ item, theme, display }: { item: EnrichedItem; theme: Theme; display: ResolvedItemDisplay }) {
+function HeroFeature({
+  item,
+  theme,
+  display,
+  timezone,
+}: {
+  item: EnrichedItem;
+  theme: Theme;
+  display: ResolvedItemDisplay;
+  timezone?: string;
+}) {
   const { palette, fonts, layout } = theme;
-  const kicker = itemKicker(item);
+  const kicker = itemKicker(item, timezone);
   const overview = truncate(item.overview, display.overviewMaxChars ?? 320);
   const showsRating = display.showRating && item.rating > 0;
   const title = displayTitle(item);
@@ -169,7 +179,17 @@ function HeroFeature({ item, theme, display }: { item: EnrichedItem; theme: Them
   );
 }
 
-function Rundown({ items, theme, display }: { items: EnrichedItem[]; theme: Theme; display: ResolvedItemDisplay }) {
+function Rundown({
+  items,
+  theme,
+  display,
+  timezone,
+}: {
+  items: EnrichedItem[];
+  theme: Theme;
+  display: ResolvedItemDisplay;
+  timezone?: string;
+}) {
   const { palette, fonts, layout } = theme;
 
   return (
@@ -195,7 +215,7 @@ function Rundown({ items, theme, display }: { items: EnrichedItem[]; theme: Them
         Also arriving
       </Text>
       {items.map((item, i) => {
-        const kicker = itemKicker(item);
+        const kicker = itemKicker(item, timezone);
         const showsRating = display.showRating && item.rating > 0;
         const isLast = i === items.length - 1;
         return (

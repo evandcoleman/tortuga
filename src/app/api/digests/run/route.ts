@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const dryRun = body.dry_run === true;
   try {
     const result = await runDigest({
-      db: ctx.db, tautulli: ctx.tautulli, tmdb: ctx.tmdb, provider: ctx.email, llm: ctx.llm,
+      db: ctx.db, tautulli: ctx.tautulli, tmdb: ctx.tmdb, maintainerr: ctx.maintainerr, provider: ctx.email, llm: ctx.llm,
       config: ctx.config.newsletter,
       appUrl: ctx.env.APP_URL, sessionSecret: ctx.env.SESSION_SECRET,
       scheduledAt: new Date(), dryRun,

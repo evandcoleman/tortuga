@@ -1,14 +1,30 @@
 import { getAppContext } from '@/kernel/context';
 import { revertToFileDefault } from './actions';
-import { SettingsForm } from './SettingsForm';
+import { SettingsForm, type LeavingCollectionsResult } from './SettingsForm';
 import { Badge, Button, Card, CardHeader, PageHeader } from '../_components/ui';
 
 export const dynamic = 'force-dynamic';
 
-export default function SettingsPage() {
+// Collections are fetched live so the exclusion checklist always reflects
+// Maintainerr's current state; a fetch failure never blocks the settings page
+// or the ability to save the rest of the form (see SettingsForm).
+async function loadLeavingCollections(
+  maintainerr: ReturnType<typeof getAppContext>['maintainerr'],
+): Promise<LeavingCollectionsResult | null> {
+  if (!maintainerr) return null;
+  try {
+    const collections = await maintainerr.getCollections(AbortSignal.timeout(3000));
+    return { ok: true, collections: collections.filter(c => (c.deleteAfterDays ?? 0) > 0) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export default async function SettingsPage() {
   const ctx = getAppContext();
   const cfg = ctx.config.newsletter;
   const env = ctx.env;
+  const leavingCollections = await loadLeavingCollections(ctx.maintainerr);
 
   const secrets: Array<{ label: string; set: boolean }> = [
     { label: 'Resend API key', set: Boolean(env.RESEND_API_KEY) },
@@ -31,7 +47,7 @@ export default function SettingsPage() {
         }
       />
 
-      <SettingsForm config={cfg} />
+      <SettingsForm config={cfg} leavingCollections={leavingCollections} />
 
       <div className="mt-6">
         <Card>

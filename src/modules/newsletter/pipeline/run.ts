@@ -6,15 +6,18 @@ import { createElement } from 'react';
 import type { Db } from '@/kernel/db/client';
 import type { TautulliClient } from '@/kernel/integrations/tautulli';
 import type { TmdbClient } from '@/kernel/integrations/tmdb';
+import type { MaintainerrClient } from '@/kernel/integrations/maintainerr';
 import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import { createLogger } from '@/kernel/logging/logger';
 
 import { digests, sends, recipientsCache, unsubscribes } from '../schema';
+import type { EnrichedItem } from '../types';
 import { applyFilters } from '../filters';
 import { syncRecipients } from './recipients';
 import { enrichItems } from './enrich';
+import { fetchLeavingItems } from './leaving';
 import { DigestEmail } from '../templates/digest';
 import { THEMES } from '../templates/themes';
 import { LAYOUTS } from '../templates/layouts';
@@ -26,10 +29,27 @@ import { generateIntro } from './commentary';
 
 const log = createLogger('newsletter.run');
 
+/**
+ * Attaches a Plex deep-link `plexUrl` to every item that has a `ratingKey`,
+ * when a Plex server id is configured. Shared by the main item list and the
+ * leaving-soon list so both get the same "Open in Plex" behaviour.
+ */
+function withPlexLinks<T extends EnrichedItem>(items: T[], serverId: string | undefined): T[] {
+  return items.map(it => {
+    if (!serverId || !it.ratingKey) return it;
+    const key = encodeURIComponent(`/library/metadata/${it.ratingKey}`);
+    return {
+      ...it,
+      plexUrl: `https://app.plex.tv/desktop/#!/server/${serverId}/details?key=${key}`,
+    };
+  });
+}
+
 export interface RunDigestOpts {
   db: Db;
   tautulli: TautulliClient;
   tmdb: TmdbClient;
+  maintainerr?: MaintainerrClient;
   provider: EmailProvider;
   config: NewsletterConfig;
   appUrl: string;
@@ -63,18 +83,30 @@ export async function runDigest(opts: RunDigestOpts) {
       return { id: digestId, status: 'skipped' as const, itemCount: 0 };
     }
 
+    let leavingItems: EnrichedItem[] = [];
+    if (opts.maintainerr && opts.config.leaving.enabled) {
+      try {
+        const leavingRaw = await fetchLeavingItems(
+          { maintainerr: opts.maintainerr, tautulli: opts.tautulli, log },
+          {
+            windowEnd,
+            days: opts.config.leaving.days,
+            excludedCollectionIds: opts.config.leaving.excluded_collection_ids,
+          },
+        );
+        leavingItems = await enrichItems(opts.db, opts.tmdb, leavingRaw);
+      } catch (err) {
+        log.error({ digest_id: digestId, err }, 'leaving-soon fetch failed; continuing without it');
+        leavingItems = [];
+      }
+    }
+
     const serverId = opts.config.plex?.server_id;
-    const withPlexLinks = filtered.map(it => {
-      if (!serverId || !it.ratingKey) return it;
-      const key = encodeURIComponent(`/library/metadata/${it.ratingKey}`);
-      return {
-        ...it,
-        plexUrl: `https://app.plex.tv/desktop/#!/server/${serverId}/details?key=${key}`,
-      };
-    });
+    const filteredWithPlexLinks = withPlexLinks(filtered, serverId);
+    const leavingItemsWithPlexLinks = withPlexLinks(leavingItems, serverId);
 
     const intro = opts.llm
-      ? await generateIntro(opts.llm, withPlexLinks, {
+      ? await generateIntro(opts.llm, filteredWithPlexLinks, {
           appName: opts.config.from.name,
           voice: opts.config.commentary?.voice,
         })
@@ -98,7 +130,7 @@ export async function runDigest(opts: RunDigestOpts) {
     // theme and disclaimer are identical everywhere; only the unsubscribe token
     // differs per recipient.
     const baseEmailProps = {
-      items: withPlexLinks,
+      items: filteredWithPlexLinks,
       appName: opts.config.from.name,
       windowStart,
       windowEnd,
@@ -110,6 +142,9 @@ export async function runDigest(opts: RunDigestOpts) {
       personalLink,
       freeformHtml,
       appearance: opts.config.appearance,
+      leavingItems: leavingItemsWithPlexLinks,
+      leavingHeading: opts.config.leaving.heading,
+      timezone: opts.config.timezone,
     };
 
     const html = await render(

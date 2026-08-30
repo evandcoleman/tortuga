@@ -2,7 +2,7 @@ import { Column, Link, Row, Section, Text, Img } from '@react-email/components';
 import * as React from 'react';
 import type { LayoutItemsProps } from './index';
 import { posterScaleFactor, type ResolvedItemDisplay } from './index';
-import { displayTitle } from '../item-format';
+import { displayTitle, leavesLabel } from '../item-format';
 
 const PER_ROW = 3;
 const POSTER_W = 150;
@@ -19,7 +19,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
-export function GalleryItems({ items, theme, itemDisplay }: LayoutItemsProps) {
+export function GalleryItems({ items, theme, itemDisplay, timezone }: LayoutItemsProps) {
   const { palette, fonts, layout } = theme;
   const d = itemDisplay ?? DEFAULT_DISPLAY;
   const posterRadius = Math.min(4, layout.radius);
@@ -80,6 +80,18 @@ export function GalleryItems({ items, theme, itemDisplay }: LayoutItemsProps) {
                   displayTitle(item)
                 )}
               </Text>
+              {item.leavesAt ? (
+                <Text
+                  style={{
+                    margin: '2px 0 0',
+                    fontSize: 11,
+                    fontFamily: fonts.body,
+                    color: palette.muted,
+                  }}
+                >
+                  {leavesLabel(item.leavesAt, timezone)}
+                </Text>
+              ) : null}
             </Column>
           ))}
           {row.length < PER_ROW
