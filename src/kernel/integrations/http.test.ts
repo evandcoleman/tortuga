@@ -24,4 +24,16 @@ describe('fetchWithRetry', () => {
     expect(res.status).toBe(400);
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
+
+  it('rejects when the provided signal aborts', async () => {
+    const fetcher = vi.fn().mockImplementation((_url, init: RequestInit) =>
+      new Promise((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(new Error('The operation was aborted.')));
+      }),
+    );
+    const controller = new AbortController();
+    const promise = fetchWithRetry('http://x', {}, { fetcher, retries: 2, baseDelayMs: 1, signal: controller.signal });
+    controller.abort();
+    await expect(promise).rejects.toThrow();
+  });
 });

@@ -17,4 +17,5 @@ services:
       ADMIN_EMAIL: "${ADMIN_EMAIL}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
       AUTH_MODE: "${AUTH_MODE:-session}"
+      # MAINTAINERR_URL: "http://maintainerr:6246"
     restart: unless-stopped

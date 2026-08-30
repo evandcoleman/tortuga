@@ -23,7 +23,24 @@ export interface TautulliItem {
   year?: number;
   summary?: string;
   thumb?: string;
+  leavesAt?: Date;
   raw: Record<string, unknown>;
+}
+
+function mapTautulliItem(it: Record<string, unknown>): TautulliItem {
+  return {
+    guid: String(it.guid ?? it.rating_key),
+    title: String(it.title ?? ''),
+    mediaType: String(it.media_type ?? ''),
+    libraryName: String(it.library_name ?? ''),
+    addedAt: new Date(Number(it.added_at) * 1000),
+    parentTitle: typeof it.parent_title === 'string' ? it.parent_title : undefined,
+    grandparentTitle: typeof it.grandparent_title === 'string' ? it.grandparent_title : undefined,
+    year: it.year ? Number(it.year) : undefined,
+    summary: typeof it.summary === 'string' ? it.summary : undefined,
+    thumb: typeof it.thumb === 'string' ? it.thumb : undefined,
+    raw: it,
+  };
 }
 
 export function createTautulliClient(opts: TautulliOpts) {
@@ -55,19 +72,12 @@ export function createTautulliClient(opts: TautulliOpts) {
       const cutoff = Math.floor(args.since.getTime() / 1000);
       return (data.recently_added ?? [])
         .filter(it => Number(it.added_at) >= cutoff)
-        .map(it => ({
-          guid: String(it.guid ?? it.rating_key),
-          title: String(it.title ?? ''),
-          mediaType: String(it.media_type ?? ''),
-          libraryName: String(it.library_name ?? ''),
-          addedAt: new Date(Number(it.added_at) * 1000),
-          parentTitle: typeof it.parent_title === 'string' ? it.parent_title : undefined,
-          grandparentTitle: typeof it.grandparent_title === 'string' ? it.grandparent_title : undefined,
-          year: it.year ? Number(it.year) : undefined,
-          summary: typeof it.summary === 'string' ? it.summary : undefined,
-          thumb: typeof it.thumb === 'string' ? it.thumb : undefined,
-          raw: it,
-        }));
+        .map(mapTautulliItem);
+    },
+
+    async getMetadata(ratingKey: string): Promise<TautulliItem> {
+      const data = await call<Record<string, unknown>>('get_metadata', { rating_key: ratingKey });
+      return mapTautulliItem(data);
     },
   };
 }

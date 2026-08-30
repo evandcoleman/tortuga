@@ -4,6 +4,7 @@ import { createDb, type Db } from './db/client';
 import { applyMigrations } from './db/migrate';
 import { createTautulliClient, type TautulliClient } from './integrations/tautulli';
 import { createTmdbClient, type TmdbClient } from './integrations/tmdb';
+import { createMaintainerrClient, type MaintainerrClient } from './integrations/maintainerr';
 import { createScheduler, type Scheduler } from './scheduler/scheduler';
 import { createLogger } from './logging/logger';
 import { createEmailProvider } from './email/factory';
@@ -17,6 +18,7 @@ export interface AppContext {
   db: Db;
   tautulli: TautulliClient;
   tmdb: TmdbClient;
+  maintainerr?: MaintainerrClient;
   email: EmailProvider;
   llm: LlmClient | null;
   scheduler: Scheduler;
@@ -39,10 +41,11 @@ export function getAppContext(): AppContext {
   }
   const tautulli = createTautulliClient({ url: env.TAUTULLI_URL, apiKey: env.TAUTULLI_API_KEY });
   const tmdb = createTmdbClient({ apiKey: env.TMDB_API_KEY });
+  const maintainerr = env.MAINTAINERR_URL ? createMaintainerrClient({ url: env.MAINTAINERR_URL }) : undefined;
   const email = createEmailProvider(env, config.newsletter.email);
   const llm = resolveLlmClient(env, config.newsletter);
   const scheduler = createScheduler();
-  cached = { env, config, db, tautulli, tmdb, email, llm, scheduler };
+  cached = { env, config, db, tautulli, tmdb, maintainerr, email, llm, scheduler };
   return cached;
 }
 

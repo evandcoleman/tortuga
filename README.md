@@ -59,6 +59,7 @@ instead of `RESEND_API_KEY` — see [Email providers](#email-providers).
 | `OPENAI_API_KEY` | — | Required when AI commentary is enabled with `provider=openai` |
 | `DATABASE_URL` | `file:/config/tortuga.db` | SQLite database location |
 | `CONFIG_PATH` | `/config/tortuga.yml` | Path to the YAML config file |
+| `MAINTAINERR_URL` | — | URL to your Maintainerr instance; enables the "Leaving soon" digest section |
 | `LOG_LEVEL` | `info` | pino log level (`trace`/`debug`/`info`/`warn`/`error`) |
 
 ## Authentication

@@ -21,13 +21,21 @@ export const EnvSchema = z.object({
   CONFIG_PATH: z.string().default('/config/tortuga.yml'),
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   OPENAI_API_KEY: z.string().min(1).optional(),
+  MAINTAINERR_URL: z.union([z.literal('').transform(() => undefined), z.string().url()]).optional(),
 });
 export type Env = z.infer<typeof EnvSchema>;
 
 export const NewsletterConfigSchema = z.object({
   schedule: z.string().default('0 9 * * SUN'),
   schedule_enabled: z.boolean().default(true),
-  timezone: z.string().default('America/New_York'),
+  timezone: z.string().default('America/New_York').refine((tz) => {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: tz });
+      return true;
+    } catch {
+      return false;
+    }
+  }, { message: 'Invalid IANA timezone' }),
   lookback_days: z.number().int().positive().default(7),
   email: z.object({
     provider: z.enum(['resend', 'mailgun']).default('resend'),
@@ -79,6 +87,14 @@ export const NewsletterConfigSchema = z.object({
     personal_label: z.string().optional(),
     freeform_markdown: z.string().optional(),
   }).optional(),
+  leaving: z.object({
+    enabled: z.boolean().default(true),
+    days: z.number().int().min(1).max(90).default(7),
+    excluded_collection_ids: z.array(z.number()).default([]),
+    heading: z.string().min(1).max(80).default('Leaving soon'),
+  }).default(() => ({
+    enabled: true, days: 7, excluded_collection_ids: [], heading: 'Leaving soon',
+  })),
 });
 export type NewsletterConfig = z.infer<typeof NewsletterConfigSchema>;
 

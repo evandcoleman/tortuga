@@ -35,4 +35,90 @@ describe('NewsletterConfigSchema commentary/extras', () => {
     expect(env.ANTHROPIC_API_KEY).toBe('sk-ant');
     expect(env.OPENAI_API_KEY).toBe('sk-oai');
   });
+
+  it('accepts optional MAINTAINERR_URL in env', () => {
+    const env = EnvSchema.parse({
+      TAUTULLI_URL: 'http://t', TAUTULLI_API_KEY: 'k', TMDB_API_KEY: 'k',
+      APP_URL: 'http://a', SESSION_SECRET: 'x'.repeat(32),
+      MAINTAINERR_URL: 'http://maintainerr.service.consul:6246',
+    });
+    expect(env.MAINTAINERR_URL).toBe('http://maintainerr.service.consul:6246');
+  });
+
+  it('leaves MAINTAINERR_URL undefined when absent', () => {
+    const env = EnvSchema.parse({
+      TAUTULLI_URL: 'http://t', TAUTULLI_API_KEY: 'k', TMDB_API_KEY: 'k',
+      APP_URL: 'http://a', SESSION_SECRET: 'x'.repeat(32),
+    });
+    expect(env.MAINTAINERR_URL).toBeUndefined();
+  });
+
+  it('treats an empty-string MAINTAINERR_URL as unset', () => {
+    const env = EnvSchema.parse({
+      TAUTULLI_URL: 'http://t', TAUTULLI_API_KEY: 'k', TMDB_API_KEY: 'k',
+      APP_URL: 'http://a', SESSION_SECRET: 'x'.repeat(32),
+      MAINTAINERR_URL: '',
+    });
+    expect(env.MAINTAINERR_URL).toBeUndefined();
+  });
+
+  it('still rejects an invalid non-empty MAINTAINERR_URL', () => {
+    expect(() => EnvSchema.parse({
+      TAUTULLI_URL: 'http://t', TAUTULLI_API_KEY: 'k', TMDB_API_KEY: 'k',
+      APP_URL: 'http://a', SESSION_SECRET: 'x'.repeat(32),
+      MAINTAINERR_URL: 'not-a-url',
+    })).toThrow();
+  });
+});
+
+describe('NewsletterConfigSchema leaving', () => {
+  it('defaults leaving to enabled with a 7 day window and no exclusions', () => {
+    const cfg = NewsletterConfigSchema.parse(base);
+    expect(cfg.leaving).toEqual({
+      enabled: true, days: 7, excluded_collection_ids: [], heading: 'Leaving soon',
+    });
+  });
+
+  it('parses a fully-specified leaving block', () => {
+    const cfg = NewsletterConfigSchema.parse({
+      ...base,
+      leaving: { enabled: false, days: 30, excluded_collection_ids: [1, 2], heading: 'Going away' },
+    });
+    expect(cfg.leaving).toEqual({
+      enabled: false, days: 30, excluded_collection_ids: [1, 2], heading: 'Going away',
+    });
+  });
+
+  it('rejects days outside 1-90', () => {
+    expect(() => NewsletterConfigSchema.parse({ ...base, leaving: { days: 0 } })).toThrow();
+    expect(() => NewsletterConfigSchema.parse({ ...base, leaving: { days: 91 } })).toThrow();
+  });
+
+  it('rejects an empty or too-long heading', () => {
+    expect(() => NewsletterConfigSchema.parse({ ...base, leaving: { heading: '' } })).toThrow();
+    expect(() => NewsletterConfigSchema.parse({ ...base, leaving: { heading: 'x'.repeat(81) } })).toThrow();
+  });
+
+  it('still parses an existing config without a leaving key (backwards compatible)', () => {
+    const stored = { ...base, filters: { min_tmdb_rating: 3 } };
+    const cfg = NewsletterConfigSchema.parse(stored);
+    expect(cfg.leaving.enabled).toBe(true);
+    expect(cfg.leaving.days).toBe(7);
+  });
+});
+
+describe('NewsletterConfigSchema timezone', () => {
+  it('accepts a valid IANA timezone', () => {
+    const cfg = NewsletterConfigSchema.parse({ ...base, timezone: 'America/Los_Angeles' });
+    expect(cfg.timezone).toBe('America/Los_Angeles');
+  });
+
+  it('rejects an invalid timezone', () => {
+    const result = NewsletterConfigSchema.safeParse({ ...base, timezone: 'Not/AZone' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find(i => i.path.join('.') === 'timezone');
+      expect(issue?.message).toBe('Invalid IANA timezone');
+    }
+  });
 });

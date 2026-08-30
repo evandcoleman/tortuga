@@ -64,4 +64,15 @@ describe('getAppContext config resolution', () => {
     await invalidateAppContext();
     expect(getAppContext().scheduler.list()).toHaveLength(0);
   });
+
+  it('does not create a maintainerr client when MAINTAINERR_URL is unset', () => {
+    expect(getAppContext().maintainerr).toBeUndefined();
+  });
+
+  it('creates a maintainerr client when MAINTAINERR_URL is set', () => {
+    process.env.MAINTAINERR_URL = 'http://maintainerr.local:6246';
+    resetAppContextForTests();
+    expect(getAppContext().maintainerr).toBeDefined();
+    delete process.env.MAINTAINERR_URL;
+  });
 });
