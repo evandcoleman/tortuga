@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { desc } from 'drizzle-orm';
+import { desc, isNotNull } from 'drizzle-orm';
 import { getAppContext } from '@/kernel/context';
 import { digests, sends, recipientsCache } from '@/modules/newsletter/schema';
 import {
@@ -29,7 +29,8 @@ export default function Dashboard() {
     .limit(5)
     .all();
   const lastDigest = recent[0];
-  const allSends = ctx.db.select().from(sends).all();
+  // Digest-only stats: exclude one-off announcement sends (digestId null).
+  const allSends = ctx.db.select().from(sends).where(isNotNull(sends.digestId)).all();
   const recipients = ctx.db.select().from(recipientsCache).all();
   const totalDigests = ctx.db.select().from(digests).all().length;
 

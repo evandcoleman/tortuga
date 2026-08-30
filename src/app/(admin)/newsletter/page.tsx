@@ -26,6 +26,18 @@ const tiles: ReadonlyArray<Tile> = [
     ),
   },
   {
+    href: '/newsletter/messages',
+    title: 'Messages',
+    description: 'Compose and send a one-off email to all or a subset of active recipients.',
+    cta: 'Compose a message',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 4h16v14H4z" />
+        <path d="M4 6l8 6 8-6" />
+      </svg>
+    ),
+  },
+  {
     href: '/newsletter/history',
     title: 'Send history',
     description: 'Past digests and per-recipient delivery results across providers.',

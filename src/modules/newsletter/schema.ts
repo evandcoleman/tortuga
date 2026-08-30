@@ -1,5 +1,7 @@
 import { sqliteTable, text, integer, uniqueIndex, index } from 'drizzle-orm/sqlite-core';
 
+import { announcements } from '@/modules/announcements/schema';
+
 export const digests = sqliteTable('digests', {
   id: text('id').primaryKey(),
   scheduledAt: integer('scheduled_at', { mode: 'timestamp_ms' }).notNull(),
@@ -17,7 +19,8 @@ export const digests = sqliteTable('digests', {
 
 export const sends = sqliteTable('sends', {
   id: text('id').primaryKey(),
-  digestId: text('digest_id').notNull().references(() => digests.id),
+  digestId: text('digest_id').references(() => digests.id),
+  announcementId: text('announcement_id').references(() => announcements.id),
   recipientEmail: text('recipient_email').notNull(),
   recipientName: text('recipient_name').notNull(),
   providerMessageId: text('provider_message_id'),
@@ -27,6 +30,7 @@ export const sends = sqliteTable('sends', {
   error: text('error'),
 }, t => ({
   digestIdx: index('sends_digest_idx').on(t.digestId),
+  announcementIdx: index('sends_announcement_idx').on(t.announcementId),
   emailIdx: index('sends_email_idx').on(t.recipientEmail),
 }));
 

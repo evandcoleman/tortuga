@@ -1,13 +1,8 @@
 import {
-  Body,
   Column,
-  Container,
-  Head,
   Heading,
   Hr,
-  Html,
   Link,
-  Preview,
   Row,
   Section,
   Text,
@@ -19,6 +14,7 @@ import { resolveLayout } from './layouts';
 import { buildLibrarySections, resolveBlocks, resolveItemDisplay } from '../appearance/resolve';
 import type { Appearance } from '../appearance/schema';
 import type { BlockId } from '../appearance/schema';
+import { EmailShell } from './shell';
 
 export interface DigestLink {
   url: string;
@@ -326,56 +322,17 @@ export function DigestEmail({
   const ordered = resolveBlocks(appearance?.blocks);
 
   return (
-    <Html>
-      <Head>
-        <meta name="color-scheme" content={theme.colorScheme} />
-        <meta name="supported-color-schemes" content={theme.colorScheme} />
-      </Head>
-      <Preview>{`${items.length} new on ${appName} · ${dateRange}`}</Preview>
-      <Body
-        style={{
-          margin: 0,
-          padding: 0,
-          background: palette.paper,
-          color: palette.ink,
-          fontFamily: fonts.body,
-          WebkitFontSmoothing: 'antialiased',
-        }}
-      >
-        <Container
-          style={{
-            maxWidth: 640,
-            margin: '0 auto',
-            padding: '40px 28px 56px',
-            background: palette.paper,
-          }}
-        >
-          {ordered
-            .filter(b => b.enabled)
-            .map(b => (
-              <React.Fragment key={b.id}>{blockNodes[b.id]}</React.Fragment>
-            ))}
-
-          <Text
-            style={{
-              margin: '6px 0 0',
-              fontSize: 12,
-              color: palette.muted,
-              textAlign: 'center',
-              lineHeight: 1.5,
-            }}
-          >
-            You&apos;re receiving this because you have access to {appName}.
-            <br />
-            <Link
-              href={unsubscribeUrl}
-              style={{ color: palette.muted, textDecoration: 'underline' }}
-            >
-              Unsubscribe
-            </Link>
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+    <EmailShell
+      theme={theme}
+      appName={appName}
+      unsubscribeUrl={unsubscribeUrl}
+      previewText={`${items.length} new on ${appName} · ${dateRange}`}
+    >
+      {ordered
+        .filter(b => b.enabled)
+        .map(b => (
+          <React.Fragment key={b.id}>{blockNodes[b.id]}</React.Fragment>
+        ))}
+    </EmailShell>
   );
 }

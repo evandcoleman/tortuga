@@ -7,7 +7,7 @@ type NavItem = {
   href: string;
   label: string;
   exact?: boolean;
-  icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings';
+  icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings' | 'send';
 };
 
 const items: ReadonlyArray<NavItem> = [
@@ -15,6 +15,7 @@ const items: ReadonlyArray<NavItem> = [
   { href: '/newsletter', label: 'Newsletter', exact: true, icon: 'mail' },
   { href: '/newsletter/preview', label: 'Preview', icon: 'eye' },
   { href: '/newsletter/customize', label: 'Customize', icon: 'customize' },
+  { href: '/newsletter/messages', label: 'Messages', icon: 'send' },
   { href: '/newsletter/history', label: 'History', icon: 'history' },
   { href: '/newsletter/recipients', label: 'Recipients', icon: 'users' },
   { href: '/settings', label: 'Settings', exact: true, icon: 'settings' },
@@ -204,6 +205,13 @@ function Icon({ name, className = '' }: { name: NavItem['icon']; className?: str
           <path d="M3 12a9 9 0 1 0 3-6.7" />
           <path d="M3 4v4h4" />
           <path d="M12 7v5l3 2" />
+        </svg>
+      );
+    case 'send':
+      return (
+        <svg {...common}>
+          <path d="M4 4h16v14H4z" />
+          <path d="M4 6l8 6 8-6" />
         </svg>
       );
     case 'users':

@@ -31,6 +31,7 @@ export default function History() {
     .select({ digestId: sends.digestId, status: sends.status })
     .from(sends)
     .all()) {
+    if (!s.digestId) continue; // announcement sends have no digestId
     counts[s.digestId] = counts[s.digestId] ?? {};
     counts[s.digestId][s.status] = (counts[s.digestId][s.status] ?? 0) + 1;
   }
