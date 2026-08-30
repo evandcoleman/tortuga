@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from 'react';
 import Link from 'next/link';
 
-import { Card, CardHeader } from '../../_components/ui';
+import { Card, CardHeader } from '../_components/ui';
 import { RecipientChecklist } from './RecipientChecklist';
 import { SendMessageButton } from './SendMessageButton';
 import {
@@ -210,7 +210,7 @@ export function MessageComposer({ recipients, defaultTestEmail }: MessageCompose
                   ) : null}
                 </div>
                 <Link
-                  href={`/newsletter/messages/history/${sendOutcome.announcementId}`}
+                  href={`/messages/history/${sendOutcome.announcementId}`}
                   className="mt-1 inline-block font-medium text-gold hover:opacity-90"
                 >
                   View delivery details →

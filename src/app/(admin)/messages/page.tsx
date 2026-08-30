@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { auth } from '@/kernel/auth/auth';
 import { getAppContext } from '@/kernel/context';
 import { recipientsCache } from '@/modules/newsletter/schema';
-import { PageHeader } from '../../_components/ui';
+import { PageHeader } from '../_components/ui';
 import { MessageComposer } from './MessageComposer';
 
 export const dynamic = 'force-dynamic';
@@ -35,7 +35,7 @@ export default async function Messages() {
         description="Send a one-off email to all or a chosen subset of active recipients, using the same themed shell as the weekly digest."
         actions={
           <Link
-            href="/newsletter/messages/history"
+            href="/messages/history"
             className="text-[12.5px] font-medium text-gold hover:opacity-90"
           >
             View history →

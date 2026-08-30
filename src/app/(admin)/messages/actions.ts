@@ -164,7 +164,7 @@ export async function sendAnnouncementToRecipients(
         recipientEmails: parsed.data.recipientEmails,
       },
     );
-    revalidatePath('/newsletter/messages/history');
+    revalidatePath('/messages/history');
     revalidatePath('/');
     if (!result.announcementId) {
       return { success: false, error: 'No active recipients selected.' };

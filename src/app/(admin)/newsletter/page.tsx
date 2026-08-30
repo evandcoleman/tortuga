@@ -26,7 +26,7 @@ const tiles: ReadonlyArray<Tile> = [
     ),
   },
   {
-    href: '/newsletter/messages',
+    href: '/messages',
     title: 'Messages',
     description: 'Compose and send a one-off email to all or a subset of active recipients.',
     cta: 'Compose a message',

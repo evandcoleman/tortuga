@@ -15,7 +15,7 @@ import {
   Table,
   formatDateTime,
   formatRelative,
-} from '../../../_components/ui';
+} from '../../_components/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +53,7 @@ export default function MessagesHistory() {
         description="The 50 most recent one-off messages and their per-recipient outcomes."
         actions={
           <Link
-            href="/newsletter/messages"
+            href="/messages"
             className="text-[12.5px] font-medium text-gold hover:opacity-90"
           >
             ← Compose
@@ -88,7 +88,7 @@ export default function MessagesHistory() {
                 <TR key={a.id}>
                   <TD>
                     <Link
-                      href={`/newsletter/messages/history/${a.id}`}
+                      href={`/messages/history/${a.id}`}
                       className="font-medium text-fg hover:text-gold"
                     >
                       {a.subject}

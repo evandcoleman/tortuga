@@ -10,16 +10,24 @@ type NavItem = {
   icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings' | 'send';
 };
 
-const items: ReadonlyArray<NavItem> = [
+const workspaceItems: ReadonlyArray<NavItem> = [
   { href: '/', label: 'Dashboard', exact: true, icon: 'dashboard' },
-  { href: '/newsletter', label: 'Newsletter', exact: true, icon: 'mail' },
+];
+
+const newsletterItems: ReadonlyArray<NavItem> = [
+  { href: '/newsletter', label: 'Overview', exact: true, icon: 'mail' },
   { href: '/newsletter/preview', label: 'Preview', icon: 'eye' },
   { href: '/newsletter/customize', label: 'Customize', icon: 'customize' },
-  { href: '/newsletter/messages', label: 'Messages', icon: 'send' },
   { href: '/newsletter/history', label: 'History', icon: 'history' },
   { href: '/newsletter/recipients', label: 'Recipients', icon: 'users' },
-  { href: '/settings', label: 'Settings', exact: true, icon: 'settings' },
 ];
+
+const messagesItems: ReadonlyArray<NavItem> = [
+  { href: '/messages', label: 'Compose', exact: true, icon: 'send' },
+  { href: '/messages/history', label: 'History', icon: 'history' },
+];
+
+const settingsItem: NavItem = { href: '/settings', label: 'Settings', exact: true, icon: 'settings' };
 
 function isActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.href;
@@ -49,19 +57,28 @@ export function Sidebar({ userEmail, providerName, authMode, signOutAction }: Si
       <nav className="px-3">
         <SectionLabel>Workspace</SectionLabel>
         <ul className="mb-2 grid gap-0.5">
-          {items.slice(0, 1).map(it => (
+          {workspaceItems.map(it => (
             <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
           ))}
         </ul>
         <SectionLabel>Newsletter</SectionLabel>
+        <ul className="mb-2 grid gap-0.5">
+          {newsletterItems.map(it => (
+            <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
+          ))}
+        </ul>
+        <SectionLabel>Messages</SectionLabel>
         <ul className="grid gap-0.5">
-          {items.slice(1).map(it => (
+          {messagesItems.map(it => (
             <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
           ))}
         </ul>
       </nav>
 
       <div className="mt-auto border-t border-line px-3 py-3">
+        <ul className="mb-2 grid gap-0.5">
+          <NavLink item={settingsItem} active={isActive(pathname, settingsItem)} />
+        </ul>
         <div className="mb-2 rounded-md bg-surface px-3 py-2.5">
           <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-faint">
             <Dot className="text-success" />

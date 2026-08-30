@@ -14,7 +14,7 @@ import {
   TR,
   Table,
   formatDateTime,
-} from '../../../../_components/ui';
+} from '../../../_components/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,7 +51,7 @@ export default async function MessageDetail({ params }: { params: Promise<{ id: 
         description="Per-recipient delivery status for this message."
         actions={
           <Link
-            href="/newsletter/messages/history"
+            href="/messages/history"
             className="text-[12.5px] font-medium text-gold hover:opacity-90"
           >
             ← All messages
