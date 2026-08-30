@@ -6,12 +6,13 @@ import { createElement } from 'react';
 import type { Db } from '@/kernel/db/client';
 import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
+import { deliverToRecipients } from '@/kernel/email/deliver';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 
 /** The subset of NewsletterConfig this pipeline actually reads. */
 export type AnnouncementSendConfig = Pick<NewsletterConfig, 'from' | 'reply_to' | 'theme' | 'appearance'>;
 import { createLogger } from '@/kernel/logging/logger';
-import { sends, recipientsCache, unsubscribes } from '@/modules/newsletter/schema';
+import { recipientsCache, unsubscribes } from '@/modules/newsletter/schema';
 
 import { announcements } from '../schema';
 import { AnnouncementEmail } from '../templates/announcement';
@@ -150,49 +151,18 @@ export async function sendAnnouncement(
     createdAt: new Date(),
   }).run();
 
-  let sent = 0;
-  let failed = 0;
-  let firstFailureMessage: string | undefined;
-
-  for (const email of targets) {
-    const recipient = activeRecipients.get(email)!;
-    const sendId = createId();
-    const tokenStr = generateUnsubscribeToken(email, deps.sessionSecret);
-    deps.db.insert(unsubscribes).values({ token: tokenStr, email, createdAt: new Date() }).run();
-    deps.db.insert(sends).values({
-      id: sendId, announcementId, recipientEmail: email, recipientName: recipient.name, status: 'queued',
-    }).run();
-    try {
-      const perRecipientHtml = await renderFn(deps, input, `${deps.appUrl}/api/unsubscribe?token=${tokenStr}`);
-      const result = await deps.provider.send({
-        from: deps.config.from,
-        to: email,
-        subject: input.subject,
-        html: perRecipientHtml,
-        replyTo: deps.config.reply_to,
-      });
-      deps.db.update(sends).set({
-        providerMessageId: result.providerMessageId,
-        provider: deps.provider.name,
-        status: result.error ? 'failed' : 'sent',
-        sentAt: new Date(),
-        error: result.error,
-      }).where(eq(sends.id, sendId)).run();
-      if (result.error) {
-        failed++;
-        firstFailureMessage = firstFailureMessage ?? result.error;
-      } else {
-        sent++;
-      }
-    } catch (e) {
-      const message = errorMessage(e);
-      deps.db.update(sends).set({
-        status: 'failed', error: message, sentAt: new Date(),
-      }).where(eq(sends.id, sendId)).run();
-      failed++;
-      firstFailureMessage = firstFailureMessage ?? message;
-    }
-  }
+  const targetRecipients = targets.map(email => ({ email, name: activeRecipients.get(email)!.name }));
+  const { sent, failed, firstFailureMessage } = await deliverToRecipients(
+    { db: deps.db, provider: deps.provider, appUrl: deps.appUrl, sessionSecret: deps.sessionSecret },
+    {
+      recipients: targetRecipients,
+      subject: input.subject,
+      from: deps.config.from,
+      replyTo: deps.config.reply_to,
+      renderFor: unsubscribeUrl => renderFn(deps, input, unsubscribeUrl),
+      sendRow: { announcementId },
+    },
+  );
 
   const status = sent === 0 ? 'failed' : failed === 0 ? 'sent' : 'partial';
   const errorSummary = failed > 0 ? `${failed} of ${targets.length} failed: ${firstFailureMessage}` : null;

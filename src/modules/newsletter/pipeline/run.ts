@@ -9,10 +9,11 @@ import type { TmdbClient } from '@/kernel/integrations/tmdb';
 import type { MaintainerrClient } from '@/kernel/integrations/maintainerr';
 import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
+import { deliverToRecipients } from '@/kernel/email/deliver';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import { createLogger } from '@/kernel/logging/logger';
 
-import { digests, sends, recipientsCache, unsubscribes } from '../schema';
+import { digests, recipientsCache } from '../schema';
 import type { EnrichedItem } from '../types';
 import { applyFilters } from '../filters';
 import { syncRecipients } from './recipients';
@@ -192,42 +193,19 @@ export async function runDigest(opts: RunDigestOpts) {
       .filter(r => r.active)
       .filter(r => !opts.recipientFilter || opts.recipientFilter(r.email));
 
-    let anySent = false;
-    for (const r of recipients) {
-      const sendId = createId();
-      const tokenStr = generateUnsubscribeToken(r.email, opts.sessionSecret);
-      opts.db.insert(unsubscribes).values({ token: tokenStr, email: r.email, createdAt: new Date() }).run();
-      const perRecipientHtml = await render(
-        createElement(DigestEmail, {
-          ...baseEmailProps,
-          unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${tokenStr}`,
-        }),
-      );
-      opts.db.insert(sends).values({
-        id: sendId, digestId, recipientEmail: r.email, recipientName: r.name, status: 'queued',
-      }).run();
-      try {
-        const result = await opts.provider.send({
-          from: opts.config.from,
-          to: r.email,
-          subject,
-          html: perRecipientHtml,
-          replyTo: opts.config.reply_to,
-        });
-        opts.db.update(sends).set({
-          providerMessageId: result.providerMessageId,
-          provider: opts.provider.name,
-          status: result.error ? 'failed' : 'sent',
-          sentAt: new Date(),
-          error: result.error,
-        }).where(eq(sends.id, sendId)).run();
-        if (!result.error) anySent = true;
-      } catch (e) {
-        opts.db.update(sends).set({
-          status: 'failed', error: e instanceof Error ? e.message : 'unknown', sentAt: new Date(),
-        }).where(eq(sends.id, sendId)).run();
-      }
-    }
+    const { sent } = await deliverToRecipients(
+      { db: opts.db, provider: opts.provider, appUrl: opts.appUrl, sessionSecret: opts.sessionSecret },
+      {
+        recipients: recipients.map(r => ({ email: r.email, name: r.name })),
+        subject,
+        from: opts.config.from,
+        replyTo: opts.config.reply_to,
+        renderFor: unsubscribeUrl => render(createElement(DigestEmail, { ...baseEmailProps, unsubscribeUrl })),
+        sendRow: { digestId },
+        onRenderFailure: 'abort',
+      },
+    );
+    const anySent = sent > 0;
 
     opts.db.update(digests).set({
       status: anySent ? 'sent' : 'failed', ranAt: new Date(),
