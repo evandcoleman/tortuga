@@ -44,14 +44,18 @@ export async function testResend(): Promise<ConnectionTestResult> {
   return testResendConnection(apiKey);
 }
 
-/** Pings Mailgun using the currently effective (env-or-db) API key. Never mutates state. */
-export async function testMailgun(): Promise<ConnectionTestResult> {
+/**
+ * Pings Mailgun using the currently effective (env-or-db) API key. Never mutates state.
+ * `region` reflects the unsaved region dropdown in the form so "Test" checks what the user
+ * is about to save, not the last-saved config.
+ */
+export async function testMailgun(region?: 'us' | 'eu'): Promise<ConnectionTestResult> {
   await requireAdminSession();
 
   const ctx = getAppContext();
   const settings = readServiceSettings(ctx.db, ctx.env);
   const apiKey = settings['mailgun.api_key'].value;
   if (!apiKey) return { ok: false, message: 'Mailgun API key is not configured.' };
-  const region = ctx.config.newsletter.email.mailgun?.region ?? 'us';
-  return testMailgunConnection(apiKey, region);
+  const effectiveRegion = region ?? ctx.config.newsletter.email.mailgun?.region ?? 'us';
+  return testMailgunConnection(apiKey, effectiveRegion);
 }

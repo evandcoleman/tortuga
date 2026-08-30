@@ -215,6 +215,37 @@ describe('runDigest', () => {
       expect(row.status).toBe('failed');
       expect(row.error).toMatch(/Email provider is not configured/);
     });
+
+    it('fails gracefully naming the LLM provider when commentary is enabled but llm is null', async () => {
+      const db = createDb(':memory:');
+      applyMigrations(db);
+      const { tautulli, tmdb, provider } = fakes();
+      await expect(
+        runDigest({
+          db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+          config: { ...baseConfig, commentary: { enabled: true, provider: 'anthropic', model: '', voice: '' } } as any,
+          appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+          scheduledAt: new Date('2026-05-24T13:00:00Z'), llm: null,
+        }),
+      ).rejects.toBeInstanceOf(ServiceNotConfiguredError);
+
+      const [row] = db.select().from(digests).all();
+      expect(row.status).toBe('failed');
+      expect(row.error).toMatch(/anthropic/i);
+    });
+
+    it('stays fine when commentary is disabled and llm is null', async () => {
+      const db = createDb(':memory:');
+      applyMigrations(db);
+      const { tautulli, tmdb, provider } = fakes();
+      const result = await runDigest({
+        db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+        config: { ...baseConfig, commentary: { enabled: false, provider: 'anthropic', model: '', voice: '' } } as any,
+        appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+        scheduledAt: new Date('2026-05-25T13:00:00Z'), llm: null,
+      });
+      expect(result.status).toBe('sent');
+    });
   });
 
   describe('leaving-soon', () => {

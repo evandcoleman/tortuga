@@ -69,6 +69,20 @@ describe('NewsletterConfigSchema commentary/extras', () => {
       MAINTAINERR_URL: 'not-a-url',
     })).toThrow();
   });
+
+  it('treats a blanked-out optional secret env var as unset instead of failing validation', () => {
+    const secretKeys = [
+      'TAUTULLI_API_KEY', 'TMDB_API_KEY', 'RESEND_API_KEY', 'RESEND_WEBHOOK_SECRET',
+      'MAILGUN_API_KEY', 'MAILGUN_WEBHOOK_SIGNING_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY',
+    ] as const;
+    for (const key of secretKeys) {
+      const env = EnvSchema.parse({
+        APP_URL: 'http://a', SESSION_SECRET: 'x'.repeat(32),
+        [key]: '',
+      });
+      expect(env[key]).toBeUndefined();
+    }
+  });
 });
 
 describe('NewsletterConfigSchema leaving', () => {

@@ -76,6 +76,10 @@ export async function runDigest(opts: RunDigestOpts) {
     if (!opts.tautulli) throw new ServiceNotConfiguredError('tautulli', 'Tautulli is not configured');
     if (!opts.tmdb) throw new ServiceNotConfiguredError('tmdb', 'TMDB is not configured');
     if (!opts.provider) throw new ServiceNotConfiguredError('email', 'Email provider is not configured');
+    if (opts.config.commentary?.enabled && !opts.llm) {
+      const provider = opts.config.commentary.provider;
+      throw new ServiceNotConfiguredError(provider, `newsletter.commentary is enabled but ${provider} is not configured`);
+    }
 
     await syncRecipients(opts.db, opts.tautulli);
 

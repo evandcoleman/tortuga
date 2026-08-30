@@ -142,4 +142,13 @@ describe('test buttons', () => {
     expect(writeServiceSettings).not.toHaveBeenCalled();
     expect(invalidateAppContext).not.toHaveBeenCalled();
   });
+
+  it('testMailgun pings using the submitted (unsaved) region rather than the saved config', async () => {
+    readServiceSettings.mockReturnValue({ 'mailgun.api_key': { value: 'k', source: 'db' } });
+    testMailgunConnection.mockResolvedValue({ ok: true, message: 'Connected.' });
+    // ctx.config.newsletter.email.mailgun.region is 'us' (see mocked getAppContext below);
+    // passing 'eu' explicitly should override it.
+    await testMailgun('eu');
+    expect(testMailgunConnection).toHaveBeenCalledWith('k', 'eu');
+  });
 });

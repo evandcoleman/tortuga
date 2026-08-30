@@ -98,6 +98,9 @@ interface ReadOpts {
   warn?: (obj: Record<string, unknown>, msg: string) => void;
 }
 
+/** Keys already warned about this process; keeps the decrypt-failure warn from firing on every read. */
+const warnedUndecryptableKeys = new Set<ServiceSettingKey>();
+
 /**
  * Resolves the effective value for every managed service setting. Env vars always win over the
  * DB value. DB values that fail to decrypt (e.g. after a SESSION_SECRET rotation) are treated as
@@ -107,7 +110,7 @@ export function readServiceSettings(db: Db, env: Env, opts: ReadOpts = {}): Reso
   const warn = opts.warn ?? ((obj: Record<string, unknown>, msg: string) => log.warn(obj, msg));
   const rows = db.select().from(serviceSettings).all();
   const rowByKey = new Map(rows.map(r => [r.key, r.value]));
-  const undecryptableKeys: string[] = [];
+  const undecryptableKeys: ServiceSettingKey[] = [];
 
   const resolved = {} as ResolvedServiceSettings;
   for (const key of SERVICE_SETTING_KEYS) {
@@ -123,7 +126,7 @@ export function readServiceSettings(db: Db, env: Env, opts: ReadOpts = {}): Reso
     }
     const plaintext = decrypt(stored, env.SESSION_SECRET);
     if (plaintext === null) {
-      undecryptableKeys.push(key);
+      if (!warnedUndecryptableKeys.has(key)) undecryptableKeys.push(key);
       resolved[key] = { value: undefined, source: undefined };
       continue;
     }
@@ -135,6 +138,7 @@ export function readServiceSettings(db: Db, env: Env, opts: ReadOpts = {}): Reso
       { keys: undecryptableKeys },
       'service settings failed to decrypt; treating as unset (SESSION_SECRET may have rotated)',
     );
+    for (const key of undecryptableKeys) warnedUndecryptableKeys.add(key);
   }
 
   return resolved;

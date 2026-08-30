@@ -5,14 +5,18 @@ import { str, opt, secretPatch } from '../_lib/form-values';
 
 export function parseEmailConfigForm(fd: FormData, current: NewsletterConfig): ParseResult {
   const provider = str(fd, 'email.provider') === 'mailgun' ? 'mailgun' : 'resend';
+  const domain = str(fd, 'email.mailgun.domain');
 
   return mergeAndValidate(current, {
     email: {
       provider,
-      ...(provider === 'mailgun'
+      // Include the mailgun sub-object whenever the domain field is populated, not just when
+      // provider=mailgun — mergeAndValidate replaces `email` wholesale, so omitting it here would
+      // silently wipe an already-configured mailgun domain/region when saving with provider=resend.
+      ...(domain.length > 0
         ? {
             mailgun: {
-              domain: str(fd, 'email.mailgun.domain'),
+              domain,
               region: str(fd, 'email.mailgun.region') === 'eu' ? ('eu' as const) : ('us' as const),
             },
           }

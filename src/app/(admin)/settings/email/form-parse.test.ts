@@ -42,6 +42,26 @@ describe('parseEmailConfigForm', () => {
     if (!r.ok) expect(r.errors['from.email']).toBeTruthy();
   });
 
+  it('keeps the existing mailgun domain/region when saving with provider=resend and the domain field is populated', () => {
+    const withMailgun = {
+      ...current,
+      email: { provider: 'resend' as const, mailgun: { domain: 'mg.example.com', region: 'eu' as const } },
+    };
+    const r = parseEmailConfigForm(
+      fd({
+        'from.email': 'a@b.com', 'from.name': 'A', 'email.provider': 'resend',
+        'email.mailgun.domain': 'mg.example.com', 'email.mailgun.region': 'eu',
+      }),
+      withMailgun,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.config.email.provider).toBe('resend');
+      expect(r.config.email.mailgun?.domain).toBe('mg.example.com');
+      expect(r.config.email.mailgun?.region).toBe('eu');
+    }
+  });
+
   it('round-trips fields owned by other settings pages (e.g. schedule) unchanged', () => {
     const withCustomSchedule = { ...current, schedule: '30 7 * * MON' };
     const r = parseEmailConfigForm(fd({ 'from.email': 'a@b.com', 'from.name': 'A', 'email.provider': 'resend' }), withCustomSchedule);

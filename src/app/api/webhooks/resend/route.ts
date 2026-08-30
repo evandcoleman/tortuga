@@ -4,6 +4,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { getAppContext } from '@/kernel/context';
 import { sendEvents, sends } from '@/modules/newsletter/schema';
 import { createLogger } from '@/kernel/logging/logger';
+import { readServiceSettings } from '@/kernel/config/service-settings';
 
 export const dynamic = 'force-dynamic';
 const log = createLogger('webhook.resend');
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'resend webhooks not enabled for this deploy' }, { status: 404 });
   }
   const body = await req.text();
-  const secret = ctx.env.RESEND_WEBHOOK_SECRET ?? '';
+  const secret = readServiceSettings(ctx.db, ctx.env)['resend.webhook_secret'].value ?? '';
   if (!secret) {
     log.warn('webhook received but RESEND_WEBHOOK_SECRET unset');
     return NextResponse.json({ error: 'not configured' }, { status: 401 });

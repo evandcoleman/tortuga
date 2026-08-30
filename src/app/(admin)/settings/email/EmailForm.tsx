@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import { Button, Card, CardHeader } from '../../_components/ui';
 import { TextField, SelectField, SecretField } from '../fields';
@@ -25,6 +25,9 @@ export function EmailForm({
 }) {
   const [state, action, pending] = useActionState(saveEmailSettings, initial);
   const err = state.status === 'error' ? state.errors : {};
+  // Tracks the unsaved region select so "Test" pings against what's about to be saved,
+  // not the last-persisted config.
+  const [mailgunRegion, setMailgunRegion] = useState<'us' | 'eu'>(config.email.mailgun?.region ?? 'us');
 
   return (
     <form action={action} className="grid gap-5">
@@ -38,7 +41,8 @@ export function EmailForm({
             options={[{ value: 'resend', label: 'Resend' }, { value: 'mailgun', label: 'Mailgun' }]} />
           <TextField name="email.mailgun.domain" label="Mailgun domain" defaultValue={config.email.mailgun?.domain ?? ''} error={err['email.mailgun.domain']} hint="Required when provider is Mailgun." />
           <SelectField name="email.mailgun.region" label="Mailgun region" defaultValue={config.email.mailgun?.region ?? 'us'}
-            options={[{ value: 'us', label: 'US' }, { value: 'eu', label: 'EU' }]} />
+            options={[{ value: 'us', label: 'US' }, { value: 'eu', label: 'EU' }]}
+            onChange={(v) => setMailgunRegion(v === 'eu' ? 'eu' : 'us')} />
         </div>
       </Card>
 
@@ -58,7 +62,7 @@ export function EmailForm({
         <CardHeader
           title="Mailgun credentials"
           description="Used when Provider is set to Mailgun."
-          action={<TestButton action={testMailgun} />}
+          action={<TestButton action={() => testMailgun(mailgunRegion)} />}
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <SecretField name="mailgun.api_key" label="API key" source={secretSources['mailgun.api_key']} envVar="MAILGUN_API_KEY" />

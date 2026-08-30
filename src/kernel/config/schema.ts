@@ -1,11 +1,14 @@
 import { z } from 'zod';
 import { AppearanceSchema } from '@/modules/newsletter/appearance/schema';
 
+/** An optional secret env var: a blanked-out value (e.g. `FOO=""`) is treated as unset. */
+const optionalSecret = z.union([z.literal('').transform(() => undefined), z.string().min(1)]).optional();
+
 export const EnvSchema = z.object({
   TAUTULLI_URL: z.union([z.literal('').transform(() => undefined), z.string().url()]).optional(),
-  TAUTULLI_API_KEY: z.string().min(1).optional(),
-  TMDB_API_KEY: z.string().min(1).optional(),
-  RESEND_API_KEY: z.string().min(1).optional(),
+  TAUTULLI_API_KEY: optionalSecret,
+  TMDB_API_KEY: optionalSecret,
+  RESEND_API_KEY: optionalSecret,
   APP_URL: z.string().url(),
   SESSION_SECRET: z.string().min(32),
   AUTH_MODE: z.enum(['forward', 'session']).default('session'),
@@ -13,14 +16,14 @@ export const EnvSchema = z.object({
   ADMIN_EMAIL: z.string().email().optional(),
   ADMIN_PASSWORD: z.string().min(8).optional(),
   DATABASE_URL: z.string().default('file:/config/tortuga.db'),
-  RESEND_WEBHOOK_SECRET: z.string().min(1).optional(),
-  MAILGUN_API_KEY: z.string().min(1).optional(),
-  MAILGUN_WEBHOOK_SIGNING_KEY: z.string().min(1).optional(),
+  RESEND_WEBHOOK_SECRET: optionalSecret,
+  MAILGUN_API_KEY: optionalSecret,
+  MAILGUN_WEBHOOK_SIGNING_KEY: optionalSecret,
   DIGEST_RUN_TOKEN: z.string().min(16).optional(),
   LOG_LEVEL: z.string().default('info'),
   CONFIG_PATH: z.string().default('/config/tortuga.yml'),
-  ANTHROPIC_API_KEY: z.string().min(1).optional(),
-  OPENAI_API_KEY: z.string().min(1).optional(),
+  ANTHROPIC_API_KEY: optionalSecret,
+  OPENAI_API_KEY: optionalSecret,
   MAINTAINERR_URL: z.union([z.literal('').transform(() => undefined), z.string().url()]).optional(),
 });
 export type Env = z.infer<typeof EnvSchema>;

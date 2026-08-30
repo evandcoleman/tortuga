@@ -110,12 +110,18 @@ export function TextareaField({ name, label, defaultValue = '', hint, error, row
   );
 }
 
-export function SelectField({ name, label, defaultValue, options, hint, error }: {
+export function SelectField({ name, label, defaultValue, options, hint, error, onChange }: {
   name: string; label: string; defaultValue: string; options: ReadonlyArray<{ value: string; label: string }>; hint?: string; error?: string;
+  onChange?: (value: string) => void;
 }) {
   return (
     <Wrap label={label} hint={hint} error={error}>
-      <select className={inputCls} name={name} defaultValue={defaultValue}>
+      <select
+        className={inputCls}
+        name={name}
+        defaultValue={defaultValue}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+      >
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </Wrap>

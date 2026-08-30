@@ -1,6 +1,9 @@
 import type { NewsletterConfig } from '../config/schema';
 import { LlmError } from './errors';
 import { fetchWithRetry } from './http';
+import { createLogger } from '../logging/logger';
+
+const log = createLogger('integrations.llm');
 
 export type LlmProvider = 'anthropic' | 'openai';
 
@@ -91,7 +94,8 @@ export function resolveLlmClient(
   const apiKey = c.provider === 'anthropic' ? keys.anthropicApiKey : keys.openaiApiKey;
   if (!apiKey) {
     const key = c.provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY';
-    throw new Error(`newsletter.commentary.enabled is true but ${key} is not set`);
+    log.warn({ provider: c.provider }, `newsletter.commentary.enabled is true but ${key} is not set; disabling commentary`);
+    return null;
   }
   return createLlmClient({ provider: c.provider, apiKey, model: c.model, fetcher });
 }

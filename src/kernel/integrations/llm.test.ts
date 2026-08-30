@@ -57,9 +57,8 @@ describe('resolveLlmClient', () => {
     expect(resolveLlmClient(keys(), cfg())).toBeNull();
   });
 
-  it('throws when enabled but the provider key is missing', () => {
-    expect(() => resolveLlmClient(keys(), cfg({ enabled: true, provider: 'openai' })))
-      .toThrow(/OPENAI_API_KEY/);
+  it('returns null (and does not throw) when enabled but the provider key is missing', () => {
+    expect(resolveLlmClient(keys(), cfg({ enabled: true, provider: 'openai' }))).toBeNull();
   });
 
   it('builds a client when enabled and key present', () => {

@@ -14,11 +14,9 @@ import {
   type ConnectionTestResult,
 } from '@/kernel/integrations/connection-tests';
 import { secretPatch, urlPatch } from '../_lib/form-values';
+import type { ServiceSaveState } from '../_components/ServiceCard';
 
-export type ServiceSaveState =
-  | { status: 'idle' }
-  | { status: 'success' }
-  | { status: 'error'; message: string };
+export type { ServiceSaveState };
 
 const urlSchema = z.string().url();
 

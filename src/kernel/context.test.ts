@@ -119,4 +119,14 @@ describe('getAppContext service settings resolution', () => {
     expect(getAppContext().tmdb).not.toBeNull();
     delete process.env.TMDB_API_KEY;
   });
+
+  it('builds successfully (llm null) when commentary is enabled but no provider key is configured', async () => {
+    const override = NewsletterConfigSchema.parse({
+      from: { email: 'a@b.com', name: 'A' },
+      commentary: { enabled: true, provider: 'anthropic', model: '', voice: '', disclaimer: false },
+    });
+    writeConfigOverride(getAppContext().db, override);
+    await expect(invalidateAppContext()).resolves.not.toThrow();
+    expect(getAppContext().llm).toBeNull();
+  });
 });
