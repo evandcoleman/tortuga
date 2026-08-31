@@ -1,6 +1,7 @@
 # Roadmap
 
-Tortuga's goal: **every email your Plex server sends, in one place.**
+Tortuga's goal: **front-of-house for your Plex server — every email it
+sends and every page your users need, in one place.**
 
 v1 ships the newsletter. The items below take it the rest of the way to a
 one-stop shop for communicating with your Plex users, in priority order.
@@ -26,18 +27,27 @@ here's how to set up Plex" — today that happens outside Tortuga. Send (or
 detect) the Plex invite, then fire a templated welcome email: apps to
 install, how to request content, house rules.
 
-### 2. Resubscribe & recipient preferences
+### 2. User portal
+The web half of front-of-house: a small set of opinionated, templated
+public pages — getting started with Plex, recommended devices, request
+link, server status link, report an issue. Driven by existing YAML
+config and appearance theming, with an optional markdown blob per page
+for custom prose. Not a CMS. Pairs with invites/welcome (#1), which is
+what drives traffic to it; replaces hand-rolled portal sites like
+plex.example.com. Scope to be brainstormed when we get there.
+
+### 3. Resubscribe & recipient preferences
 Unsubscribe is currently one-way. Add a resubscribe link and a minimal
 per-recipient preferences page (frequency, which libraries) so opt-out
 isn't a dead end that generates support email. Include message
 categories (newsletter vs. announcements) so opting out of the digest
 doesn't also suppress operational notices.
 
-### 3. Scheduled announcement sends
+### 4. Scheduled announcement sends
 Compose exists but is fire-now only. Let "maintenance Saturday 9pm" be
 written Wednesday and sent Saturday.
 
-### 4. Transactional templates library
+### 5. Transactional templates library
 Reusable templates for the recurring one-offs: welcome, "server is back
 up", password help, removal notice. Include drafts, clone-previous-send,
 and variables ({{name}}, {{server_name}}). Compose covers these manually
