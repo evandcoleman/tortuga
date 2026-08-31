@@ -29,6 +29,9 @@ newsletter:
   # or in Plex Web → Settings → Network → Show Advanced → Server ID.
   # plex:
   #   server_id: "abc123def4567890abc123def4567890abc12345"
+  # Sending Plex invites additionally requires a Plex auth token, set via the
+  # PLEX_TOKEN env var (not stored in this file — same pattern as the other
+  # provider API keys). See docs/CONFIG.md.
   # Optional. AI-generated editorial intro paragraph at the top of the digest.
   # Requires ANTHROPIC_API_KEY (provider: anthropic) or OPENAI_API_KEY (provider: openai)
   # in the environment when enabled.

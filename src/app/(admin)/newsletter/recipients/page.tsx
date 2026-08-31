@@ -22,6 +22,7 @@ export default function Recipients() {
   const active = rows.filter(r => r.active);
   const inactive = rows.filter(r => !r.active);
   const manual = rows.filter(r => r.source === 'manual');
+  const notWelcomed = rows.filter(r => r.active && !r.welcomedAt);
   const sorted = [...rows].sort((a, b) => {
     if (a.active !== b.active) return a.active ? -1 : 1;
     return a.email.localeCompare(b.email);
@@ -36,9 +37,15 @@ export default function Recipients() {
         description="Synced from Plex and managed by hand. Manual recipients survive every Plex sync; unsubscribes are marked inactive automatically."
       />
 
-      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-5">
         <Stat label="Active" value={active.length} tone="success" />
         <Stat label="Manual" value={manual.length} tone={manual.length > 0 ? 'info' : 'neutral'} />
+        <Stat
+          label="Not welcomed"
+          value={notWelcomed.length}
+          tone={notWelcomed.length > 0 ? 'warning' : 'neutral'}
+          hint="Invited outside Tortuga, or invited but the welcome email hasn't sent"
+        />
         <Stat
           label="Unsubscribed"
           value={inactive.length}
@@ -83,6 +90,7 @@ export default function Recipients() {
                 plexUsername: r.plexUsername,
                 source: r.source,
                 active: r.active,
+                welcomedAt: r.welcomedAt ? r.welcomedAt.toISOString() : null,
               };
               return <RecipientRow key={r.email} recipient={data} />;
             })}

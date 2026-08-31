@@ -5,6 +5,7 @@ import { applyMigrations } from './db/migrate';
 import { createTautulliClient, type TautulliClient } from './integrations/tautulli';
 import { createTmdbClient, type TmdbClient } from './integrations/tmdb';
 import { createMaintainerrClient, type MaintainerrClient } from './integrations/maintainerr';
+import { createPlexClient, type PlexClient } from './integrations/plex';
 import { createScheduler, type Scheduler } from './scheduler/scheduler';
 import { createLogger } from './logging/logger';
 import { createEmailProvider } from './email/factory';
@@ -20,6 +21,8 @@ export interface AppContext {
   tautulli: TautulliClient | null;
   tmdb: TmdbClient | null;
   maintainerr?: MaintainerrClient;
+  /** Non-null only when both PLEX_TOKEN and newsletter.plex.server_id are configured. */
+  plex: PlexClient | null;
   email: EmailProvider | null;
   llm: LlmClient | null;
   scheduler: Scheduler;
@@ -50,6 +53,11 @@ export function getAppContext(): AppContext {
   const tmdb = tmdbApiKey ? createTmdbClient({ apiKey: tmdbApiKey }) : null;
   const maintainerrUrl = settings['maintainerr.url'].value;
   const maintainerr = maintainerrUrl ? createMaintainerrClient({ url: maintainerrUrl }) : undefined;
+  const plexToken = settings['plex.token'].value;
+  const plexServerId = config.newsletter.plex?.server_id;
+  const plex = plexToken && plexServerId
+    ? createPlexClient({ token: plexToken, machineId: plexServerId })
+    : null;
   const email = createEmailProvider(
     {
       resendApiKey: settings['resend.api_key'].value,
@@ -64,7 +72,7 @@ export function getAppContext(): AppContext {
     config.newsletter,
   );
   const scheduler = createScheduler();
-  cached = { env, config, db, tautulli, tmdb, maintainerr, email, llm, scheduler };
+  cached = { env, config, db, tautulli, tmdb, maintainerr, plex, email, llm, scheduler };
   return cached;
 }
 

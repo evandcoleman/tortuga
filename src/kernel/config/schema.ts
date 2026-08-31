@@ -25,6 +25,7 @@ export const EnvSchema = z.object({
   ANTHROPIC_API_KEY: optionalSecret,
   OPENAI_API_KEY: optionalSecret,
   MAINTAINERR_URL: z.union([z.literal('').transform(() => undefined), z.string().url()]).optional(),
+  PLEX_TOKEN: optionalSecret,
 });
 export type Env = z.infer<typeof EnvSchema>;
 

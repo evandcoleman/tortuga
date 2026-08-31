@@ -29,12 +29,12 @@ beforeEach(() => {
 });
 
 describe('service-settings', () => {
-  it('lists all 10 managed keys', () => {
-    expect(SERVICE_SETTING_KEYS).toHaveLength(10);
+  it('lists all 11 managed keys', () => {
+    expect(SERVICE_SETTING_KEYS).toHaveLength(11);
     expect(SERVICE_SETTING_KEYS).toEqual(expect.arrayContaining([
       'tautulli.url', 'tautulli.api_key', 'tmdb.api_key', 'maintainerr.url',
       'resend.api_key', 'resend.webhook_secret', 'mailgun.api_key',
-      'mailgun.webhook_signing_key', 'anthropic.api_key', 'openai.api_key',
+      'mailgun.webhook_signing_key', 'anthropic.api_key', 'openai.api_key', 'plex.token',
     ]));
   });
 

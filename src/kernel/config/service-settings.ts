@@ -19,6 +19,7 @@ export const SERVICE_SETTING_KEYS = [
   'mailgun.webhook_signing_key',
   'anthropic.api_key',
   'openai.api_key',
+  'plex.token',
 ] as const;
 
 export type ServiceSettingKey = (typeof SERVICE_SETTING_KEYS)[number];
@@ -35,6 +36,7 @@ const ENV_KEYS: Record<ServiceSettingKey, keyof Env> = {
   'mailgun.webhook_signing_key': 'MAILGUN_WEBHOOK_SIGNING_KEY',
   'anthropic.api_key': 'ANTHROPIC_API_KEY',
   'openai.api_key': 'OPENAI_API_KEY',
+  'plex.token': 'PLEX_TOKEN',
 };
 
 export interface ResolvedServiceSetting {

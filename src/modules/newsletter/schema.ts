@@ -56,6 +56,11 @@ export const recipientsCache = sqliteTable('recipients_cache', {
   lastSynced: integer('last_synced', { mode: 'timestamp_ms' }).notNull(),
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
   source: text('source').$type<'plex' | 'manual'>().notNull().default('plex'),
+  // Null = "not welcomed" (either invited outside Tortuga, or a Tortuga
+  // invite whose welcome email hasn't sent yet). The migration adding this
+  // column backfills existing rows to non-null so pre-feature users are
+  // grandfathered rather than flagged.
+  welcomedAt: integer('welcomed_at', { mode: 'timestamp_ms' }),
 });
 
 export const itemsCache = sqliteTable('items_cache', {
