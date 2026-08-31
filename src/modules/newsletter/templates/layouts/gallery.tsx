@@ -38,7 +38,7 @@ export function GalleryItems({ items, theme, itemDisplay, timezone }: LayoutItem
                 item.posterUrl ? (
                   <Img
                     src={item.posterUrl}
-                    alt=""
+                    alt={displayTitle(item)}
                     width={posterW}
                     height={posterH}
                     style={{

@@ -180,7 +180,7 @@ function TimelineEntry({
               {item.posterUrl ? (
                 <Img
                   src={item.posterUrl}
-                  alt=""
+                  alt={title}
                   width={posterW}
                   height={posterH}
                   style={{

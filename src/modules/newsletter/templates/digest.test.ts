@@ -379,4 +379,28 @@ describe('DigestEmail limits + issue URL', () => {
     expect(html).toContain('id="movies"');
     expect(html).toContain('id="leaving-soon"');
   });
+
+  it('email variant applies a library rule max_items cap but reports the true uncapped total', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      limits: { perLibrarySection: 99 }, // render cap is generous; the rule cap should still bite
+      appearance: { libraries: [{ name: 'Movies', enabled: true, max_items: 2 }] },
+      issueUrl: 'https://x/issues/abc',
+    }));
+    expect(html).toContain('Movie 0');
+    expect(html).toContain('Movie 1');
+    expect(html).not.toContain('Movie 2');
+    expect(html).toMatch(/View all\s*(<!-- -->)?5/); // true total, not the capped count
+  });
+
+  it('web variant ignores a library rule max_items cap and renders every item', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      unsubscribeUrl: undefined,
+      appearance: { libraries: [{ name: 'Movies', enabled: true, max_items: 2 }] },
+    }));
+    expect(html).toContain('Movie 0');
+    expect(html).toContain('Movie 4');
+    expect(html).not.toContain('View all');
+  });
 });

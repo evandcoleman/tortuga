@@ -76,6 +76,21 @@ describe('buildLibrarySections', () => {
     expect(s.map(x => x.name)).toEqual(['Music', 'Movies']); // TV hidden, listed order, no unlisted left
     expect(s[0].title).toBe('Tunes');
     expect(s[1].items).toHaveLength(1);     // capped
+    expect(s[1].totalCount).toBe(2);        // true count unaffected by the cap
     expect(s[1].layoutId).toBe('gallery');
+  });
+
+  it('applies rule max_items by default (email variant)', () => {
+    const s = buildLibrarySections(items, [{ name: 'Movies', enabled: true, max_items: 1 }]);
+    const movies = s.find(x => x.name === 'Movies')!;
+    expect(movies.items).toHaveLength(1);
+    expect(movies.totalCount).toBe(2);
+  });
+
+  it('ignores rule max_items when applyRuleCaps is false (web variant), but keeps true totalCount', () => {
+    const s = buildLibrarySections(items, [{ name: 'Movies', enabled: true, max_items: 1 }], { applyRuleCaps: false });
+    const movies = s.find(x => x.name === 'Movies')!;
+    expect(movies.items).toHaveLength(2);
+    expect(movies.totalCount).toBe(2);
   });
 });

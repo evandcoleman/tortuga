@@ -4,6 +4,8 @@ import { createElement } from 'react';
 import { resolveLayout, DEFAULT_LAYOUT_ID, LAYOUT_OPTIONS, LAYOUTS } from './index';
 import { resolveTheme } from '../themes';
 import { ListItems } from './list';
+import { GalleryItems } from './gallery';
+import { TimelineItems } from './timeline';
 import type { EnrichedItem } from '../../types';
 
 const theme = resolveTheme('editorial');
@@ -27,6 +29,18 @@ describe('ListItems itemDisplay', () => {
       itemDisplay: { showPoster: true, showRating: true, showOverview: false, overviewMaxChars: null, posterScale: 'md' },
     }));
     expect(html).not.toContain('oooo');
+  });
+});
+
+describe('poster alt text for screen readers', () => {
+  it('GalleryItems sets the poster alt to the item title', async () => {
+    const html = await render(createElement(GalleryItems, { items: [baseItem], theme }));
+    expect(html).toContain('alt="X"');
+  });
+
+  it('TimelineItems sets the poster alt to the item title', async () => {
+    const html = await render(createElement(TimelineItems, { items: [baseItem], theme }));
+    expect(html).toContain('alt="X"');
   });
 });
 

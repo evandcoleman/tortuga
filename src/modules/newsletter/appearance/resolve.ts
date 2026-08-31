@@ -56,18 +56,36 @@ export interface ResolvedSection {
   name: string;
   title: string;
   items: EnrichedItem[];
+  /** True count of items in this section before any rule `max_items` cap is applied. */
+  totalCount: number;
   layoutId?: string;
   maxItems?: number;
 }
 
-export function buildLibrarySections(items: EnrichedItem[], rules?: LibraryRule[]): ResolvedSection[] {
+export interface BuildLibrarySectionsOptions {
+  /**
+   * Whether a rule's `max_items` cap should be applied to `items`. Defaults to `true`
+   * (the email variant). The web/hosted variant passes `false` so every item renders,
+   * while `totalCount` always reflects the true, uncapped count either way.
+   */
+  applyRuleCaps?: boolean;
+}
+
+export function buildLibrarySections(
+  items: EnrichedItem[],
+  rules?: LibraryRule[],
+  options?: BuildLibrarySectionsOptions,
+): ResolvedSection[] {
+  const applyRuleCaps = options?.applyRuleCaps ?? true;
   const groups = new Map<string, EnrichedItem[]>();
   for (const it of items) {
     groups.set(it.libraryName, [...(groups.get(it.libraryName) ?? []), it]);
   }
 
   if (!rules || rules.length === 0) {
-    return Array.from(groups.entries()).map(([name, list]) => ({ name, title: name, items: list }));
+    return Array.from(groups.entries()).map(([name, list]) => ({
+      name, title: name, items: list, totalCount: list.length,
+    }));
   }
 
   const result: ResolvedSection[] = [];
@@ -76,13 +94,16 @@ export function buildLibrarySections(items: EnrichedItem[], rules?: LibraryRule[
     const list = groups.get(rule.name);
     used.add(rule.name);
     if (!list || rule.enabled === false) continue;
-    const capped = rule.max_items ? list.slice(0, rule.max_items) : list;
-    result.push({ name: rule.name, title: rule.title ?? rule.name, items: capped, layoutId: rule.layout, maxItems: rule.max_items });
+    const capped = applyRuleCaps && rule.max_items ? list.slice(0, rule.max_items) : list;
+    result.push({
+      name: rule.name, title: rule.title ?? rule.name, items: capped, totalCount: list.length,
+      layoutId: rule.layout, maxItems: rule.max_items,
+    });
   }
   // Append libraries not covered by any rule, in first-seen order.
   for (const [name, list] of groups.entries()) {
     if (used.has(name)) continue;
-    result.push({ name, title: name, items: list });
+    result.push({ name, title: name, items: list, totalCount: list.length });
   }
   return result;
 }

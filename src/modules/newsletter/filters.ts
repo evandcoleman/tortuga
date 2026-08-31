@@ -19,17 +19,28 @@ export function applyFilters(
     .filter(i => !i.genres || !i.genres.some(g => excludedGenres.has(g.toLowerCase())));
 
   if (opts.dedupe_episodes_into_seasons) {
-    const rolledUp = new Map<string, EnrichedItem>();
-    const kept: EnrichedItem[] = [];
+    // Index of each season's roll-up within `kept`, so repeat episodes update it
+    // by replacing the array entry (immutably) rather than mutating the object.
+    const seasonIndex = new Map<string, number>();
+    let kept: EnrichedItem[] = [];
     for (const item of working) {
       if (item.mediaType === 'episode' && item.showTitle && item.seasonNumber !== undefined) {
         const key = `${item.showTitle}::S${item.seasonNumber}::${item.libraryName}`;
-        const existing = rolledUp.get(key);
-        if (existing) {
-          existing.episodeCount = (existing.episodeCount ?? 1) + 1;
-          if (typeof item.episodeNumber === 'number') {
-            existing.episodeNumbers = [...(existing.episodeNumbers ?? []), item.episodeNumber];
-          }
+        const existingIndex = seasonIndex.get(key);
+        if (existingIndex !== undefined) {
+          const existing = kept[existingIndex];
+          kept = [
+            ...kept.slice(0, existingIndex),
+            {
+              ...existing,
+              episodeCount: (existing.episodeCount ?? 1) + 1,
+              episodeNumbers:
+                typeof item.episodeNumber === 'number'
+                  ? [...(existing.episodeNumbers ?? []), item.episodeNumber]
+                  : existing.episodeNumbers,
+            },
+            ...kept.slice(existingIndex + 1),
+          ];
           continue;
         }
         const season: EnrichedItem = {
@@ -39,16 +50,17 @@ export function applyFilters(
           episodeCount: 1,
           episodeNumbers: typeof item.episodeNumber === 'number' ? [item.episodeNumber] : [],
         };
-        rolledUp.set(key, season);
-        kept.push(season);
+        seasonIndex.set(key, kept.length);
+        kept = [...kept, season];
       } else {
-        kept.push(item);
+        kept = [...kept, item];
       }
     }
-    for (const season of rolledUp.values()) {
-      season.episodeNumbers?.sort((a, b) => a - b);
-    }
-    working = kept;
+    working = kept.map(entry =>
+      entry.episodeNumbers
+        ? { ...entry, episodeNumbers: [...entry.episodeNumbers].sort((a, b) => a - b) }
+        : entry,
+    );
   }
 
   // Group by section and sort most-recent-first within each section so

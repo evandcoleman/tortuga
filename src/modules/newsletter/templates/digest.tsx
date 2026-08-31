@@ -113,7 +113,10 @@ export function DigestEmail({
   const itemDisplay = resolveItemDisplay(appearance?.item_display);
   const header = appearance?.header;
   const footer = appearance?.footer;
-  const sections = buildLibrarySections(items, appearance?.libraries);
+  // `limits` is only ever supplied for the email variant; its absence (the web/hosted
+  // variant) means rule-based per-library caps must not truncate anything either.
+  const isEmailVariant = limits != null;
+  const sections = buildLibrarySections(items, appearance?.libraries, { applyRuleCaps: isEmailVariant });
   const { palette, fonts, layout } = theme;
 
   const dateRange = formatDateRange(windowStart, windowEnd);
@@ -230,10 +233,10 @@ export function DigestEmail({
         {sections.map(section => {
           const SectionLayout = resolveLayout(section.layoutId ?? layoutId);
           const anchor = sectionAnchor(section.name);
-          const total = section.items.length;
+          const total = section.totalCount;
           const limit = limits?.perLibrarySection;
-          const truncated = limit != null && total > limit;
-          const displayItems = truncated ? section.items.slice(0, limit) : section.items;
+          const displayItems = limit != null ? section.items.slice(0, limit) : section.items;
+          const truncated = displayItems.length < total;
           return (
             <Section key={section.name} id={anchor} style={{ marginTop: 32 }}>
               <Row>
