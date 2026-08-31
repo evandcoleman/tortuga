@@ -1,9 +1,23 @@
 import { eq } from 'drizzle-orm';
 import type { Db } from '@/kernel/db/client';
 import type { TautulliClient } from '@/kernel/integrations/tautulli';
+import { getInviteByEmail, markInviteAccepted } from '@/modules/invites/service';
 import { recipientsCache } from '../schema';
 
 type RecipientSource = 'plex' | 'manual';
+
+/**
+ * When a newly-synced recipient matches a known Tortuga invite by email, the
+ * invite is marked accepted and its `welcomeSentAt` is copied onto the new
+ * recipient's `welcomedAt`. No match (invited straight through Plex, outside
+ * Tortuga) leaves `welcomedAt` null so the "not welcomed" badge shows.
+ */
+function resolveWelcomedAt(db: Db, email: string): Date | null {
+  const invite = getInviteByEmail(db, email);
+  if (!invite) return null;
+  markInviteAccepted(db, email);
+  return invite.welcomeSentAt;
+}
 
 export async function syncRecipients(db: Db, tautulli: TautulliClient) {
   const users = await tautulli.getUsers();
@@ -16,6 +30,7 @@ export async function syncRecipients(db: Db, tautulli: TautulliClient) {
       db.insert(recipientsCache).values({
         email: u.email, name: u.name, plexUsername: u.plexUsername,
         lastSynced: new Date(), active: true, source: 'plex',
+        welcomedAt: resolveWelcomedAt(db, u.email),
       }).run();
       synced++;
       continue;

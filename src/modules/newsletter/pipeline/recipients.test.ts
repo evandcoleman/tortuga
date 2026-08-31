@@ -10,6 +10,8 @@ import {
   importManualRecipients,
 } from './recipients';
 import { recipientsCache } from '../schema';
+import { upsertInviteAfterPlexInvite, markWelcomeSent, getInviteByEmail } from '@/modules/invites/service';
+import type { TautulliClient } from '@/kernel/integrations/tautulli';
 
 function freshDb(): Db {
   const db = createDb(':memory:');
@@ -178,6 +180,41 @@ describe('removeRecipient', () => {
 
     // Assert
     expect(res).toEqual({ removed: false });
+  });
+});
+
+describe('syncRecipients invite matching', () => {
+  it('marks a matching invite accepted and copies welcomeSentAt onto the new recipient', async () => {
+    const db = freshDb();
+    upsertInviteAfterPlexInvite(db, 'welcomed@x.io', ['1001']);
+    const sentAt = new Date(2026, 0, 1);
+    markWelcomeSent(db, 'welcomed@x.io', sentAt);
+    const tautulli = { getUsers: async () => [{ plexUserId: 1, name: 'W', plexUsername: 'w', email: 'welcomed@x.io' }] } as unknown as TautulliClient;
+
+    await syncRecipients(db, tautulli);
+
+    expect(rowFor(db, 'welcomed@x.io')?.welcomedAt).toEqual(sentAt);
+    expect(getInviteByEmail(db, 'welcomed@x.io')?.status).toBe('accepted');
+  });
+
+  it('leaves welcomedAt null for a new recipient with no matching invite (invited outside Tortuga)', async () => {
+    const db = freshDb();
+    const tautulli = { getUsers: async () => [{ plexUserId: 1, name: 'Outside', plexUsername: 'o', email: 'outside@x.io' }] } as unknown as TautulliClient;
+
+    await syncRecipients(db, tautulli);
+
+    expect(rowFor(db, 'outside@x.io')?.welcomedAt).toBeNull();
+  });
+
+  it('leaves welcomedAt null when the matching invite has no welcomeSentAt yet (Plex succeeded, welcome email failed)', async () => {
+    const db = freshDb();
+    upsertInviteAfterPlexInvite(db, 'pending-welcome@x.io', ['1001']);
+    const tautulli = { getUsers: async () => [{ plexUserId: 1, name: 'P', plexUsername: 'p', email: 'pending-welcome@x.io' }] } as unknown as TautulliClient;
+
+    await syncRecipients(db, tautulli);
+
+    expect(rowFor(db, 'pending-welcome@x.io')?.welcomedAt).toBeNull();
+    expect(getInviteByEmail(db, 'pending-welcome@x.io')?.status).toBe('accepted');
   });
 });
 
