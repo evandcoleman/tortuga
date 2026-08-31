@@ -16,8 +16,6 @@ import {
 import { secretPatch, urlPatch } from '../_lib/form-values';
 import type { ServiceSaveState } from '../_components/ServiceCard';
 
-export type { ServiceSaveState };
-
 const urlSchema = z.string().url();
 
 /** Returns a user-facing error when a submitted (non-untouched) URL patch fails validation. */

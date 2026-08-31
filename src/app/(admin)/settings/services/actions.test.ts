@@ -41,8 +41,8 @@ import {
   saveMaintainerrSettings,
   testTautulli,
   testTmdb,
-  type ServiceSaveState,
 } from './actions';
+import type { ServiceSaveState } from '../_components/ServiceCard';
 
 function fd(entries: Record<string, string>): FormData {
   const f = new FormData();
