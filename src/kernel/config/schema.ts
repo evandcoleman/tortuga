@@ -62,6 +62,8 @@ export const NewsletterConfigSchema = z.object({
     min_tmdb_rating: z.number().min(0).max(10).default(0),
     dedupe_episodes_into_seasons: z.boolean().default(true),
     max_items_per_section: z.number().int().positive().default(12),
+    /** Optional cap on the leaving-soon section; unset (undefined) means uncapped. */
+    max_items_leaving_soon: z.number().int().positive().optional(),
     exclude_genres: z.array(z.string()).default([]),
   }).default(() => ({
     min_tmdb_rating: 0,

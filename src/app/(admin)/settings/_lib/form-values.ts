@@ -13,6 +13,12 @@ export function num(fd: FormData, key: string): number {
   return Number(str(fd, key));
 }
 
+/** Like `num`, but a blank field means "unset" rather than 0 — for optional numeric config fields. */
+export function optNum(fd: FormData, key: string): number | undefined {
+  const raw = str(fd, key);
+  return raw === '' ? undefined : Number(raw);
+}
+
 export function list(fd: FormData, key: string): string[] {
   return str(fd, key)
     .split(/[\n,]/)

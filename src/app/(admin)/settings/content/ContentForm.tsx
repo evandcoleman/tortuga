@@ -32,6 +32,15 @@ export function ContentForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <NumberField name="filters.min_tmdb_rating" label="Min TMDB rating" defaultValue={config.filters.min_tmdb_rating} step="0.1" min={0} max={10} error={err['filters.min_tmdb_rating']} />
           <NumberField name="filters.max_items_per_section" label="Max items per section" defaultValue={config.filters.max_items_per_section} min={1} error={err['filters.max_items_per_section']} />
+          <NumberField
+            name="filters.max_items_leaving_soon"
+            label="Max items in leaving soon"
+            defaultValue={config.filters.max_items_leaving_soon}
+            min={1}
+            placeholder="Uncapped"
+            hint="Blank = uncapped."
+            error={err['filters.max_items_leaving_soon']}
+          />
           <TextField name="filters.exclude_genres" label="Exclude genres" defaultValue={config.filters.exclude_genres.join(', ')} hint="Comma or newline separated." />
           <TextField name="include_libraries" label="Include libraries" defaultValue={(config.include_libraries ?? []).join(', ')} hint="Blank = all libraries." />
         </div>

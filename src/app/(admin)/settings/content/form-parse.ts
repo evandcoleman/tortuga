@@ -1,6 +1,6 @@
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import { mergeAndValidate, type ParseResult } from '../_lib/config-patch';
-import { str, bool, num, list, opt, numList } from '../_lib/form-values';
+import { str, bool, num, optNum, list, opt, numList } from '../_lib/form-values';
 
 export function parseContentForm(fd: FormData, current: NewsletterConfig): ParseResult {
   const includeRaw = list(fd, 'include_libraries');
@@ -25,6 +25,7 @@ export function parseContentForm(fd: FormData, current: NewsletterConfig): Parse
       min_tmdb_rating: num(fd, 'filters.min_tmdb_rating'),
       dedupe_episodes_into_seasons: bool(fd, 'filters.dedupe_episodes_into_seasons'),
       max_items_per_section: num(fd, 'filters.max_items_per_section'),
+      max_items_leaving_soon: optNum(fd, 'filters.max_items_leaving_soon'),
       exclude_genres: list(fd, 'filters.exclude_genres'),
     },
     commentary: {

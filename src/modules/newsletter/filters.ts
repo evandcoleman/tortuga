@@ -3,7 +3,6 @@ import type { EnrichedItem } from './types';
 export interface FilterOpts {
   min_tmdb_rating: number;
   dedupe_episodes_into_seasons: boolean;
-  max_items_per_section: number;
   exclude_genres: string[];
 }
 
@@ -52,16 +51,20 @@ export function applyFilters(
     working = kept;
   }
 
+  // Group by section and sort most-recent-first within each section so
+  // downstream per-section caps (applied at render time, not here) keep the
+  // newest items. Per-section caps used to be applied here; they now live in
+  // the renderer so the web variant can show every item.
   const bySection = new Map<string, EnrichedItem[]>();
   for (const item of working) {
     const list = bySection.get(item.libraryName) ?? [];
     list.push(item);
     bySection.set(item.libraryName, list);
   }
-  const capped: EnrichedItem[] = [];
+  const sorted: EnrichedItem[] = [];
   for (const [, list] of bySection) {
     list.sort((a, b) => b.addedAt.getTime() - a.addedAt.getTime());
-    capped.push(...list.slice(0, opts.max_items_per_section));
+    sorted.push(...list);
   }
-  return capped;
+  return sorted;
 }

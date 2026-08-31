@@ -90,12 +90,21 @@ export function SecretField({ name, label, source, envVar, hint }: {
   );
 }
 
-export function NumberField({ name, label, defaultValue, hint, error, step, min, max }: {
-  name: string; label: string; defaultValue: number; hint?: string; error?: string; step?: string; min?: number; max?: number;
+export function NumberField({ name, label, defaultValue, hint, error, step, min, max, placeholder }: {
+  name: string; label: string; defaultValue?: number; hint?: string; error?: string; step?: string; min?: number; max?: number; placeholder?: string;
 }) {
   return (
     <Wrap label={label} hint={hint} error={error}>
-      <input className={inputCls} name={name} type="number" defaultValue={defaultValue} step={step} min={min} max={max} />
+      <input
+        className={inputCls}
+        name={name}
+        type="number"
+        defaultValue={defaultValue}
+        step={step}
+        min={min}
+        max={max}
+        placeholder={placeholder}
+      />
     </Wrap>
   );
 }

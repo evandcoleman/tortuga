@@ -121,6 +121,23 @@ describe('NewsletterConfigSchema leaving', () => {
   });
 });
 
+describe('NewsletterConfigSchema filters.max_items_leaving_soon', () => {
+  it('defaults to unset (uncapped)', () => {
+    const cfg = NewsletterConfigSchema.parse(base);
+    expect(cfg.filters.max_items_leaving_soon).toBeUndefined();
+  });
+
+  it('accepts a positive int', () => {
+    const cfg = NewsletterConfigSchema.parse({ ...base, filters: { max_items_leaving_soon: 5 } });
+    expect(cfg.filters.max_items_leaving_soon).toBe(5);
+  });
+
+  it('rejects zero or negative values', () => {
+    expect(() => NewsletterConfigSchema.parse({ ...base, filters: { max_items_leaving_soon: 0 } })).toThrow();
+    expect(() => NewsletterConfigSchema.parse({ ...base, filters: { max_items_leaving_soon: -1 } })).toThrow();
+  });
+});
+
 describe('NewsletterConfigSchema timezone', () => {
   it('accepts a valid IANA timezone', () => {
     const cfg = NewsletterConfigSchema.parse({ ...base, timezone: 'America/Los_Angeles' });

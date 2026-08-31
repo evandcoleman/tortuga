@@ -40,6 +40,21 @@ describe('parseContentForm', () => {
     expect(r.ok && r.config.include_libraries).toBeNull();
   });
 
+  it('leaves max_items_leaving_soon unset when the field is blank', () => {
+    const r = parseContentForm(fd(base), current);
+    expect(r.ok && r.config.filters.max_items_leaving_soon).toBeUndefined();
+  });
+
+  it('parses a numeric max_items_leaving_soon', () => {
+    const r = parseContentForm(fd({ ...base, 'filters.max_items_leaving_soon': '3' }), current);
+    expect(r.ok && r.config.filters.max_items_leaving_soon).toBe(3);
+  });
+
+  it('rejects a non-positive max_items_leaving_soon', () => {
+    const r = parseContentForm(fd({ ...base, 'filters.max_items_leaving_soon': '0' }), current);
+    expect(r.ok).toBe(false);
+  });
+
   it('omits optional extras when blank', () => {
     const r = parseContentForm(fd(base), current);
     expect(r.ok && r.config.extras).toBeUndefined();
