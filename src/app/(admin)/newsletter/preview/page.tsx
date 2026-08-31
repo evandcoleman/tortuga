@@ -8,6 +8,7 @@ import { digests, recipientsCache } from '@/modules/newsletter/schema';
 import { PreviewSwitcher } from './PreviewSwitcher';
 import { SubmitButton } from './SubmitButton';
 import { IssueUrlCopy } from './IssueUrlCopy';
+import { digestIssueUrl } from './issue-url';
 import {
   Badge,
   Card,
@@ -55,6 +56,7 @@ export default function Preview() {
   const themedPreviews = themed && row && themed.digestId === row.id ? themed.previews : null;
   const defaultThemeId = ctx.config.newsletter.theme;
   const defaultLayoutId = ctx.config.newsletter.layout;
+  const issueUrl = digestIssueUrl(row, ctx.env.APP_URL);
   const recipientCount = ctx.db
     .select()
     .from(recipientsCache)
@@ -76,9 +78,9 @@ export default function Preview() {
         }
       />
 
-      {row?.slug ? (
+      {issueUrl ? (
         <div className="mb-4">
-          <IssueUrlCopy url={`${ctx.env.APP_URL}/issues/${row.slug}`} />
+          <IssueUrlCopy url={issueUrl} />
         </div>
       ) : null}
 
