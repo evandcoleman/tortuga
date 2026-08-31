@@ -10,6 +10,7 @@ import {
 import * as React from 'react';
 import type { EnrichedItem } from '../types';
 import { resolveThemeWithOverrides } from './themes';
+import type { ThemePalette } from './themes';
 import { resolveLayout } from './layouts';
 import { buildLibrarySections, resolveBlocks, resolveItemDisplay } from '../appearance/resolve';
 import type { Appearance } from '../appearance/schema';
@@ -21,9 +22,16 @@ export interface DigestLink {
   label: string;
 }
 
+/** Per-section item caps applied at render time; unset means uncapped (used by the web variant). */
+export interface DigestLimits {
+  perLibrarySection?: number;
+  leavingSoon?: number;
+}
+
 export interface DigestEmailProps {
   items: EnrichedItem[];
-  unsubscribeUrl: string;
+  /** Omitted for the web variant, which has no per-recipient unsubscribe link. */
+  unsubscribeUrl?: string;
   appName: string;
   windowStart: Date;
   windowEnd: Date;
@@ -39,6 +47,32 @@ export interface DigestEmailProps {
   leavingHeading?: string;
   /** IANA timezone used to format the "Leaves <date>" label on leaving items. */
   timezone?: string;
+  /** Per-section item caps; unset (the web variant) shows every item. */
+  limits?: DigestLimits;
+  /** Absolute URL to the hosted web version. Enables the "View this issue online" link and "View all" section links. */
+  issueUrl?: string;
+}
+
+/** Stable, non-configurable id for a section's `#anchor` — independent of user-editable titles/headings. */
+export function sectionAnchor(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'section';
+}
+
+export const LEAVING_SOON_ANCHOR = 'leaving-soon';
+
+/** Link shown under a truncated section, pointing at that section's anchor on the hosted web version. */
+function ViewAllLink({ href, total, palette }: { href: string; total: number; palette: ThemePalette }) {
+  return (
+    <Text style={{ margin: '10px 0 0', fontSize: 12 }}>
+      <Link href={href} style={{ color: palette.accent, fontWeight: 600, textDecoration: 'none' }}>
+        View all {total} →
+      </Link>
+    </Text>
+  );
 }
 
 export function formatDateRange(start: Date, end: Date): string {
@@ -72,6 +106,8 @@ export function DigestEmail({
   leavingItems,
   leavingHeading,
   timezone,
+  limits,
+  issueUrl,
 }: DigestEmailProps) {
   const theme = resolveThemeWithOverrides(themeId, appearance?.theme_overrides);
   const itemDisplay = resolveItemDisplay(appearance?.item_display);
@@ -131,21 +167,38 @@ export function DigestEmail({
     </Section>
   );
 
-  const introNode = intro ? (
+  const viewOnlineNode = issueUrl ? (
+    <Text
+      style={{
+        margin: 0,
+        fontSize: 12,
+        fontWeight: 600,
+      }}
+    >
+      <Link href={issueUrl} style={{ color: palette.accent, textDecoration: 'underline' }}>
+        View this issue online →
+      </Link>
+    </Text>
+  ) : null;
+
+  const introNode = intro || viewOnlineNode ? (
     <Section style={{ marginTop: 20 }}>
-      <Text
-        style={{
-          margin: 0,
-          fontFamily: fonts.heading,
-          fontSize: 17,
-          lineHeight: 1.55,
-          color: palette.ink,
-          fontStyle: layout.introItalic ? 'italic' : 'normal',
-        }}
-      >
-        {intro}
-      </Text>
-      {disclaimer ? (
+      {viewOnlineNode}
+      {intro ? (
+        <Text
+          style={{
+            margin: viewOnlineNode ? '10px 0 0' : 0,
+            fontFamily: fonts.heading,
+            fontSize: 17,
+            lineHeight: 1.55,
+            color: palette.ink,
+            fontStyle: layout.introItalic ? 'italic' : 'normal',
+          }}
+        >
+          {intro}
+        </Text>
+      ) : null}
+      {intro && disclaimer ? (
         <Text
           style={{
             margin: '8px 0 0',
@@ -176,8 +229,13 @@ export function DigestEmail({
 
         {sections.map(section => {
           const SectionLayout = resolveLayout(section.layoutId ?? layoutId);
+          const anchor = sectionAnchor(section.name);
+          const total = section.items.length;
+          const limit = limits?.perLibrarySection;
+          const truncated = limit != null && total > limit;
+          const displayItems = truncated ? section.items.slice(0, limit) : section.items;
           return (
-            <Section key={section.name} style={{ marginTop: 32 }}>
+            <Section key={section.name} id={anchor} style={{ marginTop: 32 }}>
               <Row>
                 <Column>
                   <Text
@@ -195,7 +253,7 @@ export function DigestEmail({
                 </Column>
                 <Column align="right">
                   <Text style={{ margin: 0, fontSize: 11, color: palette.muted }}>
-                    {section.items.length} {section.items.length === 1 ? 'title' : 'titles'}
+                    {total} {total === 1 ? 'title' : 'titles'}
                   </Text>
                 </Column>
               </Row>
@@ -208,7 +266,10 @@ export function DigestEmail({
                 }}
               />
 
-              <SectionLayout.Items items={section.items} theme={theme} itemDisplay={itemDisplay} timezone={timezone} />
+              <SectionLayout.Items items={displayItems} theme={theme} itemDisplay={itemDisplay} timezone={timezone} />
+              {truncated && issueUrl ? (
+                <ViewAllLink href={`${issueUrl}#${anchor}`} total={total} palette={palette} />
+              ) : null}
             </Section>
           );
         })}
@@ -219,6 +280,10 @@ export function DigestEmail({
     leavingItems && leavingItems.length > 0 ? (
       (() => {
         const SectionLayout = resolveLayout(layoutId);
+        const total = leavingItems.length;
+        const limit = limits?.leavingSoon;
+        const truncated = limit != null && total > limit;
+        const displayItems = truncated ? leavingItems.slice(0, limit) : leavingItems;
         return (
           <>
             <Hr
@@ -229,7 +294,7 @@ export function DigestEmail({
                 margin: '28px 0 0',
               }}
             />
-            <Section style={{ marginTop: 32 }}>
+            <Section id={LEAVING_SOON_ANCHOR} style={{ marginTop: 32 }}>
               <Row>
                 <Column>
                   <Text
@@ -247,7 +312,7 @@ export function DigestEmail({
                 </Column>
                 <Column align="right">
                   <Text style={{ margin: 0, fontSize: 11, color: palette.muted }}>
-                    {leavingItems.length} {leavingItems.length === 1 ? 'title' : 'titles'}
+                    {total} {total === 1 ? 'title' : 'titles'}
                   </Text>
                 </Column>
               </Row>
@@ -259,7 +324,10 @@ export function DigestEmail({
                   margin: '8px 0 0',
                 }}
               />
-              <SectionLayout.Items items={leavingItems} theme={theme} itemDisplay={itemDisplay} timezone={timezone} />
+              <SectionLayout.Items items={displayItems} theme={theme} itemDisplay={itemDisplay} timezone={timezone} />
+              {truncated && issueUrl ? (
+                <ViewAllLink href={`${issueUrl}#${LEAVING_SOON_ANCHOR}`} total={total} palette={palette} />
+              ) : null}
             </Section>
           </>
         );

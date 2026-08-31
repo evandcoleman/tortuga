@@ -5,7 +5,8 @@ import type { Theme } from './themes';
 export interface EmailShellProps {
   theme: Theme;
   appName: string;
-  unsubscribeUrl: string;
+  /** Omitted for the web variant, which has no per-recipient unsubscribe link. */
+  unsubscribeUrl?: string;
   previewText?: string;
   children: React.ReactNode;
 }
@@ -45,24 +46,26 @@ export function EmailShell({ theme, appName, unsubscribeUrl, previewText, childr
         >
           {children}
 
-          <Text
-            style={{
-              margin: '6px 0 0',
-              fontSize: 12,
-              color: palette.muted,
-              textAlign: 'center',
-              lineHeight: 1.5,
-            }}
-          >
-            You&apos;re receiving this because you have access to {appName}.
-            <br />
-            <Link
-              href={unsubscribeUrl}
-              style={{ color: palette.muted, textDecoration: 'underline' }}
+          {unsubscribeUrl ? (
+            <Text
+              style={{
+                margin: '6px 0 0',
+                fontSize: 12,
+                color: palette.muted,
+                textAlign: 'center',
+                lineHeight: 1.5,
+              }}
             >
-              Unsubscribe
-            </Link>
-          </Text>
+              You&apos;re receiving this because you have access to {appName}.
+              <br />
+              <Link
+                href={unsubscribeUrl}
+                style={{ color: palette.muted, textDecoration: 'underline' }}
+              >
+                Unsubscribe
+              </Link>
+            </Text>
+          ) : null}
         </Container>
       </Body>
     </Html>

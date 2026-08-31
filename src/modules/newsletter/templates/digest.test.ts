@@ -278,3 +278,105 @@ describe('DigestEmail appearance', () => {
     expect(html.indexOf('Shows')).toBeLessThan(html.indexOf('Movies'));
   });
 });
+
+describe('DigestEmail limits + issue URL', () => {
+  const manyMovies: EnrichedItem[] = Array.from({ length: 5 }, (_, i) => ({
+    guid: `m${i}`, libraryName: 'Movies', title: `Movie ${i}`, mediaType: 'movie',
+    addedAt: new Date('2026-05-20T00:00:00Z'), overview: 'x', rating: 0, posterUrl: '',
+  }));
+  const leavingItems: EnrichedItem[] = Array.from({ length: 4 }, (_, i) => ({
+    guid: `l${i}`, libraryName: 'Movies', title: `Leaving ${i}`, mediaType: 'movie',
+    addedAt: new Date('2026-05-20T00:00:00Z'), overview: 'x', rating: 0, posterUrl: '',
+    leavesAt: new Date('2026-09-06T12:00:00Z'),
+  }));
+
+  const base = {
+    items: manyMovies,
+    unsubscribeUrl: 'http://u/x',
+    appName: 'Plex',
+    windowStart: new Date('2026-05-20'),
+    windowEnd: new Date('2026-05-27'),
+  };
+
+  it('truncates a library section at the limit and adds a "View all N" link', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      limits: { perLibrarySection: 2 },
+      issueUrl: 'https://x/issues/abc',
+    }));
+    expect(html).toContain('Movie 0');
+    expect(html).toContain('Movie 1');
+    expect(html).not.toContain('Movie 2');
+    expect(html).toMatch(/View all\s*(<!-- -->)?5/);
+    expect(html).toContain('https://x/issues/abc#movies');
+  });
+
+  it('omits the "View all" link when the section is under the limit', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      limits: { perLibrarySection: 10 },
+      issueUrl: 'https://x/issues/abc',
+    }));
+    expect(html).not.toContain('View all');
+  });
+
+  it('caps the leaving-soon section only when leavingSoon is set', async () => {
+    const uncapped = await render(createElement(DigestEmail, {
+      ...base,
+      leavingItems,
+      limits: { perLibrarySection: 99 },
+      issueUrl: 'https://x/issues/abc',
+    }));
+    expect(uncapped).toContain('Leaving 3');
+    expect(uncapped).not.toContain('View all');
+
+    const capped = await render(createElement(DigestEmail, {
+      ...base,
+      leavingItems,
+      limits: { perLibrarySection: 99, leavingSoon: 2 },
+      issueUrl: 'https://x/issues/abc',
+    }));
+    expect(capped).toContain('Leaving 0');
+    expect(capped).toContain('Leaving 1');
+    expect(capped).not.toContain('Leaving 2');
+    expect(capped).toMatch(/View all\s*(<!-- -->)?4/);
+    expect(capped).toContain('https://x/issues/abc#leaving-soon');
+  });
+
+  it('renders a "View this issue online" link above the intro when issueUrl is set', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      intro: 'Hello.',
+      issueUrl: 'https://x/issues/abc',
+    }));
+    expect(html).toContain('View this issue online');
+    const onlineIdx = html.indexOf('View this issue online');
+    const introIdx = html.indexOf('Hello.');
+    expect(onlineIdx).toBeGreaterThan(-1);
+    expect(onlineIdx).toBeLessThan(introIdx);
+  });
+
+  it('omits the "View this issue online" link when issueUrl is unset', async () => {
+    const html = await render(createElement(DigestEmail, base));
+    expect(html).not.toContain('View this issue online');
+  });
+
+  it('web variant (no limits, no unsubscribeUrl) renders every item and no unsubscribe line', async () => {
+    const html = await render(createElement(DigestEmail, {
+      ...base,
+      unsubscribeUrl: undefined,
+      leavingItems,
+    }));
+    expect(html).toContain('Movie 0');
+    expect(html).toContain('Movie 4');
+    expect(html).toContain('Leaving 3');
+    expect(html).not.toContain('Unsubscribe');
+    expect(html).not.toContain('View all');
+  });
+
+  it('renders stable section id anchors for library and leaving sections', async () => {
+    const html = await render(createElement(DigestEmail, { ...base, leavingItems }));
+    expect(html).toContain('id="movies"');
+    expect(html).toContain('id="leaving-soon"');
+  });
+});
