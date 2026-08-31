@@ -32,7 +32,10 @@ export interface PlexSection {
 export interface PlexPendingInvite {
   id: string;
   invitedEmail: string;
-  librarySectionIds: string[];
+  /** Flags plex.tv assigns per invite; required verbatim on the cancel request's query string. */
+  friend: boolean;
+  home: boolean;
+  server: boolean;
 }
 
 export type PlexClientError =
@@ -105,15 +108,28 @@ function parseSectionsXml(xml: string): PlexSection[] {
   });
 }
 
-const invitedSectionsSchema = z.array(z.union([z.string(), z.number()])).transform(ids => ids.map(String));
+const plexBooleanSchema = z.union([z.string(), z.number(), z.boolean()]).transform(v => String(v) === '1' || v === true);
 
-const pendingInviteSchema = z.object({
+const inviteAttrSchema = z.object({
   id: z.union([z.string(), z.number()]).transform(String),
-  invitedEmail: z.string(),
-  librarySectionIds: invitedSectionsSchema.default([]),
-  acceptedAt: z.union([z.string(), z.null()]).optional(),
+  email: z.string(),
+  friend: plexBooleanSchema.default(false),
+  home: plexBooleanSchema.default(false),
+  server: plexBooleanSchema.default(false),
 });
-const pendingInvitesSchema = z.array(pendingInviteSchema);
+
+function parsePendingInvitesXml(xml: string): PlexPendingInvite[] {
+  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' });
+  const doc = parser.parse(xml) as Record<string, unknown>;
+  const container = doc.MediaContainer as Record<string, unknown> | undefined;
+  if (!container) throw new Error('missing MediaContainer element');
+
+  const invites = asArray(container.Invite as Record<string, unknown> | Record<string, unknown>[] | undefined);
+  return invites.map(raw => {
+    const parsed = inviteAttrSchema.parse(raw);
+    return { id: parsed.id, invitedEmail: parsed.email, friend: parsed.friend, home: parsed.home, server: parsed.server };
+  });
+}
 
 export function createPlexClient(opts: PlexOpts) {
   const fetcher = opts.fetcher ?? fetch;
@@ -180,7 +196,7 @@ export function createPlexClient(opts: PlexOpts) {
     let res: Response;
     try {
       res = await fetchWithRetry(
-        `${PLEX_API_BASE}/api/v2/servers/${opts.machineId}/shared_servers`,
+        `${PLEX_API_BASE}/api/invites/requested`,
         { method: 'GET', headers: authHeaders(opts) },
         { fetcher, signal },
       );
@@ -190,27 +206,24 @@ export function createPlexClient(opts: PlexOpts) {
     if (!res.ok) {
       return { ok: false, error: httpError(res.status, `plex.tv returned HTTP ${res.status}`) };
     }
-    let body: unknown;
     try {
-      body = await res.json();
+      const xml = await res.text();
+      return { ok: true, data: parsePendingInvitesXml(xml) };
     } catch (err) {
       return { ok: false, error: invalidResponseError(err) };
     }
-    const parsed = pendingInvitesSchema.safeParse(body);
-    if (!parsed.success) {
-      return { ok: false, error: invalidResponseError(parsed.error) };
-    }
-    const pending = parsed.data
-      .filter(row => !row.acceptedAt)
-      .map(row => ({ id: row.id, invitedEmail: row.invitedEmail, librarySectionIds: row.librarySectionIds }));
-    return { ok: true, data: pending };
   }
 
-  async function cancelInvite(id: string, signal?: AbortSignal): Promise<PlexResult<void>> {
+  async function cancelInvite(invite: PlexPendingInvite, signal?: AbortSignal): Promise<PlexResult<void>> {
+    const query = new URLSearchParams({
+      friend: invite.friend ? '1' : '0',
+      home: invite.home ? '1' : '0',
+      server: invite.server ? '1' : '0',
+    });
     let res: Response;
     try {
       res = await fetchWithRetry(
-        `${PLEX_API_BASE}/api/v2/shared_servers/${id}`,
+        `${PLEX_API_BASE}/api/invites/requested/${invite.id}?${query.toString()}`,
         { method: 'DELETE', headers: authHeaders(opts) },
         { fetcher, signal },
       );

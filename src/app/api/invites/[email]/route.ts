@@ -32,7 +32,7 @@ export async function DELETE(_req: Request, { params }: RouteParams) {
     if (pending.ok) {
       const match = pending.data.find(p => p.invitedEmail.toLowerCase() === decoded.toLowerCase());
       if (match) {
-        const cancelled = await ctx.plex.cancelInvite(match.id);
+        const cancelled = await ctx.plex.cancelInvite(match);
         if (!cancelled.ok) {
           log.error({ error: cancelled.error, email: decoded }, 'failed to cancel plex invite');
           return NextResponse.json({ error: cancelled.error.message }, { status: 502 });

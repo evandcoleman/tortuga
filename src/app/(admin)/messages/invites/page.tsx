@@ -40,7 +40,9 @@ export default async function InvitesPage() {
     const local = dbInvites.find(i => i.email.toLowerCase() === p.invitedEmail.toLowerCase());
     return {
       email: p.invitedEmail,
-      sectionIds: local ? parseSectionIds(local) : p.librarySectionIds,
+      // plex.tv's pending-invites endpoint doesn't report library section ids; only
+      // Tortuga's own invite record (when the invite went through Tortuga) has them.
+      sectionIds: local ? parseSectionIds(local) : [],
       sentAt: local?.sentAt.toISOString() ?? null,
       welcomeSentAt: local?.welcomeSentAt?.toISOString() ?? null,
     };

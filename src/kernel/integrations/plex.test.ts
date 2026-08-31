@@ -126,52 +126,95 @@ describe('PlexClient.invite', () => {
   });
 });
 
+const PENDING_INVITES_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer size="2">
+  <Invite id="555" createdAt="1700000000" email="friend@example.com" username="friend" friend="1" home="0" server="1">
+    <Server name="Cerberus" numLibraries="2"/>
+  </Invite>
+  <Invite id="556" createdAt="1700000100" email="other@example.com" username="other" friend="0" home="1" server="1">
+    <Server name="Cerberus" numLibraries="2"/>
+  </Invite>
+</MediaContainer>`;
+
 describe('PlexClient.getPendingInvites', () => {
-  it('parses the pending invites fixture', async () => {
-    const fixture = [
-      { id: 555, invitedEmail: 'friend@example.com', librarySectionIds: ['1001'], acceptedAt: null },
-      { id: 556, invitedEmail: 'other@example.com', librarySectionIds: ['1001', '1002'], acceptedAt: null },
-    ];
-    const fetcher = vi.fn().mockResolvedValue(jsonResponse(fixture));
+  it('parses the pending invites XML fixture from plex.tv/api/invites/requested', async () => {
+    const fetcher = vi.fn().mockResolvedValue(xmlResponse(PENDING_INVITES_XML));
     const client = createPlexClient({ ...baseOpts, fetcher });
     const result = await client.getPendingInvites();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data).toEqual([
-      { id: '555', invitedEmail: 'friend@example.com', librarySectionIds: ['1001'] },
-      { id: '556', invitedEmail: 'other@example.com', librarySectionIds: ['1001', '1002'] },
+      { id: '555', invitedEmail: 'friend@example.com', friend: true, home: false, server: true },
+      { id: '556', invitedEmail: 'other@example.com', friend: false, home: true, server: true },
     ]);
+    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://plex.tv/api/invites/requested');
+    expect(init.method).toBe('GET');
   });
 
-  it('excludes already-accepted shares', async () => {
-    const fixture = [
-      { id: 555, invitedEmail: 'friend@example.com', librarySectionIds: ['1001'], acceptedAt: null },
-      { id: 557, invitedEmail: 'accepted@example.com', librarySectionIds: ['1001'], acceptedAt: '2026-01-01T00:00:00Z' },
-    ];
-    const fetcher = vi.fn().mockResolvedValue(jsonResponse(fixture));
+  it('handles a single Invite with no siblings without collapsing the array', async () => {
+    const singleInviteXml = `<MediaContainer size="1">
+      <Invite id="555" createdAt="1700000000" email="friend@example.com" username="friend" friend="1" home="0" server="1">
+        <Server name="Cerberus" numLibraries="2"/>
+      </Invite>
+    </MediaContainer>`;
+    const fetcher = vi.fn().mockResolvedValue(xmlResponse(singleInviteXml));
     const client = createPlexClient({ ...baseOpts, fetcher });
     const result = await client.getPendingInvites();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.data.map(i => i.id)).toEqual(['555']);
+    expect(result.data).toEqual([
+      { id: '555', invitedEmail: 'friend@example.com', friend: true, home: false, server: true },
+    ]);
+  });
+
+  it('returns an empty list when there are no pending invites', async () => {
+    const fetcher = vi.fn().mockResolvedValue(xmlResponse('<MediaContainer size="0"/>'));
+    const client = createPlexClient({ ...baseOpts, fetcher });
+    const result = await client.getPendingInvites();
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data).toEqual([]);
+  });
+
+  it('returns a typed http error on a non-2xx response', async () => {
+    const fetcher = vi.fn().mockResolvedValue(xmlResponse('unauthorized', 401));
+    const client = createPlexClient({ ...baseOpts, fetcher });
+    const result = await client.getPendingInvites();
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.type).toBe('http');
+    expect(result.error.status).toBe(401);
+  });
+
+  it('returns a typed invalid_response error when an Invite is missing required attributes', async () => {
+    const missingEmailXml = `<MediaContainer size="1">
+      <Invite id="555" createdAt="1700000000" username="friend" friend="1" home="0" server="1"/>
+    </MediaContainer>`;
+    const fetcher = vi.fn().mockResolvedValue(xmlResponse(missingEmailXml));
+    const client = createPlexClient({ ...baseOpts, fetcher });
+    const result = await client.getPendingInvites();
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.type).toBe('invalid_response');
   });
 });
 
 describe('PlexClient.cancelInvite', () => {
-  it('sends a DELETE for the given id', async () => {
+  it('sends a DELETE with the invite id and friend/home/server flags in the query string', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     const client = createPlexClient({ ...baseOpts, fetcher });
-    const result = await client.cancelInvite('555');
+    const result = await client.cancelInvite({ id: '555', invitedEmail: 'friend@example.com', friend: true, home: false, server: true });
     expect(result.ok).toBe(true);
     const [url, init] = fetcher.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('https://plex.tv/api/v2/shared_servers/555');
+    expect(url).toBe('https://plex.tv/api/invites/requested/555?friend=1&home=0&server=1');
     expect(init.method).toBe('DELETE');
   });
 
   it('returns a typed http error when the delete fails', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
     const client = createPlexClient({ ...baseOpts, fetcher });
-    const result = await client.cancelInvite('555');
+    const result = await client.cancelInvite({ id: '555', invitedEmail: 'friend@example.com', friend: true, home: false, server: true });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.type).toBe('http');

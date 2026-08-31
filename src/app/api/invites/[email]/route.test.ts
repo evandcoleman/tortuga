@@ -41,13 +41,14 @@ describe('DELETE /api/invites/[email]', () => {
     db.insert(invites).values({
       email: 'a@x.io', sectionIds: '["1"]', sentAt: new Date(), welcomeSentAt: null, status: 'pending',
     }).run();
-    getPendingInvites.mockResolvedValue({ ok: true, data: [{ id: '999', invitedEmail: 'a@x.io', librarySectionIds: ['1'] }] });
+    const pendingEntry = { id: '999', invitedEmail: 'a@x.io', friend: true, home: false, server: true };
+    getPendingInvites.mockResolvedValue({ ok: true, data: [pendingEntry] });
     cancelInvite.mockResolvedValue({ ok: true, data: undefined });
 
     const res = await DELETE(new Request('http://localhost'), params('a@x.io'));
 
     expect(res.status).toBe(200);
-    expect(cancelInvite).toHaveBeenCalledWith('999');
+    expect(cancelInvite).toHaveBeenCalledWith(pendingEntry);
     const row = db.select().from(invites).where(eq(invites.email, 'a@x.io')).get();
     expect(row?.status).toBe('cancelled');
   });
