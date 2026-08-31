@@ -64,6 +64,58 @@ describe('runDigest', () => {
     expect(db.select().from(sends).all()[0].status).toBe('sent');
   });
 
+  it('assigns a unique slug at digest creation and stores it on the row', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, provider } = fakes();
+    await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+      config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-10T14:00:00Z'),
+    });
+    const [row] = db.select().from(digests).all();
+    expect(row.slug).toBeTruthy();
+    expect(row.slug).toMatch(/^[A-Za-z0-9_-]+$/);
+  });
+
+  it('stores an uncapped web_html snapshot alongside the capped rendered_html', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, provider } = fakes();
+    tautulli.getRecentlyAdded.mockResolvedValue(
+      Array.from({ length: 3 }, (_, i) => ({
+        guid: `g${i}`, title: `M${i}`, mediaType: 'movie', libraryName: 'Movies', addedAt: new Date(), year: 2020, raw: {},
+      })),
+    );
+    tmdb.searchMovie.mockResolvedValue({ id: 1, title: 'M', rating: 8, posterUrl: null, overview: 'o' });
+    await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+      config: { ...baseConfig, filters: { ...baseConfig.filters, max_items_per_section: 1 } } as any,
+      appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-10T15:00:00Z'),
+    });
+    const [row] = db.select().from(digests).all();
+    expect(row.webHtml).toBeTruthy();
+    // Web variant has no per-section cap, so it should not show a "View all" link.
+    expect(row.webHtml).not.toContain('View all');
+    // The email variant is capped and links back to the hosted issue.
+    expect(row.renderedHtml).toContain(`/issues/${row.slug}`);
+  });
+
+  it('renders the web variant without an unsubscribe link', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, provider } = fakes();
+    await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+      config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-10T16:00:00Z'),
+    });
+    const [row] = db.select().from(digests).all();
+    expect(row.webHtml).not.toContain('Unsubscribe');
+    expect(row.renderedHtml).toContain('Unsubscribe');
+  });
+
   it('skips when no items pass filters', async () => {
     const db = createDb(':memory:');
     applyMigrations(db);

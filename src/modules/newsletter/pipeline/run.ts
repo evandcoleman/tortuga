@@ -17,6 +17,7 @@ import { createLogger } from '@/kernel/logging/logger';
 import { digests, recipientsCache } from '../schema';
 import type { EnrichedItem } from '../types';
 import { applyFilters } from '../filters';
+import { generateDigestSlug } from '../slug';
 import { syncRecipients } from './recipients';
 import { enrichItems } from './enrich';
 import { fetchLeavingItems } from './leaving';
@@ -65,11 +66,12 @@ export interface RunDigestOpts {
 
 export async function runDigest(opts: RunDigestOpts) {
   const digestId = createId();
+  const slug = generateDigestSlug();
   const windowEnd = opts.scheduledAt;
   const windowStart = new Date(windowEnd.getTime() - opts.config.lookback_days * 86_400_000);
   opts.db.insert(digests).values({
     id: digestId, scheduledAt: opts.scheduledAt, windowStart, windowEnd,
-    status: 'pending', itemCount: 0,
+    status: 'pending', itemCount: 0, slug,
   }).run();
 
   try {
@@ -136,9 +138,9 @@ export async function runDigest(opts: RunDigestOpts) {
     const placeholderUnsub = generateUnsubscribeToken('preview@tortuga.local', opts.sessionSecret);
     const subject = `New on ${opts.config.from.name} — ${filtered.length} item${filtered.length === 1 ? '' : 's'}`;
 
-    // Shared across the stored preview and every per-recipient render so the
-    // theme and disclaimer are identical everywhere; only the unsubscribe token
-    // differs per recipient.
+    // Shared across every render (email and web) so the theme and disclaimer
+    // are identical everywhere; only the unsubscribe token, caps, and issue
+    // URL differ per variant/recipient.
     const baseEmailProps = {
       items: filteredWithPlexLinks,
       appName: opts.config.from.name,
@@ -157,16 +159,30 @@ export async function runDigest(opts: RunDigestOpts) {
       timezone: opts.config.timezone,
     };
 
+    const issueUrl = `${opts.appUrl}/issues/${slug}`;
+    // Email variant: per-section caps applied, links back to the full issue online.
+    const emailProps = {
+      ...baseEmailProps,
+      limits: {
+        perLibrarySection: opts.config.filters.max_items_per_section,
+        leavingSoon: opts.config.filters.max_items_leaving_soon,
+      },
+      issueUrl,
+    };
+
     const html = await render(
       createElement(DigestEmail, {
-        ...baseEmailProps,
+        ...emailProps,
         unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
       }),
     );
+    // Web variant: no caps (every item), no unsubscribe link, no recipient-specific
+    // content — an immutable snapshot served at the hosted issue URL.
+    const webHtml = await render(createElement(DigestEmail, { ...baseEmailProps }));
 
     opts.db.update(digests).set({
       status: 'rendered', itemCount: filtered.length,
-      renderedHtml: html, renderedSubject: subject,
+      renderedHtml: html, renderedSubject: subject, webHtml,
     }).where(eq(digests.id, digestId)).run();
 
     if (opts.cacheThemedPreviews) {
@@ -175,7 +191,7 @@ export async function runDigest(opts: RunDigestOpts) {
         for (const lay of Object.values(LAYOUTS)) {
           const comboHtml = await render(
             createElement(DigestEmail, {
-              ...baseEmailProps,
+              ...emailProps,
               unsubscribeUrl: `${opts.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
               themeId: theme.id,
               layoutId: lay.id,
@@ -209,7 +225,7 @@ export async function runDigest(opts: RunDigestOpts) {
         subject,
         from: opts.config.from,
         replyTo: opts.config.reply_to,
-        renderFor: unsubscribeUrl => render(createElement(DigestEmail, { ...baseEmailProps, unsubscribeUrl })),
+        renderFor: unsubscribeUrl => render(createElement(DigestEmail, { ...emailProps, unsubscribeUrl })),
         sendRow: { digestId },
         onRenderFailure: 'abort',
       },
