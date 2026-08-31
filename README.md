@@ -2,8 +2,8 @@
 
 Front-of-house for your Plex server. Sends a weekly digest of new content,
 filtered and TMDB-enriched, via [Resend](https://resend.com) or
-[Mailgun](https://www.mailgun.com). v1 ships newsletter-only; broadcasts,
-invites, and user lifecycle are on the roadmap.
+[Mailgun](https://www.mailgun.com). v1 ships newsletter-only; invites, recipient preferences, scheduled
+announcements, and more are on the [roadmap](ROADMAP.md).
 
 ## Quickstart (docker compose)
 
