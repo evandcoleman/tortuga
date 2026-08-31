@@ -7,6 +7,7 @@ import { getThemedPreviews } from '@/modules/newsletter/pipeline/preview-cache';
 import { digests, recipientsCache } from '@/modules/newsletter/schema';
 import { PreviewSwitcher } from './PreviewSwitcher';
 import { SubmitButton } from './SubmitButton';
+import { IssueUrlCopy } from './IssueUrlCopy';
 import {
   Badge,
   Card,
@@ -74,6 +75,12 @@ export default function Preview() {
           </form>
         }
       />
+
+      {row?.slug ? (
+        <div className="mb-4">
+          <IssueUrlCopy url={`${ctx.env.APP_URL}/issues/${row.slug}`} />
+        </div>
+      ) : null}
 
       {row ? (
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
