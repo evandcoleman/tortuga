@@ -1,5 +1,5 @@
 import { createId } from '@paralleldrive/cuid2';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 
 import type { Db } from '@/kernel/db/client';
 import { sends, unsubscribes } from '@/modules/newsletter/schema';
@@ -48,6 +48,14 @@ export interface DeliverToRecipientsArgs {
 export interface DeliverToRecipientsResult {
   sent: number;
   failed: number;
+  /**
+   * Count of recipients skipped because a non-failed `sends` row already
+   * existed for (digestId, recipientEmail) — see `alreadySentEmailsForDigest`.
+   * Callers should treat `sent + skippedAlreadySent > 0` as a successful
+   * outcome, since a retry where everything was already sent is a success,
+   * not a failure.
+   */
+  skippedAlreadySent: number;
   firstFailureMessage?: string;
 }
 
@@ -96,16 +104,36 @@ async function sendAndRecord(
   return result.error;
 }
 
+/**
+ * All recipient emails that already have a non-failed `sends` row for this
+ * digest, fetched in a single query. Used to make retrying a partially-failed
+ * digest send idempotent: recipients who already received it (or are still
+ * queued) are skipped, while recipients whose only prior attempt failed are
+ * retried.
+ */
+function alreadySentEmailsForDigest(
+  deps: DeliverToRecipientsDeps,
+  digestId: string,
+): Set<string> {
+  const rows = deps.db
+    .select({ recipientEmail: sends.recipientEmail })
+    .from(sends)
+    .where(and(eq(sends.digestId, digestId), ne(sends.status, 'failed')))
+    .all();
+  return new Set(rows.map(r => r.recipientEmail));
+}
+
 function markSendFailed(deps: DeliverToRecipientsDeps, sendId: string, message: string): void {
   deps.db.update(sends).set({
     status: 'failed', error: message, sentAt: new Date(),
   }).where(eq(sends.id, sendId)).run();
 }
 
-/** Tracks running sent/failed counts and the first failure message across the batch. */
+/** Tracks running sent/failed/skipped counts and the first failure message across the batch. */
 interface DeliveryTally {
   sent: number;
   failed: number;
+  skippedAlreadySent: number;
   firstFailureMessage: string | undefined;
 }
 
@@ -115,6 +143,10 @@ function recordSuccess(tally: DeliveryTally): DeliveryTally {
 
 function recordFailure(tally: DeliveryTally, message: string): DeliveryTally {
   return { ...tally, failed: tally.failed + 1, firstFailureMessage: tally.firstFailureMessage ?? message };
+}
+
+function recordSkippedAlreadySent(tally: DeliveryTally): DeliveryTally {
+  return { ...tally, skippedAlreadySent: tally.skippedAlreadySent + 1 };
 }
 
 /**
@@ -127,9 +159,25 @@ export async function deliverToRecipients(
   args: DeliverToRecipientsArgs,
 ): Promise<DeliverToRecipientsResult> {
   const mode = args.onRenderFailure ?? 'continue';
-  let tally: DeliveryTally = { sent: 0, failed: 0, firstFailureMessage: undefined };
+  let tally: DeliveryTally = {
+    sent: 0, failed: 0, skippedAlreadySent: 0, firstFailureMessage: undefined,
+  };
+
+  // Fetched once up front (rather than per-recipient) to avoid an N+1 query.
+  const alreadySentEmails = mode === 'abort' && 'digestId' in args.sendRow
+    ? alreadySentEmailsForDigest(deps, args.sendRow.digestId)
+    : null;
 
   for (const recipient of args.recipients) {
+    if (alreadySentEmails?.has(recipient.email)) {
+      // Guards against double-sending on a retry/replay that reuses the same
+      // digestId (e.g. a future scheduler retry path). Currently dead in
+      // practice because runDigest always mints a fresh digestId, but kept
+      // as defense-in-depth.
+      tally = recordSkippedAlreadySent(tally);
+      continue;
+    }
+
     const tokenStr = generateUnsubscribeToken(recipient.email, deps.sessionSecret);
     deps.db.insert(unsubscribes).values({ token: tokenStr, email: recipient.email, createdAt: new Date() }).run();
     const unsubscribeUrl = `${deps.appUrl}/api/unsubscribe?token=${tokenStr}`;
@@ -160,5 +208,10 @@ export async function deliverToRecipients(
     }
   }
 
-  return { sent: tally.sent, failed: tally.failed, firstFailureMessage: tally.firstFailureMessage };
+  return {
+    sent: tally.sent,
+    failed: tally.failed,
+    skippedAlreadySent: tally.skippedAlreadySent,
+    firstFailureMessage: tally.firstFailureMessage,
+  };
 }

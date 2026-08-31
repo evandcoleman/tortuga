@@ -61,7 +61,12 @@ export class ResendProvider implements EmailProvider {
   }
 
   parseEvent(body: string): NormalizedEvent {
-    const payload = JSON.parse(body) as { type?: string; data?: { email_id?: string } };
+    let payload: { type?: string; data?: { email_id?: string } };
+    try {
+      payload = JSON.parse(body) as { type?: string; data?: { email_id?: string } };
+    } catch {
+      return { type: 'other', providerMessageId: null, rawType: '', receivedAt: new Date() };
+    }
     const rawType = payload.type ?? '';
     const type: NormalizedEventType = EVENT_TYPE_MAP[rawType] ?? 'other';
     return {

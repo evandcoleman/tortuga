@@ -104,4 +104,11 @@ describe('ResendProvider.parseEvent', () => {
     expect(event.type).toBe('other');
     expect(event.rawType).toBe('email.opened');
   });
+
+  it('returns a safe "other" event instead of throwing on malformed JSON', () => {
+    const event = provider.parseEvent('not json{');
+    expect(event.type).toBe('other');
+    expect(event.providerMessageId).toBeNull();
+    expect(event.rawType).toBe('');
+  });
 });

@@ -218,7 +218,7 @@ export async function runDigest(opts: RunDigestOpts) {
       .filter(r => r.active)
       .filter(r => !opts.recipientFilter || opts.recipientFilter(r.email));
 
-    const { sent } = await deliverToRecipients(
+    const { sent, skippedAlreadySent } = await deliverToRecipients(
       { db: opts.db, provider: opts.provider, appUrl: opts.appUrl, sessionSecret: opts.sessionSecret },
       {
         recipients: recipients.map(r => ({ email: r.email, name: r.name })),
@@ -230,7 +230,10 @@ export async function runDigest(opts: RunDigestOpts) {
         onRenderFailure: 'abort',
       },
     );
-    const anySent = sent > 0;
+    // A retry/replay where every recipient was already sent to (same digestId)
+    // is a success, not a failure — otherwise it would falsely mark the
+    // digest 'failed' and unpublish its /issues page.
+    const anySent = sent + skippedAlreadySent > 0;
 
     opts.db.update(digests).set({
       status: anySent ? 'sent' : 'failed', ranAt: new Date(),

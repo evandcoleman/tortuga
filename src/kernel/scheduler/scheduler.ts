@@ -15,10 +15,21 @@ export function createScheduler() {
   return {
     register(spec: ScheduleSpec) {
       if (jobs.has(spec.name)) throw new Error(`duplicate schedule: ${spec.name}`);
-      const cron = new Cron(spec.cron, { timezone: spec.timezone }, async () => {
-        try { await spec.handler(); }
-        catch (err) { log.error({ schedule: spec.name, err }, 'scheduled handler threw'); }
-      });
+      const cron = new Cron(
+        spec.cron,
+        {
+          timezone: spec.timezone,
+          // Prevents a slow-running handler from overlapping with the next tick
+          // (e.g. a duplicate digest send if a run is still in progress).
+          protect: () => {
+            log.warn({ schedule: spec.name }, 'skipped scheduled tick: previous run still in progress');
+          },
+        },
+        async () => {
+          try { await spec.handler(); }
+          catch (err) { log.error({ schedule: spec.name, err }, 'scheduled handler threw'); }
+        },
+      );
       jobs.set(spec.name, { spec, cron });
     },
     stop(name: string) {

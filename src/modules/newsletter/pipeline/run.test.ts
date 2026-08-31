@@ -3,11 +3,17 @@ import { eq } from 'drizzle-orm';
 import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
 import { ServiceNotConfiguredError } from '@/kernel/config/service-settings';
+import * as deliverModule from '@/kernel/email/deliver';
 import { runDigest } from './run';
 import { getThemedPreviews } from './preview-cache';
 import { THEMES } from '../templates/themes';
 import { LAYOUTS } from '../templates/layouts';
 import { digests, sends } from '../schema';
+
+vi.mock('@/kernel/email/deliver', async () => {
+  const actual = await vi.importActual<typeof import('@/kernel/email/deliver')>('@/kernel/email/deliver');
+  return { ...actual, deliverToRecipients: vi.fn(actual.deliverToRecipients) };
+});
 
 function fakes() {
   const tautulli = {
@@ -62,6 +68,23 @@ describe('runDigest', () => {
     expect(result.status).toBe('sent');
     expect(result.itemCount).toBe(1);
     expect(db.select().from(sends).all()[0].status).toBe('sent');
+  });
+
+  it('treats a digest as sent (not failed) when every recipient was already sent to (skippedAlreadySent > 0, sent === 0)', async () => {
+    const db = createDb(':memory:');
+    applyMigrations(db);
+    const { tautulli, tmdb, provider } = fakes();
+    vi.mocked(deliverModule.deliverToRecipients).mockResolvedValueOnce({
+      sent: 0, failed: 0, skippedAlreadySent: 2, firstFailureMessage: undefined,
+    });
+    const result = await runDigest({
+      db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+      config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+      scheduledAt: new Date('2026-05-10T13:00:00Z'),
+    });
+    expect(result.status).toBe('sent');
+    const digestRow = db.select().from(digests).where(eq(digests.id, result.id)).all()[0];
+    expect(digestRow.status).toBe('sent');
   });
 
   it('assigns a unique slug at digest creation and stores it on the row', async () => {

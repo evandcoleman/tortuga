@@ -23,6 +23,9 @@ const DEFAULT_MODEL: Record<LlmProvider, string> = {
   openai: 'gpt-4o-mini',
 };
 
+/** LLM responses are slower than typical upstreams, so allow more headroom than the fetch default. */
+const LLM_FETCH_TIMEOUT_MS = 60_000;
+
 export function createLlmClient(opts: LlmOpts): LlmClient {
   const model = opts.model && opts.model.length > 0 ? opts.model : DEFAULT_MODEL[opts.provider];
 
@@ -45,7 +48,7 @@ export function createLlmClient(opts: LlmOpts): LlmClient {
               messages: [{ role: 'user', content: prompt }],
             }),
           },
-          { fetcher: opts.fetcher },
+          { fetcher: opts.fetcher, timeoutMs: LLM_FETCH_TIMEOUT_MS },
         );
         if (!res.ok) throw new LlmError('anthropic', `HTTP ${res.status}`, res.status, res.status >= 500);
         const data = (await res.json()) as { content: Array<{ type: string; text?: string }> };
@@ -69,7 +72,7 @@ export function createLlmClient(opts: LlmOpts): LlmClient {
             ],
           }),
         },
-        { fetcher: opts.fetcher },
+        { fetcher: opts.fetcher, timeoutMs: LLM_FETCH_TIMEOUT_MS },
       );
       if (!res.ok) throw new LlmError('openai', `HTTP ${res.status}`, res.status, res.status >= 500);
       const data = (await res.json()) as { choices: Array<{ message: { content: string } }> };

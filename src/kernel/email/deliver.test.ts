@@ -57,7 +57,7 @@ describe('deliverToRecipients', () => {
         sendRow: { digestId: 'digest-1' },
       },
     );
-    expect(result).toEqual({ sent: 2, failed: 0, firstFailureMessage: undefined });
+    expect(result).toEqual({ sent: 2, failed: 0, skippedAlreadySent: 0, firstFailureMessage: undefined });
     expect(provider.send).toHaveBeenCalledTimes(2);
     const rows = db.select().from(sends).all();
     expect(rows).toHaveLength(2);
@@ -87,7 +87,7 @@ describe('deliverToRecipients', () => {
         sendRow: { announcementId: 'ann-1' },
       },
     );
-    expect(result).toEqual({ sent: 1, failed: 1, firstFailureMessage: 'bounced' });
+    expect(result).toEqual({ sent: 1, failed: 1, skippedAlreadySent: 0, firstFailureMessage: 'bounced' });
     expect(provider.send).toHaveBeenCalledTimes(2);
     const rows = db.select().from(sends).all();
     const failedRow = rows.find(r => r.recipientEmail === 'a@x.io');
@@ -118,7 +118,7 @@ describe('deliverToRecipients', () => {
         onRenderFailure: 'continue',
       },
     );
-    expect(result).toEqual({ sent: 1, failed: 1, firstFailureMessage: 'template exploded' });
+    expect(result).toEqual({ sent: 1, failed: 1, skippedAlreadySent: 0, firstFailureMessage: 'template exploded' });
     expect(provider.send).toHaveBeenCalledTimes(1);
     const rows = db.select().from(sends).all();
     expect(rows).toHaveLength(2);
@@ -229,11 +229,101 @@ describe('deliverToRecipients', () => {
         sendRow: { digestId: 'digest-1' },
       },
     );
-    expect(result).toEqual({ sent: 0, failed: 1, firstFailureMessage: 'network down' });
+    expect(result).toEqual({ sent: 0, failed: 1, skippedAlreadySent: 0, firstFailureMessage: 'network down' });
     const [row] = db.select().from(sends).all();
     expect(row.status).toBe('failed');
     expect(row.error).toBe('network down');
     const digestRow = db.select().from(sends).where(eq(sends.digestId, 'digest-1')).all();
     expect(digestRow).toHaveLength(1);
+  });
+
+  it('retrying a digest send (onRenderFailure: abort) skips recipients already sent, but retries failed ones', async () => {
+    const db = makeDb();
+    seedDigest(db, 'digest-1');
+    // Seed sends rows as if a previous attempt already reached recipient a (sent)
+    // and recipient c (bounced/failed), but never reached recipient b.
+    db.insert(sends).values([
+      {
+        id: 'send-a', digestId: 'digest-1', recipientEmail: 'a@x.io', recipientName: 'A',
+        status: 'sent', sentAt: new Date(),
+      },
+      {
+        id: 'send-c', digestId: 'digest-1', recipientEmail: 'c@x.io', recipientName: 'C',
+        status: 'failed', error: 'boom', sentAt: new Date(),
+      },
+    ]).run();
+
+    const provider = fakeProvider();
+    const renderFor = vi.fn().mockResolvedValue('<html>hi</html>');
+    const result = await deliverToRecipients(
+      { db, provider, appUrl: 'http://x', sessionSecret: 's'.repeat(32) },
+      {
+        recipients: [
+          { email: 'a@x.io', name: 'A' },
+          { email: 'b@x.io', name: 'B' },
+          { email: 'c@x.io', name: 'C' },
+        ],
+        subject: 'Hi',
+        from,
+        renderFor,
+        sendRow: { digestId: 'digest-1' },
+        onRenderFailure: 'abort',
+      },
+    );
+
+    // Only b (never sent) and c (previously failed) should be (re)sent.
+    expect(provider.send).toHaveBeenCalledTimes(2);
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'b@x.io' }));
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'c@x.io' }));
+    expect(result.sent).toBe(2);
+
+    // No duplicate `sends` row was created for a@x.io.
+    const aRows = db.select().from(sends).where(eq(sends.recipientEmail, 'a@x.io')).all();
+    expect(aRows).toHaveLength(1);
+    expect(aRows[0].status).toBe('sent');
+  });
+
+  it('reports skippedAlreadySent (not just sent) when every recipient was already sent to for this digestId', async () => {
+    const db = makeDb();
+    seedDigest(db, 'digest-1');
+    const provider = fakeProvider();
+    const renderFor = vi.fn().mockResolvedValue('<html>hi</html>');
+
+    // First attempt: sends to both recipients.
+    const first = await deliverToRecipients(
+      { db, provider, appUrl: 'http://x', sessionSecret: 's'.repeat(32) },
+      {
+        recipients: [{ email: 'a@x.io', name: 'A' }, { email: 'b@x.io', name: 'B' }],
+        subject: 'Hi',
+        from,
+        renderFor,
+        sendRow: { digestId: 'digest-1' },
+        onRenderFailure: 'abort',
+      },
+    );
+    expect(first.sent).toBe(2);
+    expect(first.skippedAlreadySent).toBe(0);
+
+    // Second attempt with the same digestId: everyone was already sent to, so
+    // no new provider.send calls happen, but the outcome must still be a
+    // success (not a false "failed" because sent === 0).
+    provider.send = vi.fn().mockResolvedValue({ providerMessageId: 'msg_2', error: null });
+    const second = await deliverToRecipients(
+      { db, provider, appUrl: 'http://x', sessionSecret: 's'.repeat(32) },
+      {
+        recipients: [{ email: 'a@x.io', name: 'A' }, { email: 'b@x.io', name: 'B' }],
+        subject: 'Hi',
+        from,
+        renderFor,
+        sendRow: { digestId: 'digest-1' },
+        onRenderFailure: 'abort',
+      },
+    );
+
+    expect(provider.send).not.toHaveBeenCalled();
+    expect(second.sent).toBe(0);
+    expect(second.failed).toBe(0);
+    expect(second.skippedAlreadySent).toBe(2);
+    expect(second.sent + second.skippedAlreadySent).toBeGreaterThan(0);
   });
 });
