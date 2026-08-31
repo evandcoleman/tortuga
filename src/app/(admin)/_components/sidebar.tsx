@@ -7,7 +7,7 @@ type NavItem = {
   href: string;
   label: string;
   exact?: boolean;
-  icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings' | 'send';
+  icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings' | 'send' | 'invite';
 };
 
 const workspaceItems: ReadonlyArray<NavItem> = [
@@ -26,6 +26,7 @@ const messagesItems: ReadonlyArray<NavItem> = [
   { href: '/messages', label: 'Compose', exact: true, icon: 'send' },
   { href: '/messages/history', label: 'History', icon: 'history' },
   { href: '/messages/templates', label: 'Templates', icon: 'mail' },
+  { href: '/messages/invites', label: 'Invites', icon: 'invite' },
 ];
 
 const settingsItem: NavItem = { href: '/settings', label: 'Settings', exact: true, icon: 'settings' };
@@ -239,6 +240,15 @@ function Icon({ name, className = '' }: { name: NavItem['icon']; className?: str
           <path d="M2.75 19a6.25 6.25 0 0 1 12.5 0" />
           <path d="M16 11a3 3 0 1 0 0-6" />
           <path d="M21.25 18a5.5 5.5 0 0 0-4.5-5.4" />
+        </svg>
+      );
+    case 'invite':
+      return (
+        <svg {...common}>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <line x1="19" y1="8" x2="19" y2="14" />
+          <line x1="16" y1="11" x2="22" y2="11" />
         </svg>
       );
     case 'settings':
