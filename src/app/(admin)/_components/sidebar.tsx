@@ -25,6 +25,7 @@ const newsletterItems: ReadonlyArray<NavItem> = [
 const messagesItems: ReadonlyArray<NavItem> = [
   { href: '/messages', label: 'Compose', exact: true, icon: 'send' },
   { href: '/messages/history', label: 'History', icon: 'history' },
+  { href: '/messages/templates', label: 'Templates', icon: 'mail' },
 ];
 
 const settingsItem: NavItem = { href: '/settings', label: 'Settings', exact: true, icon: 'settings' };
