@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   '/api/webhooks/resend',
   '/api/webhooks/mailgun',
   '/api/auth',
+  '/issues',
 ];
 
 export const config = {
