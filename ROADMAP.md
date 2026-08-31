@@ -5,6 +5,19 @@ Tortuga's goal: **every email your Plex server sends, in one place.**
 v1 ships the newsletter. The items below take it the rest of the way to a
 one-stop shop for communicating with your Plex users, in priority order.
 
+## Pre-launch email hygiene (launch-blocking)
+
+Table stakes for anything that sends email on your behalf; all small.
+
+- **Auto-suppression on hard bounce/complaint** — webhooks currently log
+  delivery events but never deactivate the recipient; repeated sends to
+  bouncing addresses damage domain reputation.
+- **RFC 8058 one-click unsubscribe** — add `List-Unsubscribe` /
+  `List-Unsubscribe-Post` headers; Gmail/Yahoo require them for bulk
+  senders. Today unsubscribe is footer-link only.
+- **Plain-text MIME alternative** — emails are HTML-only; a `text/plain`
+  part improves deliverability and accessibility.
+
 ## Planned
 
 ### 1. Invites & welcome onboarding
@@ -16,7 +29,9 @@ install, how to request content, house rules.
 ### 2. Resubscribe & recipient preferences
 Unsubscribe is currently one-way. Add a resubscribe link and a minimal
 per-recipient preferences page (frequency, which libraries) so opt-out
-isn't a dead end that generates support email.
+isn't a dead end that generates support email. Include message
+categories (newsletter vs. announcements) so opting out of the digest
+doesn't also suppress operational notices.
 
 ### 3. Scheduled announcement sends
 Compose exists but is fire-now only. Let "maintenance Saturday 9pm" be
@@ -24,13 +39,21 @@ written Wednesday and sent Saturday.
 
 ### 4. Transactional templates library
 Reusable templates for the recurring one-offs: welcome, "server is back
-up", password help, removal notice. Compose covers these manually today.
+up", password help, removal notice. Include drafts, clone-previous-send,
+and variables ({{name}}, {{server_name}}). Compose covers these manually
+today.
 
 ## Later
 
 - **Request-fulfilled notifications** — "the movie you asked for is now
   available" via Overseerr/Jellyseerr webhook.
 - **Lifecycle nudges** — inactivity check-ins, removal notices.
+- **Admin failure alerts** — surface scheduler failures, provider
+  rejections, and bounce/complaint spikes somewhere other than logs.
+- **Audience segments** — target announcements by library access,
+  last-seen activity, or saved groups.
+- **Message API** — let external automation (monitoring, scripts) send an
+  approved template, the way `/api/digests/run` works for the digest.
 
 ## Not planned
 
@@ -40,3 +63,5 @@ up", password help, removal notice. Compose covers these manually today.
 - **Sonarr/Radarr "coming soon" sections** — Tautulli + Maintainerr
   already cover added/leaving.
 - **Multi-admin** — it's a problem when it's a problem.
+- **Send-rate controls / queueing** — provider limits don't bite at
+  homelab recipient counts; it's a problem when it's a problem.
