@@ -13,8 +13,13 @@ export const digests = sqliteTable('digests', {
   renderedHtml: text('rendered_html'),
   renderedSubject: text('rendered_subject'),
   error: text('error'),
+  /** Unguessable slug for the hosted issue URL. Nullable: existing digests predate this feature and never get one. */
+  slug: text('slug'),
+  /** Uncapped web-variant HTML for the hosted issue page (immutable snapshot). */
+  webHtml: text('web_html'),
 }, t => ({
   scheduledAtIdx: uniqueIndex('digests_scheduled_at_uniq').on(t.scheduledAt),
+  slugIdx: uniqueIndex('digests_slug_uniq').on(t.slug),
 }));
 
 export const sends = sqliteTable('sends', {
