@@ -9,15 +9,16 @@ one-stop shop for communicating with your Plex users, in priority order.
 ## Pre-launch email hygiene (launch-blocking)
 
 Table stakes for anything that sends email on your behalf; all small.
+**All shipped 2026-08-31.**
 
-- **Auto-suppression on hard bounce/complaint** — webhooks currently log
-  delivery events but never deactivate the recipient; repeated sends to
-  bouncing addresses damage domain reputation.
-- **RFC 8058 one-click unsubscribe** — add `List-Unsubscribe` /
-  `List-Unsubscribe-Post` headers; Gmail/Yahoo require them for bulk
-  senders. Today unsubscribe is footer-link only.
-- **Plain-text MIME alternative** — emails are HTML-only; a `text/plain`
-  part improves deliverability and accessibility.
+- ✅ **Auto-suppression on hard bounce/complaint** — webhook
+  bounce/complaint events deactivate the recipient (hard bounces only;
+  transient/undetermined bounces do not suppress).
+- ✅ **RFC 8058 one-click unsubscribe** — `List-Unsubscribe` /
+  `List-Unsubscribe-Post` headers on every recipient send, backed by a
+  one-click POST handler.
+- ✅ **Plain-text MIME alternative** — every email now carries a
+  `text/plain` part derived from the rendered HTML.
 
 ## Planned
 
