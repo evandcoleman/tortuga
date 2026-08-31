@@ -126,6 +126,8 @@ export function CustomizeEditor({ appearance, theme, layout, knownLibraries }: C
       } else {
         setStatus({ kind: 'error', message: result.error ?? 'Failed to save.' });
       }
+    } catch {
+      setStatus({ kind: 'error', message: 'Save failed. Please try again.' });
     } finally {
       setIsSaving(false);
     }

@@ -12,6 +12,44 @@ import {
   type TestDigestResult,
 } from '@/modules/newsletter/pipeline/test-digest';
 
+export type GenerateResult = { success: true } | { success: false; error: string };
+
+/**
+ * Render the next digest as a dry-run (no emails sent) so it can be inspected
+ * on the preview page. Mirrors sendNowDigest's structured-error handling:
+ * upstream failures (Tautulli/TMDB/LLM) are caught and returned instead of
+ * throwing, so the page can surface them instead of crashing.
+ */
+export async function generatePreview(): Promise<GenerateResult> {
+  await requireAdminSession();
+  const ctx = getAppContext();
+
+  try {
+    await runDigest({
+      db: ctx.db,
+      tautulli: ctx.tautulli,
+      tmdb: ctx.tmdb,
+      maintainerr: ctx.maintainerr,
+      provider: ctx.email,
+      llm: ctx.llm,
+      config: ctx.config.newsletter,
+      appUrl: ctx.env.APP_URL,
+      sessionSecret: ctx.env.SESSION_SECRET,
+      scheduledAt: new Date(),
+      dryRun: true,
+      cacheThemedPreviews: true,
+    });
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Preview generation failed.',
+    };
+  }
+
+  revalidatePath('/newsletter/preview');
+  return { success: true };
+}
+
 /**
  * Result of a manual "Send now" run. Mirrors what runDigest returns but also
  * exposes how many recipients actually received the email — runDigest does not

@@ -1,12 +1,9 @@
-import { revalidatePath } from 'next/cache';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { getAppContext } from '@/kernel/context';
-import { requireAdminSession } from '@/kernel/auth/require-admin-session';
-import { runDigest } from '@/modules/newsletter/pipeline/run';
 import { getThemedPreviews } from '@/modules/newsletter/pipeline/preview-cache';
-import { digests, recipientsCache } from '@/modules/newsletter/schema';
+import { digests, recipientsCache, sends } from '@/modules/newsletter/schema';
 import { PreviewSwitcher } from './PreviewSwitcher';
-import { SubmitButton } from './SubmitButton';
+import { GenerateButton } from './GenerateButton';
 import { IssueUrlCopy } from './IssueUrlCopy';
 import { digestIssueUrl } from './issue-url';
 import {
@@ -20,33 +17,16 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-async function generate() {
-  'use server';
-  await requireAdminSession();
-  const ctx = getAppContext();
-  await runDigest({
-    db: ctx.db,
-    tautulli: ctx.tautulli,
-    tmdb: ctx.tmdb,
-    maintainerr: ctx.maintainerr,
-    provider: ctx.email,
-    llm: ctx.llm,
-    config: ctx.config.newsletter,
-    appUrl: ctx.env.APP_URL,
-    sessionSecret: ctx.env.SESSION_SECRET,
-    scheduledAt: new Date(),
-    dryRun: true,
-    cacheThemedPreviews: true,
-  });
-  revalidatePath('/newsletter/preview');
-}
+// Digests in these terminal states have real rendered content worth showing on
+// the preview page. 'pending'/'sending'/'skipped' have nothing (yet) to render.
+const VISIBLE_STATUSES = ['rendered', 'sent', 'failed'] as const;
 
 export default function Preview() {
   const ctx = getAppContext();
   const latest = ctx.db
     .select()
     .from(digests)
-    .where(eq(digests.status, 'rendered'))
+    .where(inArray(digests.status, VISIBLE_STATUSES))
     .orderBy(desc(digests.scheduledAt))
     .limit(1)
     .all();
@@ -62,6 +42,14 @@ export default function Preview() {
     .from(recipientsCache)
     .all()
     .filter(r => r.active).length;
+  const sentCount =
+    row && row.status === 'sent'
+      ? ctx.db
+          .select()
+          .from(sends)
+          .where(and(eq(sends.digestId, row.id), eq(sends.status, 'sent')))
+          .all().length
+      : 0;
 
   return (
     <div>
@@ -69,18 +57,17 @@ export default function Preview() {
         eyebrow="Newsletter"
         title="Preview"
         description="Render the digest as a dry-run, inspect it, then send when it’s ready. Sending is irreversible."
-        actions={
-          <form action={generate}>
-            <SubmitButton variant="secondary" pendingLabel="Generating…">
-              <RefreshIcon /> Generate fresh preview
-            </SubmitButton>
-          </form>
-        }
+        actions={<GenerateButton />}
       />
 
       {issueUrl ? (
         <div className="mb-4">
           <IssueUrlCopy url={issueUrl} />
+          <p className="mt-1 text-[11px] text-faint">
+            {row?.status === 'sent'
+              ? 'This page is public now that the issue has been sent.'
+              : 'Visible only to signed-in admins until this issue is sent — it becomes public once sent.'}
+          </p>
         </div>
       ) : null}
 
@@ -113,14 +100,30 @@ export default function Preview() {
         <Card padded={false}>
           <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
             <div className="flex items-center gap-2">
-              <Badge tone="info" dot>
-                preview
-              </Badge>
+              {row?.status === 'sent' ? (
+                <Badge tone="success" dot>
+                  sent
+                </Badge>
+              ) : row?.status === 'failed' ? (
+                <Badge tone="danger" dot>
+                  send failed
+                </Badge>
+              ) : (
+                <Badge tone="info" dot>
+                  preview
+                </Badge>
+              )}
               <span className="text-[12px] text-muted">
-                Renders the same HTML recipients will see.
+                {row?.status === 'sent'
+                  ? `Sent to ${sentCount} recipient${sentCount === 1 ? '' : 's'}.`
+                  : row?.status === 'failed'
+                    ? 'The last send failed. Check history for details.'
+                    : 'Renders the same HTML recipients will see.'}
               </span>
             </div>
-            <div className="text-[11px] text-faint">dry-run</div>
+            <div className="text-[11px] text-faint">
+              {row?.status === 'rendered' ? 'dry-run' : row ? formatRelative(row.scheduledAt) : null}
+            </div>
           </div>
           {themedPreviews ? (
             <PreviewSwitcher
@@ -146,24 +149,6 @@ export default function Preview() {
         />
       )}
     </div>
-  );
-}
-
-function RefreshIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 12a9 9 0 1 0 3-6.5" />
-      <path d="M3 4v4h4" />
-    </svg>
   );
 }
 

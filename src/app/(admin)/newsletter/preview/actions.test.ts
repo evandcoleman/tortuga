@@ -72,7 +72,54 @@ function makeSendNowCtx(sentRows: Array<Record<string, unknown>>) {
   };
 }
 
-import { sendNowDigest, sendTestDigest } from './actions';
+import { generatePreview, sendNowDigest, sendTestDigest } from './actions';
+
+describe('generatePreview server action', () => {
+  beforeEach(() => {
+    runDigest.mockReset();
+    getAppContext.mockReset();
+    requireAdminSession.mockReset();
+    requireAdminSession.mockResolvedValue({ email: 'admin@example.com' });
+  });
+
+  it('rejects when there is no admin session', async () => {
+    getAppContext.mockReturnValue(makeSendNowCtx([]));
+    requireAdminSession.mockRejectedValue(new Error('Unauthorized'));
+
+    await expect(generatePreview()).rejects.toThrow('Unauthorized');
+    expect(runDigest).not.toHaveBeenCalled();
+  });
+
+  it('renders a dry-run digest and reports success', async () => {
+    getAppContext.mockReturnValue(makeSendNowCtx([]));
+    runDigest.mockResolvedValue({ id: 'dig-new', status: 'rendered', itemCount: 3 });
+
+    const result = await generatePreview();
+
+    expect(runDigest).toHaveBeenCalledWith(
+      expect.objectContaining({ dryRun: true, cacheThemedPreviews: true }),
+    );
+    expect(result).toEqual({ success: true });
+  });
+
+  it('returns a structured error instead of throwing when runDigest fails upstream', async () => {
+    getAppContext.mockReturnValue(makeSendNowCtx([]));
+    runDigest.mockRejectedValue(new Error('Tautulli unreachable'));
+
+    const result = await generatePreview();
+
+    expect(result).toEqual({ success: false, error: 'Tautulli unreachable' });
+  });
+
+  it('falls back to a generic message when the thrown value is not an Error', async () => {
+    getAppContext.mockReturnValue(makeSendNowCtx([]));
+    runDigest.mockRejectedValue('boom');
+
+    const result = await generatePreview();
+
+    expect(result).toEqual({ success: false, error: 'Preview generation failed.' });
+  });
+});
 
 describe('sendTestDigest server action', () => {
   beforeEach(() => {

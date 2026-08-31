@@ -52,11 +52,15 @@ export function MessageComposer({ recipients, defaultTestEmail }: MessageCompose
   const onPreview = () => {
     setPreviewError(null);
     startPreviewing(async () => {
-      const result = await previewAnnouncement(subject.trim(), body);
-      if (result.success) {
-        setPreviewHtml(result.html);
-      } else {
-        setPreviewError(result.error);
+      try {
+        const result = await previewAnnouncement(subject.trim(), body);
+        if (result.success) {
+          setPreviewHtml(result.html);
+        } else {
+          setPreviewError(result.error);
+        }
+      } catch {
+        setPreviewError('Preview failed. Please try again.');
       }
     });
   };
@@ -65,11 +69,15 @@ export function MessageComposer({ recipients, defaultTestEmail }: MessageCompose
     setTestSent(false);
     setTestError(null);
     startSendingTest(async () => {
-      const result = await sendTestAnnouncement(subject.trim(), body);
-      if (result.success) {
-        setTestSent(true);
-      } else {
-        setTestError(result.error);
+      try {
+        const result = await sendTestAnnouncement(subject.trim(), body);
+        if (result.success) {
+          setTestSent(true);
+        } else {
+          setTestError(result.error);
+        }
+      } catch {
+        setTestError('Send failed. Please try again.');
       }
     });
   };
@@ -78,15 +86,19 @@ export function MessageComposer({ recipients, defaultTestEmail }: MessageCompose
     setSendOutcome(null);
     setSendError(null);
     startSending(async () => {
-      const result = await sendAnnouncementToRecipients(subject.trim(), body, selectedEmails);
-      if (result.success) {
-        setSendOutcome({
-          sent: result.sent,
-          failed: result.failed,
-          announcementId: result.announcementId,
-        });
-      } else {
-        setSendError(result.error);
+      try {
+        const result = await sendAnnouncementToRecipients(subject.trim(), body, selectedEmails);
+        if (result.success) {
+          setSendOutcome({
+            sent: result.sent,
+            failed: result.failed,
+            announcementId: result.announcementId,
+          });
+        } else {
+          setSendError(result.error);
+        }
+      } catch {
+        setSendError('Send failed — some recipients may not have received it. Check history.');
       }
     });
   };
