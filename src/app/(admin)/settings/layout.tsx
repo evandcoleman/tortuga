@@ -7,7 +7,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
     <div>
       <PageHeader
         eyebrow="Settings"
-        title="Newsletter configuration"
+        title="Configuration"
         description="Changes are saved to this instance and applied immediately — no restart needed."
         actions={
           <form action={revertToFileDefault}>
