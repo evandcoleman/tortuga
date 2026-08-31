@@ -22,11 +22,14 @@ Table stakes for anything that sends email on your behalf; all small.
 
 ## Planned
 
-### 1. Invites & welcome onboarding
-The first message anyone gets from a server owner is "here's your invite,
-here's how to set up Plex" — today that happens outside Tortuga. Send (or
-detect) the Plex invite, then fire a templated welcome email: apps to
-install, how to request content, house rules.
+### ✅ 1. Invites & welcome onboarding — shipped 2026-08-31
+Send the Plex invite from Tortuga (library picker, pending list, cancel)
+and fire a templated welcome email at invite time. Users invited outside
+Tortuga are flagged "not welcomed" with a manual send button — never
+auto-sent. Also pulled forward the core of item #5: a DB-backed templates
+module with a UI editor ({{name}}, {{email}}, {{server_name}}), of which
+welcome is the first template. Spec:
+`docs/specs/2026-08-31-invites-welcome-onboarding.md`.
 
 ### 2. User portal
 The web half of front-of-house: a small set of opinionated, templated
@@ -49,10 +52,11 @@ Compose exists but is fire-now only. Let "maintenance Saturday 9pm" be
 written Wednesday and sent Saturday.
 
 ### 5. Transactional templates library
-Reusable templates for the recurring one-offs: welcome, "server is back
-up", password help, removal notice. Include drafts, clone-previous-send,
-and variables ({{name}}, {{server_name}}). Compose covers these manually
-today.
+Reusable templates for the recurring one-offs: "server is back up",
+password help, removal notice. The core engine (DB templates, variables,
+editor) shipped with item #1; what remains is the library: more seeded
+templates, drafts, clone-previous-send, and a send-from-template flow in
+compose.
 
 ## Later
 
