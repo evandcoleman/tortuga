@@ -33,7 +33,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const rendered = await renderTemplate(
-    { subject: template.subject, body: template.body },
+    {
+      subject: parsed.data.subject ?? template.subject,
+      body: parsed.data.body ?? template.body,
+    },
     {
       vars: {
         name: parsed.data.name ?? null,

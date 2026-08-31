@@ -31,6 +31,9 @@ export const updateTemplateSchema = z
 export const previewTemplateSchema = z.object({
   name: z.string().trim().max(200).optional(),
   email: z.string().email().optional(),
+  /** Unsaved editor draft overrides — when provided, preview renders these instead of the stored template. */
+  subject: z.string().max(200).optional(),
+  body: z.string().max(20000).optional(),
 });
 
 export function firstIssueMessage(error: z.ZodError): string {

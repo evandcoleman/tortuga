@@ -70,7 +70,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
         const res = await fetch(`/api/templates/${template.slug}/preview`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ subject, body }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -161,7 +161,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
             />
           ) : (
             <p className="px-4 py-10 text-center text-[13px] text-muted">
-              Click “Preview” to render the saved subject/body against placeholder recipient data.
+              Click “Preview” to render the current subject/body against placeholder recipient data.
             </p>
           )}
         </Card>
