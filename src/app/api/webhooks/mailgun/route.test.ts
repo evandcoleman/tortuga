@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
-import { sendEvents, sends, digests } from '@/modules/newsletter/schema';
+import { sendEvents, sends, digests, recipientsCache } from '@/modules/newsletter/schema';
 import { createId } from '@paralleldrive/cuid2';
+import { eq } from 'drizzle-orm';
 import { writeServiceSettings } from '@/kernel/config/service-settings';
 
 const db = createDb(':memory:');
@@ -38,10 +39,26 @@ function makeRequest(body: string): Request {
   });
 }
 
+function insertSendAndRecipient(opts: { email: string; providerMessageId: string; active?: boolean }): void {
+  const digestId = createId();
+  db.insert(digests).values({
+    id: digestId, scheduledAt: new Date(), windowStart: new Date(), windowEnd: new Date(),
+    status: 'sent', itemCount: 1,
+  }).run();
+  db.insert(sends).values({
+    id: createId(), digestId, recipientEmail: opts.email, recipientName: 'A',
+    providerMessageId: opts.providerMessageId, provider: 'mailgun', status: 'sent',
+  }).run();
+  db.insert(recipientsCache).values({
+    email: opts.email, name: 'A', lastSynced: new Date(), active: opts.active ?? true,
+  }).run();
+}
+
 beforeEach(() => {
   db.delete(sendEvents).run();
   db.delete(sends).run();
   db.delete(digests).run();
+  db.delete(recipientsCache).run();
   mockVerifyWebhook.mockReturnValue(true);
   mockParseEvent.mockReturnValue({
     type: 'delivered',
@@ -81,6 +98,70 @@ describe('POST /api/webhooks/mailgun', () => {
     expect(res.status).toBe(200);
     const row = db.select().from(sends).all()[0];
     expect(row.status).toBe('delivered');
+  });
+
+  it('deactivates the recipient on a hard bounce event', async () => {
+    insertSendAndRecipient({ email: 'bounced@b.io', providerMessageId: 'msg_bounced' });
+    mockParseEvent.mockReturnValue({
+      type: 'bounced', providerMessageId: 'msg_bounced', rawType: 'permanent_fail',
+      receivedAt: new Date('2026-05-14T00:00:00Z'),
+    });
+
+    const res = await POST(makeRequest(JSON.stringify({ 'event-data': { event: 'permanent_fail' } })));
+
+    expect(res.status).toBe(200);
+    const row = db.select().from(recipientsCache).where(eq(recipientsCache.email, 'bounced@b.io')).all()[0];
+    expect(row.active).toBe(false);
+  });
+
+  it('deactivates the recipient on a complained event', async () => {
+    insertSendAndRecipient({ email: 'complained@b.io', providerMessageId: 'msg_complained' });
+    mockParseEvent.mockReturnValue({
+      type: 'complained', providerMessageId: 'msg_complained', rawType: 'complained',
+      receivedAt: new Date('2026-05-14T00:00:00Z'),
+    });
+
+    const res = await POST(makeRequest(JSON.stringify({ 'event-data': { event: 'complained' } })));
+
+    expect(res.status).toBe(200);
+    const row = db.select().from(recipientsCache).where(eq(recipientsCache.email, 'complained@b.io')).all()[0];
+    expect(row.active).toBe(false);
+  });
+
+  it('keeps the recipient active on a delivered event', async () => {
+    insertSendAndRecipient({ email: 'ok@b.io', providerMessageId: 'msg_abc' });
+
+    const res = await POST(makeRequest(JSON.stringify({ 'event-data': { event: 'delivered' } })));
+
+    expect(res.status).toBe(200);
+    const row = db.select().from(recipientsCache).where(eq(recipientsCache.email, 'ok@b.io')).all()[0];
+    expect(row.active).toBe(true);
+  });
+
+  it('keeps the recipient active on a soft (temporary_fail) bounce', async () => {
+    insertSendAndRecipient({ email: 'softbounce@b.io', providerMessageId: 'msg_soft' });
+    // Mailgun normalization maps temporary_fail to 'other', not 'bounced'.
+    mockParseEvent.mockReturnValue({
+      type: 'other', providerMessageId: 'msg_soft', rawType: 'temporary_fail',
+      receivedAt: new Date('2026-05-14T00:00:00Z'),
+    });
+
+    const res = await POST(makeRequest(JSON.stringify({ 'event-data': { event: 'temporary_fail' } })));
+
+    expect(res.status).toBe(200);
+    const row = db.select().from(recipientsCache).where(eq(recipientsCache.email, 'softbounce@b.io')).all()[0];
+    expect(row.active).toBe(true);
+  });
+
+  it('does not error when a bounced event has no matching recipient', async () => {
+    mockParseEvent.mockReturnValue({
+      type: 'bounced', providerMessageId: 'msg_unknown', rawType: 'permanent_fail',
+      receivedAt: new Date('2026-05-14T00:00:00Z'),
+    });
+
+    const res = await POST(makeRequest(JSON.stringify({ 'event-data': { event: 'permanent_fail' } })));
+
+    expect(res.status).toBe(200);
   });
 
   it('returns 401 for invalid signature', async () => {

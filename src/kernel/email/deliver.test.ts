@@ -201,7 +201,7 @@ describe('deliverToRecipients', () => {
         subject: 'Hello there',
         from,
         replyTo: 'reply@x.io',
-        renderFor: async () => '<html>body</html>',
+        renderFor: async () => '<html><body>body</body></html>',
         sendRow: { digestId: 'digest-1' },
       },
     );
@@ -209,9 +209,67 @@ describe('deliverToRecipients', () => {
       from,
       to: 'a@x.io',
       subject: 'Hello there',
-      html: '<html>body</html>',
+      html: '<html><body>body</body></html>',
+      text: expect.stringContaining('body'),
       replyTo: 'reply@x.io',
+      headers: expect.objectContaining({
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      }),
     });
+  });
+
+  it('sends per-recipient List-Unsubscribe headers pointing at that recipient\'s own token URL', async () => {
+    const db = makeDb();
+    seedDigest(db, 'digest-1');
+    const provider = fakeProvider();
+    await deliverToRecipients(
+      { db, provider, appUrl: 'http://x', sessionSecret: 's'.repeat(32) },
+      {
+        recipients: [{ email: 'a@x.io', name: 'A' }, { email: 'b@x.io', name: 'B' }],
+        subject: 'Hi',
+        from,
+        renderFor: async () => '<html>hi</html>',
+        sendRow: { digestId: 'digest-1' },
+      },
+    );
+    const tokenRows = db.select().from(unsubscribes).all();
+    const tokenFor = (email: string) => tokenRows.find(r => r.email === email)!.token;
+
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'a@x.io',
+      headers: {
+        'List-Unsubscribe': `<http://x/api/unsubscribe?token=${tokenFor('a@x.io')}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    }));
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'b@x.io',
+      headers: {
+        'List-Unsubscribe': `<http://x/api/unsubscribe?token=${tokenFor('b@x.io')}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    }));
+  });
+
+  it('derives a non-empty plain-text part from the rendered html', async () => {
+    const db = makeDb();
+    seedDigest(db, 'digest-1');
+    const provider = fakeProvider();
+    await deliverToRecipients(
+      { db, provider, appUrl: 'http://x', sessionSecret: 's'.repeat(32) },
+      {
+        recipients: [{ email: 'a@x.io', name: 'A' }],
+        subject: 'Hi',
+        from,
+        renderFor: async () => '<html><body><h1>Hello</h1><p>World</p></body></html>',
+        sendRow: { digestId: 'digest-1' },
+      },
+    );
+    const [call] = (provider.send as ReturnType<typeof vi.fn>).mock.calls;
+    const opts = call[0] as { text?: string };
+    expect(opts.text).toBeTruthy();
+    expect(opts.text?.toLowerCase()).toContain('hello');
+    expect(opts.text).toContain('World');
   });
 
   it('a thrown provider.send error is recorded as a failed send', async () => {

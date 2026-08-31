@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { Resend } from 'resend';
 import type {
+  BounceType,
   EmailProvider,
   EmailSendOpts,
   EmailSendResult,
@@ -14,6 +15,13 @@ const EVENT_TYPE_MAP: Record<string, NormalizedEventType> = {
   'email.bounced': 'bounced',
   'email.complained': 'complained',
   'email.failed': 'failed',
+};
+
+// Resend's raw `data.bounce.type` values, mapped to our normalized classification.
+const BOUNCE_TYPE_MAP: Record<string, BounceType> = {
+  Permanent: 'permanent',
+  Transient: 'transient',
+  Undetermined: 'undetermined',
 };
 
 export class ResendProvider implements EmailProvider {
@@ -31,6 +39,7 @@ export class ResendProvider implements EmailProvider {
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
+      text: opts.text,
       replyTo: opts.replyTo,
       headers: opts.headers,
     });
@@ -61,19 +70,25 @@ export class ResendProvider implements EmailProvider {
   }
 
   parseEvent(body: string): NormalizedEvent {
-    let payload: { type?: string; data?: { email_id?: string } };
+    let payload: { type?: string; data?: { email_id?: string; bounce?: { type?: string } } };
     try {
-      payload = JSON.parse(body) as { type?: string; data?: { email_id?: string } };
+      payload = JSON.parse(body) as {
+        type?: string;
+        data?: { email_id?: string; bounce?: { type?: string } };
+      };
     } catch {
       return { type: 'other', providerMessageId: null, rawType: '', receivedAt: new Date() };
     }
     const rawType = payload.type ?? '';
     const type: NormalizedEventType = EVENT_TYPE_MAP[rawType] ?? 'other';
+    const rawBounceType = payload.data?.bounce?.type;
+    const bounceType = typeof rawBounceType === 'string' ? BOUNCE_TYPE_MAP[rawBounceType] : undefined;
     return {
       type,
       providerMessageId: payload.data?.email_id ?? null,
       rawType,
       receivedAt: new Date(),
+      ...(bounceType ? { bounceType } : {}),
     };
   }
 }

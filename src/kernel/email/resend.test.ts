@@ -67,6 +67,20 @@ describe('ResendProvider.send', () => {
     expect(result).toEqual({ providerMessageId: 'msg_abc123', error: null });
   });
 
+  it('forwards the text plain-text part to the provider', async () => {
+    mockEmailsSend.mockResolvedValue({ data: { id: 'msg_abc123' }, error: null });
+
+    const provider = new ResendProvider({ apiKey: 're_test_key' });
+    await provider.send({
+      from: { name: 'Test', email: 'test@example.com' },
+      to: 'recipient@example.com',
+      subject: 'Hello',
+      html: '<p>Hello</p>',
+      text: 'Hello',
+    });
+    expect(mockEmailsSend).toHaveBeenCalledWith(expect.objectContaining({ text: 'Hello' }));
+  });
+
   it('error path returns error string', async () => {
     mockEmailsSend.mockResolvedValue({
       data: null,
@@ -110,5 +124,38 @@ describe('ResendProvider.parseEvent', () => {
     expect(event.type).toBe('other');
     expect(event.providerMessageId).toBeNull();
     expect(event.rawType).toBe('');
+  });
+
+  it('maps a Permanent bounce to bounceType "permanent"', () => {
+    const event = provider.parseEvent(
+      '{"type":"email.bounced","data":{"email_id":"msg_1","bounce":{"type":"Permanent"}}}',
+    );
+    expect(event.bounceType).toBe('permanent');
+  });
+
+  it('maps a Transient bounce to bounceType "transient"', () => {
+    const event = provider.parseEvent(
+      '{"type":"email.bounced","data":{"email_id":"msg_2","bounce":{"type":"Transient"}}}',
+    );
+    expect(event.bounceType).toBe('transient');
+  });
+
+  it('maps an Undetermined bounce to bounceType "undetermined"', () => {
+    const event = provider.parseEvent(
+      '{"type":"email.bounced","data":{"email_id":"msg_3","bounce":{"type":"Undetermined"}}}',
+    );
+    expect(event.bounceType).toBe('undetermined');
+  });
+
+  it('leaves bounceType undefined when bounce data is absent', () => {
+    const event = provider.parseEvent('{"type":"email.bounced","data":{"email_id":"msg_4"}}');
+    expect(event.bounceType).toBeUndefined();
+  });
+
+  it('leaves bounceType undefined for an unrecognized bounce subtype', () => {
+    const event = provider.parseEvent(
+      '{"type":"email.bounced","data":{"email_id":"msg_5","bounce":{"type":"SomethingNew"}}}',
+    );
+    expect(event.bounceType).toBeUndefined();
   });
 });

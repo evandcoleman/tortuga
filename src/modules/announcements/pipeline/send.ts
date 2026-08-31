@@ -1,6 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
 import { eq } from 'drizzle-orm';
-import { render } from '@react-email/render';
+import { render, toPlainText } from '@react-email/render';
 import { createElement } from 'react';
 
 import type { Db } from '@/kernel/db/client';
@@ -119,6 +119,7 @@ export async function sendAnnouncement(
         to: input.testRecipient,
         subject: input.subject,
         html: testHtml,
+        text: toPlainText(testHtml),
         replyTo: deps.config.reply_to,
       });
       if (result.error) failed = 1; else sent = 1;

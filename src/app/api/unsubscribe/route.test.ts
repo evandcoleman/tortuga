@@ -13,10 +13,18 @@ vi.mock('@/kernel/context', () => ({
   getAppContext: () => ({ db, env: { SESSION_SECRET } }),
 }));
 
-import { GET } from './route';
+import { GET, POST } from './route';
 
 function req(token: string): Request {
   return new Request(`http://localhost/api/unsubscribe?token=${encodeURIComponent(token)}`);
+}
+
+function postReq(token: string): Request {
+  return new Request(`http://localhost/api/unsubscribe?token=${encodeURIComponent(token)}`, {
+    method: 'POST',
+    headers: { 'content-type': 'text/plain' },
+    body: 'List-Unsubscribe=One-Click',
+  });
 }
 
 beforeEach(() => {
@@ -84,5 +92,47 @@ describe('GET /api/unsubscribe', () => {
   it('rejects an invalid/tampered token', async () => {
     const res = await GET(req('not-a-real-token'));
     expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/unsubscribe (RFC 8058 one-click)', () => {
+  it('deactivates the recipient with no user interaction and returns a bare 200', async () => {
+    const email = 'u@x.io';
+    const token = generateUnsubscribeToken(email, SESSION_SECRET);
+    db.insert(unsubscribes).values({ token, email, createdAt: new Date() }).run();
+    db.insert(recipientsCache).values({
+      email, name: 'U', lastSynced: new Date(), active: true, source: 'manual',
+    }).run();
+
+    const res = await POST(postReq(token));
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toBe('');
+
+    const recipient = db.select().from(recipientsCache).all()[0];
+    expect(recipient.active).toBe(false);
+    const row = db.select().from(unsubscribes).all()[0];
+    expect(row.usedAt).not.toBeNull();
+  });
+
+  it('rejects an invalid/tampered token with a bare 400', async () => {
+    const res = await POST(postReq('not-a-real-token'));
+    expect(res.status).toBe(400);
+    expect(await res.text()).toBe('');
+  });
+
+  it('rejects a token that was already claimed', async () => {
+    const email = 'u2@x.io';
+    const token = generateUnsubscribeToken(email, SESSION_SECRET);
+    db.insert(unsubscribes).values({ token, email, createdAt: new Date() }).run();
+    db.insert(recipientsCache).values({
+      email, name: 'U2', lastSynced: new Date(), active: true, source: 'manual',
+    }).run();
+
+    const first = await POST(postReq(token));
+    expect(first.status).toBe(200);
+
+    const second = await POST(postReq(token));
+    expect(second.status).toBe(400);
   });
 });

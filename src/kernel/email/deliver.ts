@@ -1,11 +1,20 @@
 import { createId } from '@paralleldrive/cuid2';
 import { and, eq, ne } from 'drizzle-orm';
+import { toPlainText } from '@react-email/render';
 
 import type { Db } from '@/kernel/db/client';
 import { sends, unsubscribes } from '@/modules/newsletter/schema';
 
 import type { EmailProvider, EmailSendOpts } from './types';
 import { generateUnsubscribeToken } from './unsubscribe';
+
+/** RFC 8058 one-click unsubscribe headers for a given recipient's unsubscribe URL. */
+function listUnsubscribeHeaders(unsubscribeUrl: string): Record<string, string> {
+  return {
+    'List-Unsubscribe': `<${unsubscribeUrl}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  };
+}
 
 export interface DeliverToRecipientsDeps {
   db: Db;
@@ -86,13 +95,16 @@ async function sendAndRecord(
   sendId: string,
   to: string,
   html: string,
+  headers: Record<string, string>,
 ): Promise<string | null> {
   const result = await deps.provider.send({
     from: args.from,
     to,
     subject: args.subject,
     html,
+    text: toPlainText(html),
     replyTo: args.replyTo,
+    headers,
   });
   deps.db.update(sends).set({
     providerMessageId: result.providerMessageId,
@@ -181,12 +193,13 @@ export async function deliverToRecipients(
     const tokenStr = generateUnsubscribeToken(recipient.email, deps.sessionSecret);
     deps.db.insert(unsubscribes).values({ token: tokenStr, email: recipient.email, createdAt: new Date() }).run();
     const unsubscribeUrl = `${deps.appUrl}/api/unsubscribe?token=${tokenStr}`;
+    const headers = listUnsubscribeHeaders(unsubscribeUrl);
 
     if (mode === 'abort') {
       const html = await args.renderFor(unsubscribeUrl);
       const sendId = insertQueuedSend(deps, recipient, args.sendRow);
       try {
-        const providerError = await sendAndRecord(deps, args, sendId, recipient.email, html);
+        const providerError = await sendAndRecord(deps, args, sendId, recipient.email, html, headers);
         tally = providerError ? recordFailure(tally, providerError) : recordSuccess(tally);
       } catch (e) {
         const message = errorMessage(e);
@@ -199,7 +212,7 @@ export async function deliverToRecipients(
     const sendId = insertQueuedSend(deps, recipient, args.sendRow);
     try {
       const html = await args.renderFor(unsubscribeUrl);
-      const providerError = await sendAndRecord(deps, args, sendId, recipient.email, html);
+      const providerError = await sendAndRecord(deps, args, sendId, recipient.email, html, headers);
       tally = providerError ? recordFailure(tally, providerError) : recordSuccess(tally);
     } catch (e) {
       const message = errorMessage(e);

@@ -5,6 +5,8 @@ export interface EmailSendOpts {
   to: string;
   subject: string;
   html: string;
+  /** Plain-text alternative part (MIME multipart/alternative). */
+  text?: string;
   replyTo?: string;
   headers?: Record<string, string>;
 }
@@ -29,11 +31,15 @@ export type NormalizedEventType =
   | 'failed'
   | 'other';
 
+export type BounceType = 'permanent' | 'transient' | 'undetermined';
+
 export interface NormalizedEvent {
   type: NormalizedEventType;
   providerMessageId: string | null;
   rawType: string;
   receivedAt: Date;
+  /** Provider-specific bounce classification, present only for bounce-related events. */
+  bounceType?: BounceType;
 }
 
 export interface EmailProvider {

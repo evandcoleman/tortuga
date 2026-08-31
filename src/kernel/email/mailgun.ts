@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type {
+  BounceType,
   EmailProvider,
   EmailSendOpts,
   EmailSendResult,
@@ -31,6 +32,12 @@ const EVENT_TYPE_MAP: Record<string, NormalizedEventType> = {
   temporary_fail: 'other',
 };
 
+// Mailgun's raw `event-data.event` values, mapped to our normalized bounce classification.
+const BOUNCE_TYPE_MAP: Record<string, BounceType> = {
+  permanent_fail: 'permanent',
+  temporary_fail: 'transient',
+};
+
 export class MailgunProvider implements EmailProvider {
   readonly name = 'mailgun' as const;
 
@@ -58,6 +65,9 @@ export class MailgunProvider implements EmailProvider {
     form.append('to', opts.to);
     form.append('subject', opts.subject);
     form.append('html', opts.html);
+    if (opts.text) {
+      form.append('text', opts.text);
+    }
     if (opts.replyTo) {
       form.append('h:Reply-To', opts.replyTo);
     }
@@ -171,6 +181,14 @@ export class MailgunProvider implements EmailProvider {
         ? new Date(tsRaw * 1000)
         : new Date();
 
-    return { type, providerMessageId, rawType, receivedAt };
+    const bounceType = BOUNCE_TYPE_MAP[rawType];
+
+    return {
+      type,
+      providerMessageId,
+      rawType,
+      receivedAt,
+      ...(bounceType ? { bounceType } : {}),
+    };
   }
 }

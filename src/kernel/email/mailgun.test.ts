@@ -124,6 +124,41 @@ describe('MailgunProvider.send', () => {
     expect((init.headers as Record<string, string>).Authorization).toMatch(/^Basic /);
   });
 
+  it('forwards the text plain-text part as a form field', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ id: '<abc123@mailgun.org>', message: 'Queued' }), { status: 200 }),
+    );
+
+    await provider.send({
+      from: { name: 'Test Sender', email: 'sender@example.com' },
+      to: 'recipient@example.com',
+      subject: 'Test Subject',
+      html: '<p>Test</p>',
+      text: 'Test',
+    });
+
+    const [, init] = (globalThis.fetch as ReturnType<typeof vi.spyOn>).mock.calls[0] as [string, RequestInit];
+    const form = init.body as FormData;
+    expect(form.get('text')).toBe('Test');
+  });
+
+  it('omits the text form field when no plain-text part is given', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ id: '<abc123@mailgun.org>', message: 'Queued' }), { status: 200 }),
+    );
+
+    await provider.send({
+      from: { name: 'Test Sender', email: 'sender@example.com' },
+      to: 'recipient@example.com',
+      subject: 'Test Subject',
+      html: '<p>Test</p>',
+    });
+
+    const [, init] = (globalThis.fetch as ReturnType<typeof vi.spyOn>).mock.calls[0] as [string, RequestInit];
+    const form = init.body as FormData;
+    expect(form.get('text')).toBeNull();
+  });
+
   it('non-2xx returns error string', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response('Forbidden', { status: 401 }),
