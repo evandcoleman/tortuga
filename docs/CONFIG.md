@@ -96,6 +96,12 @@ server's `machineIdentifier` — find it at
 Network → Show Advanced → Server ID. If present, `server_id` must be a non-empty
 string.
 
+Sending Plex invites from the Messages → Invites page additionally requires a
+Plex auth token. Like the other provider API keys (Tautulli, TMDB, Resend,
+etc.), the token is **not** stored in `tortuga.yml` — set it via the
+`PLEX_TOKEN` environment variable. Without a token, the Invites page shows a
+setup notice and the invite form is hidden.
+
 ## `commentary` (optional)
 
 AI-generated editorial intro paragraph at the top of the digest.
