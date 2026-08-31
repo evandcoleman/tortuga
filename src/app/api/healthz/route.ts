@@ -5,20 +5,16 @@ import { digests } from '@/modules/newsletter/schema';
 
 export const dynamic = 'force-dynamic';
 
-// Cap stored digest errors so a full stack trace can't bloat the health payload.
-const MAX_ERROR_LENGTH = 500;
-
-interface SchedulerJob {
-  name: string;
-  cron: string;
-  // croner's nextRun() returns null when the job is stopped or has no future run.
-  nextRun: string | null;
-}
+/**
+ * This endpoint is unauthenticated (hit by monitoring/uptime checks). It
+ * therefore only ever reports coarse status and timestamps — no raw error
+ * text and no scheduler job names/crons, which would otherwise leak internal
+ * implementation details to anyone who can reach the route.
+ */
 
 interface LastDigest {
   status: string;
   scheduledAt: string;
-  error: string | null;
 }
 
 export async function GET() {
@@ -40,11 +36,9 @@ export async function GET() {
     // Email provider is instantiated but not pinged — just report its name (or null if unconfigured).
     const emailProvider = ctx.email?.name ?? null;
 
-    const jobs: SchedulerJob[] = ctx.scheduler.list().map(job => ({
-      name: job.name,
-      cron: job.cron,
-      nextRun: job.nextRun ? job.nextRun.toISOString() : null,
-    }));
+    // Job count only — names and cron expressions are internal scheduling
+    // details, not something an unauthenticated caller needs.
+    const jobCount = ctx.scheduler.list().length;
 
     const lastDigestRow = ctx.db
       .select()
@@ -57,7 +51,6 @@ export async function GET() {
       ? {
           status: lastDigestRow.status,
           scheduledAt: lastDigestRow.scheduledAt.toISOString(),
-          error: lastDigestRow.error ? lastDigestRow.error.slice(0, MAX_ERROR_LENGTH) : null,
         }
       : null;
 
@@ -74,7 +67,7 @@ export async function GET() {
       email_provider: emailProvider,
       scheduler: {
         schedule_enabled: ctx.config.newsletter.schedule_enabled,
-        jobs,
+        job_count: jobCount,
       },
       last_digest: lastDigest,
     };

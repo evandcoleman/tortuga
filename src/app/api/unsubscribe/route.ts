@@ -1,31 +1,35 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { getAppContext } from '@/kernel/context';
 import { verifyUnsubscribeToken } from '@/kernel/email/unsubscribe';
 import { recipientsCache, unsubscribes } from '@/modules/newsletter/schema';
 
 export const dynamic = 'force-dynamic';
 
+const ALREADY_USED_RESPONSE = () => new NextResponse(
+  htmlPage('Link no longer valid', 'This unsubscribe link is invalid or has been used.'),
+  { status: 400, headers: { 'content-type': 'text/html' } },
+);
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const token = url.searchParams.get('token') ?? '';
   const ctx = getAppContext();
   const verified = verifyUnsubscribeToken(token, ctx.env.SESSION_SECRET);
-  if (!verified) {
-    return new NextResponse(htmlPage('Link no longer valid', 'This unsubscribe link is invalid or has been used.'), {
-      status: 400, headers: { 'content-type': 'text/html' },
-    });
-  }
-  const existing = ctx.db.select().from(unsubscribes).where(eq(unsubscribes.token, token)).get();
-  if (existing?.usedAt != null) {
-    return new NextResponse(htmlPage('Link no longer valid', 'This unsubscribe link is invalid or has been used.'), {
-      status: 400, headers: { 'content-type': 'text/html' },
-    });
-  }
+  if (!verified) return ALREADY_USED_RESPONSE();
+
+  // Atomically claim the token: only the request that flips usedAt from NULL
+  // wins (guards against a TOCTOU race between two concurrent requests for
+  // the same link). better-sqlite3 executes this synchronously, so there's
+  // no window for another request to interleave between the check and the
+  // write.
+  const claim = ctx.db.update(unsubscribes).set({ usedAt: new Date() })
+    .where(and(eq(unsubscribes.token, token), isNull(unsubscribes.usedAt)))
+    .run();
+  if (claim.changes === 0) return ALREADY_USED_RESPONSE();
+
   ctx.db.update(recipientsCache).set({ active: false })
     .where(eq(recipientsCache.email, verified.email)).run();
-  ctx.db.update(unsubscribes).set({ usedAt: new Date() })
-    .where(eq(unsubscribes.token, token)).run();
   return new NextResponse(htmlPage("You're unsubscribed", 'You will no longer receive the newsletter.'), {
     headers: { 'content-type': 'text/html' },
   });

@@ -7,6 +7,9 @@ type DigestRow = {
   error: string | null;
 };
 
+// The route intentionally never surfaces `error` (unauthenticated endpoint) —
+// tests still set it on the mock row to prove it never leaks into the body.
+
 interface MockState {
   dbOk: boolean;
   tautulliOk: boolean;
@@ -85,7 +88,7 @@ describe('GET /api/healthz', () => {
     expect(typeof body.ts).toBe('string');
   });
 
-  it('includes scheduler section with jobs and ISO next-run dates', async () => {
+  it('includes scheduler job_count without leaking job names or cron expressions', async () => {
     // Arrange
     const next = new Date('2026-06-01T13:00:00.000Z');
     state.jobs = [{ name: 'newsletter-digest', cron: '0 9 * * SUN', nextRun: next }];
@@ -94,20 +97,10 @@ describe('GET /api/healthz', () => {
     const body = await (await GET()).json();
 
     // Assert
-    expect(body.scheduler.jobs).toEqual([
-      { name: 'newsletter-digest', cron: '0 9 * * SUN', nextRun: next.toISOString() },
-    ]);
-  });
-
-  it('represents a stopped job (null nextRun) as null', async () => {
-    // Arrange
-    state.jobs = [{ name: 'newsletter-digest', cron: '0 9 * * SUN', nextRun: null }];
-
-    // Act
-    const body = await (await GET()).json();
-
-    // Assert
-    expect(body.scheduler.jobs[0].nextRun).toBeNull();
+    expect(body.scheduler.job_count).toBe(1);
+    expect(body.scheduler.jobs).toBeUndefined();
+    expect(JSON.stringify(body)).not.toContain('newsletter-digest');
+    expect(JSON.stringify(body)).not.toContain('0 9 * * SUN');
   });
 
   it('reflects schedule_enabled from config', async () => {
@@ -149,7 +142,6 @@ describe('GET /api/healthz', () => {
     expect(body.last_digest).toEqual({
       status: 'sent',
       scheduledAt: scheduledAt.toISOString(),
-      error: null,
     });
   });
 
@@ -181,10 +173,10 @@ describe('GET /api/healthz', () => {
     expect(body.status).toBe('ok');
   });
 
-  it('returns status=degraded (HTTP 200) when most recent digest failed', async () => {
+  it('returns status=degraded (HTTP 200) when most recent digest failed, without leaking the error text', async () => {
     // Arrange
     state.digestRows = [
-      { status: 'failed', scheduledAt: new Date('2026-05-25T09:00:00.000Z'), error: 'boom' },
+      { status: 'failed', scheduledAt: new Date('2026-05-25T09:00:00.000Z'), error: 'boom: /secret/internal/path' },
     ];
 
     // Act
@@ -193,22 +185,9 @@ describe('GET /api/healthz', () => {
 
     // Assert
     expect(body.status).toBe('degraded');
-    expect(body.last_digest.error).toBe('boom');
+    expect(body.last_digest.error).toBeUndefined();
+    expect(JSON.stringify(body)).not.toContain('boom');
     expect(res.status).toBe(200); // degraded is reachable, not a hard failure
-  });
-
-  it('caps a very long digest error to 500 chars', async () => {
-    // Arrange
-    const longError = 'x'.repeat(1200);
-    state.digestRows = [
-      { status: 'failed', scheduledAt: new Date('2026-05-25T09:00:00.000Z'), error: longError },
-    ];
-
-    // Act
-    const body = await (await GET()).json();
-
-    // Assert
-    expect(body.last_digest.error).toHaveLength(500);
   });
 
   it('returns 503 and status=fail when db check fails', async () => {

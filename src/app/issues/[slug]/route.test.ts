@@ -36,6 +36,12 @@ vi.mock('drizzle-orm', () => ({
   eq: (column: { name: keyof MockDigestRow }, value: string) => (row: MockDigestRow) => row[column.name] === value,
 }));
 
+const requireAdminSession = vi.fn();
+vi.mock('@/kernel/auth/require-admin-session', () => ({
+  requireAdminSession: (...args: unknown[]) => requireAdminSession(...args),
+  UnauthorizedError: class UnauthorizedError extends Error {},
+}));
+
 import { GET } from './route';
 
 function req(slug: string) {
@@ -44,22 +50,32 @@ function req(slug: string) {
 
 beforeEach(() => {
   state.rows = [];
+  requireAdminSession.mockReset();
+  requireAdminSession.mockRejectedValue(new Error('Unauthorized'));
 });
 
 describe('GET /issues/[slug]', () => {
-  it('serves the stored web_html for a sent digest', async () => {
+  it('serves the stored web_html for a sent digest without checking admin session', async () => {
     state.rows = [{ slug: 'abc123', webHtml: '<html><body>Issue</body></html>', status: 'sent' }];
     const res = await GET(req('abc123'), { params: Promise.resolve({ slug: 'abc123' }) });
     expect(res.status).toBe(200);
     expect(await res.text()).toContain('Issue');
     expect(res.headers.get('content-type')).toContain('text/html');
+    expect(requireAdminSession).not.toHaveBeenCalled();
   });
 
-  it('serves a rendered (not-yet-sent) digest too', async () => {
+  it('serves a rendered (not-yet-sent) digest to an authenticated admin', async () => {
+    requireAdminSession.mockResolvedValue({ email: 'admin@x.io' });
     state.rows = [{ slug: 'abc123', webHtml: '<html><body>Draft</body></html>', status: 'rendered' }];
     const res = await GET(req('abc123'), { params: Promise.resolve({ slug: 'abc123' }) });
     expect(res.status).toBe(200);
     expect(await res.text()).toContain('Draft');
+  });
+
+  it('404s a rendered (not-yet-sent) digest for an unauthenticated request', async () => {
+    state.rows = [{ slug: 'abc123', webHtml: '<html><body>Draft</body></html>', status: 'rendered' }];
+    const res = await GET(req('abc123'), { params: Promise.resolve({ slug: 'abc123' }) });
+    expect(res.status).toBe(404);
   });
 
   it('404s for an unknown slug', async () => {

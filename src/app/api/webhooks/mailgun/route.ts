@@ -26,20 +26,25 @@ export async function POST(req: Request) {
   if (!email.verifyWebhook({ body, headers: req.headers, secret })) {
     return NextResponse.json({ error: 'invalid signature' }, { status: 401 });
   }
-  const event = email.parseEvent(body);
-  ctx.db.insert(sendEvents).values({
-    id: createId(),
-    sendId: null,
-    providerMessageId: event.providerMessageId ?? '',
-    provider: 'mailgun',
-    type: event.rawType,
-    receivedAt: event.receivedAt,
-    payload: body,
-  }).run();
-  if (event.providerMessageId && TERMINAL_TYPES.has(event.type)) {
-    ctx.db.update(sends).set({ status: event.type as 'delivered' | 'bounced' | 'complained' | 'failed' })
-      .where(and(eq(sends.providerMessageId, event.providerMessageId), eq(sends.provider, 'mailgun')))
-      .run();
+  try {
+    const event = email.parseEvent(body);
+    ctx.db.insert(sendEvents).values({
+      id: createId(),
+      sendId: null,
+      providerMessageId: event.providerMessageId ?? null,
+      provider: 'mailgun',
+      type: event.rawType,
+      receivedAt: event.receivedAt,
+      payload: body,
+    }).run();
+    if (event.providerMessageId && TERMINAL_TYPES.has(event.type)) {
+      ctx.db.update(sends).set({ status: event.type as 'delivered' | 'bounced' | 'complained' | 'failed' })
+        .where(and(eq(sends.providerMessageId, event.providerMessageId), eq(sends.provider, 'mailgun')))
+        .run();
+    }
+  } catch (err) {
+    log.error({ err }, 'failed to process mailgun webhook payload');
+    return NextResponse.json({ error: 'malformed payload' }, { status: 400 });
   }
   return NextResponse.json({ ok: true });
 }

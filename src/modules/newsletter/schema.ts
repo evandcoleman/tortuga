@@ -42,7 +42,7 @@ export const sends = sqliteTable('sends', {
 export const sendEvents = sqliteTable('send_events', {
   id: text('id').primaryKey(),
   sendId: text('send_id').references(() => sends.id),
-  providerMessageId: text('provider_message_id').notNull(),
+  providerMessageId: text('provider_message_id'),
   provider: text('provider').$type<'resend' | 'mailgun'>(),
   type: text('type').notNull(),
   receivedAt: integer('received_at', { mode: 'timestamp_ms' }).notNull(),

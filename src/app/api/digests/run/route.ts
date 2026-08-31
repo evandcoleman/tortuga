@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server';
 import { getAppContext } from '@/kernel/context';
 import { runDigest } from '@/modules/newsletter/pipeline/run';
 import { auth } from '@/kernel/auth/auth';
+import { createLogger } from '@/kernel/logging/logger';
 
 export const dynamic = 'force-dynamic';
+
+const log = createLogger('api.digests.run');
 
 async function isAuthorized(req: Request): Promise<boolean> {
   const ctx = getAppContext();
@@ -32,6 +35,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json(result);
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    log.error({ err }, 'digest run failed');
+    return NextResponse.json({ error: 'digest run failed' }, { status: 500 });
   }
 }
