@@ -72,6 +72,14 @@ describe('validatePortalConfig', () => {
     if (!r.ok) expect(Object.values(r.errors).some(m => m.includes('exactly one'))).toBe(true);
   });
 
+  it('accepts a custom page entry with only html set (no markdown) — the mode a fresh page must be able to reach', () => {
+    const r = validatePortalConfig({
+      ...valid,
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ', html: '<p>a</p>' }],
+    });
+    expect(r.ok).toBe(true);
+  });
+
   it('accepts a custom link entry', () => {
     const r = validatePortalConfig({
       ...valid,

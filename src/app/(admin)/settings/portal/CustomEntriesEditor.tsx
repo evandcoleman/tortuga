@@ -157,7 +157,26 @@ function PageBodyEditor({
   bodyId: string;
   onChange: (patch: Partial<PortalCustomEntry>) => void;
 }) {
-  const bodyMode: 'markdown' | 'html' = typeof entry.html === 'string' && entry.html.length > 0 ? 'html' : 'markdown';
+  // The mode is tracked here rather than inferred from `entry.html.length > 0`:
+  // a fresh page entry (or one whose html is still blank) would otherwise never
+  // be able to switch to HTML mode, since typing into the HTML textarea while
+  // it's still empty would keep re-deriving "markdown" and route keystrokes to
+  // the wrong field. Initial value still infers from the entry so an existing
+  // html-bodied entry opens in the right mode.
+  const [bodyMode, setBodyMode] = useState<'markdown' | 'html'>(() =>
+    typeof entry.html === 'string' && entry.html.length > 0 ? 'html' : 'markdown',
+  );
+
+  function switchTo(mode: 'markdown' | 'html') {
+    setBodyMode(mode);
+    // Keep the markdown-xor-html invariant: moving the current text across and
+    // clearing the other field, same as before.
+    onChange(
+      mode === 'markdown'
+        ? { markdown: entry.html ?? '', html: undefined }
+        : { html: entry.markdown ?? '', markdown: undefined },
+    );
+  }
 
   return (
     <div className="mt-2">
@@ -166,7 +185,7 @@ function PageBodyEditor({
         <div className="flex gap-1 text-[11px]">
           <button
             type="button"
-            onClick={() => onChange({ markdown: entry.html ?? '', html: undefined })}
+            onClick={() => switchTo('markdown')}
             className={bodyMode === 'markdown' ? 'font-semibold text-gold' : 'text-muted hover:text-fg'}
           >
             Markdown
@@ -174,7 +193,7 @@ function PageBodyEditor({
           <span className="text-faint">/</span>
           <button
             type="button"
-            onClick={() => onChange({ html: entry.markdown ?? '', markdown: undefined })}
+            onClick={() => switchTo('html')}
             className={bodyMode === 'html' ? 'font-semibold text-gold' : 'text-muted hover:text-fg'}
           >
             HTML
