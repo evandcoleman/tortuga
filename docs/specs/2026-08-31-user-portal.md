@@ -50,6 +50,15 @@ server name as title, minimal footer, no admin nav.
 4. **Report an Issue (`/report-issue`)** — default copy: content issues go through the
    request service's Report Issue flow (links `portal.links.request_url`); no form,
    no backend. Path avoids colliding with `/issues/[slug]` (hosted newsletter issues).
+5. **Custom entries** — an ordered list of admin-defined additions, each either:
+   - `link`: an external URL — renders as a home-grid button only.
+   - `page`: a content page at `/<slug>` with a `label` and a body given as `markdown`
+     **or** `html` (exactly one). Markdown goes through the same substitution +
+     `marked` pipeline (variables available); HTML is rendered verbatim (admin-authored,
+     trusted). Gets a home-grid button and the shared portal chrome.
+   Custom buttons appear after the built-in buttons, in list order. Slugs are validated
+   (`[a-z0-9-]+`) and must not collide with reserved paths (`getting-started`, `rules`,
+   `report-issue`, `portal`, `issues`, `api`, `_next`).
 
 ### Content model
 
@@ -77,6 +86,9 @@ portal:
     getting_started: { enabled: true, markdown: null }
     rules:           { enabled: true, markdown: null }
     report_issue:    { enabled: true, markdown: null }
+  custom:                              # ordered; optional
+    - { type: link, label: Wiki, url: https://… }
+    - { type: page, slug: faq, label: FAQ, markdown: "…" }   # or html: "…"
   appearance:                          # optional; falls back to newsletter appearance
     theme: editorial
     theme_overrides: { … }             # same ThemeOverridesSchema as newsletter
@@ -92,7 +104,8 @@ portal:
 ## Admin UI
 
 New `(admin)` page **Settings → Portal** (placement consistent with existing settings
-nav): enable toggle, domain, link fields, per-page enable + markdown editor, theme
+nav): enable toggle, domain, link fields, per-page enable + markdown editor, a custom-entries
+list editor (add/remove/reorder link and page entries, markdown-or-HTML body), theme
 picker (inherit-from-newsletter default or explicit theme + overrides, reusing the
 existing appearance editor components where practical), and a "Preview portal" link to
 `/portal`. Saves via the section-keyed config override.
@@ -106,7 +119,8 @@ existing appearance editor components where practical), and a "Preview portal" l
 
 ## Non-goals
 
-- No CMS: no arbitrary pages, no WYSIWYG, no media uploads.
+- Still not a CMS: custom pages are flat config entries — no WYSIWYG, no media
+  uploads, no nesting, no drafts/versioning.
 - No forms or public POST endpoints; report-an-issue is instructions only.
 - No per-user content, auth'd user area, or analytics.
 - No automatic DNS/tunnel/Authelia provisioning.
@@ -120,3 +134,5 @@ existing appearance editor components where practical), and a "Preview portal" l
 - Theme: inherit vs explicit portal appearance.
 - Rendering: default copy variable substitution; markdown override replaces body;
   disabled page hides button and 404s.
+- Custom entries: link buttons render; custom page serves markdown and HTML bodies;
+  slug validation rejects reserved/invalid slugs; unknown slug 404s.
