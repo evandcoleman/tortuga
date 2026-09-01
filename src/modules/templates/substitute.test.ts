@@ -1,5 +1,25 @@
 import { describe, it, expect } from 'vitest';
-import { substituteVariables, type TemplateVariables } from './substitute';
+import { substituteVariables, substituteTokens, type TemplateVariables } from './substitute';
+
+describe('substituteTokens', () => {
+  it('replaces arbitrary named tokens', () => {
+    const out = substituteTokens('Go to {{plex_url}} on {{server_name}}.', {
+      plex_url: 'https://app.plex.tv',
+      server_name: 'Olympus',
+    });
+    expect(out).toBe('Go to https://app.plex.tv on Olympus.');
+  });
+
+  it('leaves a token untouched when its value is undefined or null', () => {
+    const out = substituteTokens('Status: {{status_url}}', { status_url: undefined });
+    expect(out).toBe('Status: {{status_url}}');
+  });
+
+  it('leaves unknown tokens untouched', () => {
+    const out = substituteTokens('{{unknown}}', {});
+    expect(out).toBe('{{unknown}}');
+  });
+});
 
 describe('substituteVariables', () => {
   const vars: TemplateVariables = { name: 'Ada', email: 'ada@x.io', serverName: 'Olympus' };

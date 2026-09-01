@@ -1,10 +1,10 @@
 import { Section } from '@react-email/components';
 import * as React from 'react';
-import { marked } from 'marked';
 
 import { EmailShell } from '@/modules/newsletter/templates/shell';
 import { resolveThemeWithOverrides } from '@/modules/newsletter/templates/themes';
 import type { Appearance } from '@/modules/newsletter/appearance/schema';
+import { renderMarkdown } from './markdown';
 
 export interface TemplateEmailProps {
   subject: string;
@@ -28,7 +28,7 @@ export function TemplateEmail({
   unsubscribeUrl,
 }: TemplateEmailProps) {
   const theme = resolveThemeWithOverrides(themeId, appearance?.theme_overrides);
-  const bodyHtml = marked.parse(body, { async: false }) as string;
+  const bodyHtml = renderMarkdown(body);
 
   return (
     <EmailShell theme={theme} appName={appName} unsubscribeUrl={unsubscribeUrl} previewText={subject}>
