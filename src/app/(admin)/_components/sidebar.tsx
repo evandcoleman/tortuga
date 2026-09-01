@@ -8,6 +8,8 @@ type NavItem = {
   label: string;
   exact?: boolean;
   icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings' | 'send' | 'invite';
+  /** Opens in a new tab via a plain `<a>` instead of client-side `Link` routing; never gets active styling. */
+  newTab?: boolean;
 };
 
 const workspaceItems: ReadonlyArray<NavItem> = [
@@ -30,6 +32,11 @@ const messagesItems: ReadonlyArray<NavItem> = [
   { href: '/messages', label: 'Compose', exact: true, icon: 'send' },
   { href: '/messages/history', label: 'History', icon: 'history' },
   { href: '/messages/templates', label: 'Templates', icon: 'mail' },
+];
+
+const portalItems: ReadonlyArray<NavItem> = [
+  { href: '/portal-settings', label: 'Settings', exact: true, icon: 'settings' },
+  { href: '/portal', label: 'Preview', icon: 'eye', newTab: true },
 ];
 
 const settingsItem: NavItem = { href: '/settings', label: 'Settings', exact: true, icon: 'settings' };
@@ -79,9 +86,15 @@ export function Sidebar({ userEmail, providerName, authMode, signOutAction }: Si
           ))}
         </ul>
         <SectionLabel>Messages</SectionLabel>
-        <ul className="grid gap-0.5">
+        <ul className="mb-2 grid gap-0.5">
           {messagesItems.map(it => (
             <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
+          ))}
+        </ul>
+        <SectionLabel>Portal</SectionLabel>
+        <ul className="grid gap-0.5">
+          {portalItems.map(it => (
+            <NavLink key={it.href} item={it} active={!it.newTab && isActive(pathname, it)} />
           ))}
         </ul>
       </nav>
@@ -130,22 +143,37 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+  const className = [
+    'group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13.5px] transition',
+    active ? 'bg-elevated text-fg shadow-soft' : 'text-muted hover:bg-surface hover:text-fg',
+  ].join(' ');
+  const content = (
+    <>
+      {active ? (
+        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-gold" />
+      ) : null}
+      <Icon name={item.icon} className={active ? 'text-gold' : 'text-subtle group-hover:text-fg'} />
+      <span className="tracking-[-0.01em]">{item.label}</span>
+      {item.newTab ? (
+        <Icon name="external" className="ml-auto text-subtle group-hover:text-fg" />
+      ) : null}
+    </>
+  );
+
+  if (item.newTab) {
+    return (
+      <li>
+        <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+          {content}
+        </a>
+      </li>
+    );
+  }
+
   return (
     <li>
-      <Link
-        href={item.href}
-        className={[
-          'group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13.5px] transition',
-          active
-            ? 'bg-elevated text-fg shadow-soft'
-            : 'text-muted hover:bg-surface hover:text-fg',
-        ].join(' ')}
-      >
-        {active ? (
-          <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-gold" />
-        ) : null}
-        <Icon name={item.icon} className={active ? 'text-gold' : 'text-subtle group-hover:text-fg'} />
-        <span className="tracking-[-0.01em]">{item.label}</span>
+      <Link href={item.href} className={className}>
+        {content}
       </Link>
     </li>
   );
@@ -180,7 +208,7 @@ function Dot({ className = '' }: { className?: string }) {
   return <span className={`inline-block h-1.5 w-1.5 rounded-full bg-current ${className}`} />;
 }
 
-function Icon({ name, className = '' }: { name: NavItem['icon']; className?: string }) {
+function Icon({ name, className = '' }: { name: NavItem['icon'] | 'external'; className?: string }) {
   const common = {
     width: 16,
     height: 16,
@@ -265,6 +293,13 @@ function Icon({ name, className = '' }: { name: NavItem['icon']; className?: str
         <svg {...common}>
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      );
+    case 'external':
+      return (
+        <svg {...common} width="12" height="12">
+          <path d="M7 17L17 7" />
+          <path d="M8 7h9v9" />
         </svg>
       );
   }
