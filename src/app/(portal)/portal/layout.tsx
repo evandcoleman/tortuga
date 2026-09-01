@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getAppContext } from '@/kernel/context';
+import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { PORTAL_HOST_HEADER } from '@/modules/portal/constants';
 import { resolvePortalTheme, portalThemeCssVars } from '@/modules/portal/theme';
 
@@ -11,18 +12,34 @@ export const dynamic = 'force-dynamic';
  * `resolvePortalTheme`, the server name as the "title", and a minimal
  * footer — no admin nav.
  *
- * `portal.enabled` gates real portal-host traffic: a genuine request on the
- * configured portal domain (marked by middleware's `x-portal-host` header —
- * see `constants.ts`) 404s the same way everywhere when the portal is off.
- * The admin-host `/portal` route (the "Preview" link in the sidebar) is
- * exempt from that gate so admins can preview disabled portals; it instead
- * renders with a small "disabled" banner.
+ * This route group has no auth of its own otherwise (session-mode auth
+ * lives only in the (admin) layout), so it must draw its own line here:
+ *
+ * - Genuine portal-host requests (marked by middleware's `x-portal-host`
+ *   header — see `constants.ts`) 404 when `portal.enabled` is false, and
+ *   render unauthenticated otherwise — this is the actual public site.
+ * - Everything else (the admin-host `/portal` preview link) requires an
+ *   authenticated admin session; a missing/invalid session 404s rather than
+ *   401s, so as not to leak whether the portal exists. Admins get the
+ *   preview regardless of `enabled`, with a "disabled" banner when off.
+ *
+ * Net invariant: an unauthenticated visitor can only ever reach the portal
+ * via the portal host with `enabled: true`.
  */
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const ctx = getAppContext();
   const headerList = await headers();
   const isPortalHostRequest = Boolean(headerList.get(PORTAL_HOST_HEADER));
-  if (!ctx.portal.enabled && isPortalHostRequest) notFound();
+
+  if (isPortalHostRequest) {
+    if (!ctx.portal.enabled) notFound();
+  } else {
+    try {
+      await requireAdminSession();
+    } catch {
+      notFound();
+    }
+  }
 
   const theme = resolvePortalTheme(ctx.config.newsletter, ctx.portal.appearance);
   const cssVars = portalThemeCssVars(theme);

@@ -103,7 +103,9 @@ export default function middleware(req: NextRequest) {
     }
   }
   // session mode: protected by layout-level `auth()` checks (Edge-runtime safe).
-  // On the admin host, /portal/* is not in PUBLIC_PATHS, so it stays behind
-  // this same auth gate — a live preview of the portal for admins only.
+  // On the admin host, /portal/* is not in PUBLIC_PATHS but the (portal) route
+  // group has no `auth()` check of its own — its layout requires an admin
+  // session directly (see `(portal)/portal/layout.tsx`) so the preview stays
+  // admin-only even though this generic gate doesn't cover it.
   return NextResponse.next();
 }

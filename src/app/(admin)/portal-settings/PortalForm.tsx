@@ -71,10 +71,6 @@ export function PortalForm({ config }: { config: PortalConfig }) {
   return (
     <div className="grid gap-5">
       <Card>
-        <CardHeader
-          title="Portal"
-          description="A small branded public site (buttons + a few content pages) served on your own domain."
-        />
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Domain</span>
@@ -106,7 +102,8 @@ export function PortalForm({ config }: { config: PortalConfig }) {
             <span>
               <span className="block text-[13.5px] text-fg">Enable the portal</span>
               <span className="mt-0.5 block text-[11.5px] text-muted">
-                Off 404s the portal everywhere, on the domain and via the preview link above.
+                Off 404s the portal on the domain; the preview link above still works for admins, with a
+                disabled banner.
               </span>
             </span>
           </label>
