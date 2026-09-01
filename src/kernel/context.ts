@@ -100,6 +100,25 @@ export async function invalidateAppContext(): Promise<void> {
   }
 }
 
+/**
+ * Reads the portal `enabled`/`domain` fields fresh (DB override, falling back to
+ * the YAML file) instead of from the cached `AppContext.portal` singleton.
+ *
+ * Next.js can bundle middleware into a separate module instance from the one
+ * running server actions/route handlers, so `invalidateAppContext()` called
+ * from a settings save/revert action may never be observed by middleware's own
+ * copy of `cached`. Host routing is a security boundary (it decides whether
+ * Authelia's forward-auth is bypassed), so it must not depend on that
+ * cross-instance invalidation ever happening — this does a single DB row read
+ * per call instead, reusing the existing override/YAML resolution helpers.
+ */
+export function getPortalHostConfigFresh(): { enabled: boolean; domain?: string } {
+  const ctx = getAppContext();
+  const override = readConfigOverride(ctx.db, 'portal', PortalConfigSchema);
+  const portal = override ?? loadYamlConfig(ctx.env.CONFIG_PATH).portal;
+  return { enabled: portal.enabled, domain: portal.domain };
+}
+
 export function resetAppContextForTests() {
   if (cached) cached.scheduler.stopAll();
   cached = null;

@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { getAppContext, invalidateAppContext, resetAppContextForTests } from './context';
-import { writeConfigOverride } from './config/overrides';
+import { getAppContext, getPortalHostConfigFresh, invalidateAppContext, resetAppContextForTests } from './context';
+import { writeConfigOverride, clearConfigOverride } from './config/overrides';
 import { NewsletterConfigSchema, PortalConfigSchema } from './config/schema';
 import { writeServiceSettings } from './config/service-settings';
 
@@ -103,6 +103,33 @@ describe('getAppContext portal resolution', () => {
     const ctx = getAppContext();
     expect(ctx.portal.links.requestUrl).toBe('https://req.example');
     expect(ctx.portal.links.requestLabel).toBe('Overseerr');
+  });
+});
+
+describe('getPortalHostConfigFresh', () => {
+  it('defaults to disabled when nothing is configured', () => {
+    expect(getPortalHostConfigFresh()).toEqual({ enabled: false, domain: undefined });
+  });
+
+  it('reflects a DB override immediately, without invalidateAppContext (simulates middleware running in a separate module instance)', () => {
+    const override = PortalConfigSchema.parse({ enabled: true, domain: 'plex.example.com' });
+    writeConfigOverride(getAppContext().db, 'portal', override);
+
+    // Note: no invalidateAppContext() call — the cached AppContext.portal is
+    // stale here, but the fresh reader must not depend on that invalidation.
+    expect(getAppContext().portal.enabled).toBe(false);
+    expect(getPortalHostConfigFresh()).toEqual({ enabled: true, domain: 'plex.example.com' });
+  });
+
+  it('falls back to the YAML file, not a stale cached override, once the override is cleared', async () => {
+    const override = PortalConfigSchema.parse({ enabled: true, domain: 'plex.example.com' });
+    writeConfigOverride(getAppContext().db, 'portal', override);
+    await invalidateAppContext();
+    expect(getPortalHostConfigFresh()).toEqual({ enabled: true, domain: 'plex.example.com' });
+
+    clearConfigOverride(getAppContext().db, 'portal');
+    // Again, no invalidateAppContext() — proves this doesn't read the cached ctx.config.portal.
+    expect(getPortalHostConfigFresh()).toEqual({ enabled: false, domain: undefined });
   });
 });
 

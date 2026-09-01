@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAppContext } from '@/kernel/context';
+import { getPortalHostConfigFresh } from '@/kernel/context';
 import { PORTAL_HOST_HEADER } from '@/modules/portal/constants';
+
+/** Header Next.js sets on server-action POST requests (see `ACTION_HEADER` in next/dist). */
+const NEXT_ACTION_HEADER = 'next-action';
 
 const PUBLIC_PATHS = [
   '/login',
@@ -27,8 +30,16 @@ const NOT_FOUND = new NextResponse('Not found', { status: 404, headers: { 'conte
 // no Edge/CDN deployment target to preserve compatibility with.
 export const runtime = 'nodejs';
 
+// Deliberately does NOT exclude dotted paths (e.g. `/api/invites/victim@example.com`)
+// or a `/public` prefix (Next serves `public/` assets at the root, not under
+// `/public`, so that exclusion was dead weight) — every non-`_next`/favicon path
+// must pass through here so the portal-host guard below can 404 anything it
+// doesn't explicitly allow. On the admin host this now also runs auth checks for
+// paths that used to slip through (e.g. `/file.svg`); Authelia forward-auth
+// already covers those at the edge in `forward` mode, so this is consistent with
+// existing behavior for real deployments, not a new restriction.
 export const config = {
-  matcher: ['/((?!_next|favicon.ico|public|.*\\..*).*)'],
+  matcher: ['/((?!_next/|favicon.ico$).*)'],
 };
 
 function normalizeHost(hostHeader: string | null): string {
@@ -40,22 +51,36 @@ function normalizeHost(hostHeader: string | null): string {
  * on the configured portal domain, marking them public. Any other path on
  * the portal host (admin/API routes, nested paths, mixed-case paths) 404s —
  * the portal domain never serves anything but the portal.
+ *
+ * The portal host has Authelia bypassed at the edge, so this function is the
+ * *only* auth boundary those requests see. It therefore also: (1) strips any
+ * inbound forward-auth / portal-host marker headers before rewriting, so a
+ * client can't forge `Remote-User` or `x-portal-host` to reach code that
+ * trusts them downstream, and (2) 404s anything that isn't a plain page GET —
+ * non-GET/HEAD methods and Next.js server-action dispatch (`Next-Action`
+ * header) never have legitimate business on the public portal domain.
  */
 function handlePortalHost(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
+  if (req.method !== 'GET' && req.method !== 'HEAD') return NOT_FOUND;
+  if (req.headers.has(NEXT_ACTION_HEADER)) return NOT_FOUND;
+
   const target = pathname === '/' ? '/portal' : PORTAL_PAGE_PATTERN.test(pathname) ? `/portal${pathname}` : null;
   if (!target) return NOT_FOUND;
 
   const url = req.nextUrl.clone();
   url.pathname = target;
   const requestHeaders = new Headers(req.headers);
+  const authHeader = process.env.AUTH_FORWARD_HEADER ?? 'Remote-User';
+  requestHeaders.delete(authHeader);
+  requestHeaders.delete(PORTAL_HOST_HEADER);
   requestHeaders.set(PORTAL_HOST_HEADER, '1');
   return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
 }
 
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const { portal } = getAppContext();
+  const portal = getPortalHostConfigFresh();
   const host = normalizeHost(req.headers.get('host'));
 
   // Host-routed portal domain: bypass auth entirely (public site). When the

@@ -9,10 +9,10 @@ interface MockPortalConfig {
 const state: { portal: MockPortalConfig } = { portal: { enabled: false } };
 
 vi.mock('@/kernel/context', () => ({
-  getAppContext: () => ({ portal: state.portal }),
+  getPortalHostConfigFresh: () => state.portal,
 }));
 
-import middleware from './middleware';
+import middleware, { config as middlewareConfig } from './middleware';
 
 const originalAuthMode = process.env.AUTH_MODE;
 
@@ -26,9 +26,12 @@ afterEach(() => {
   process.env.AUTH_MODE = originalAuthMode;
 });
 
-function reqFor(path: string, opts: { host?: string; headers?: Record<string, string> } = {}) {
+function reqFor(
+  path: string,
+  opts: { host?: string; headers?: Record<string, string>; method?: string } = {},
+) {
   const headers = { host: opts.host ?? 'admin.example', ...opts.headers };
-  return new NextRequest(new Request(`http://${headers.host}${path}`, { headers }));
+  return new NextRequest(new Request(`http://${headers.host}${path}`, { headers, method: opts.method }));
 }
 
 describe('middleware public paths (admin host, unaffected by portal)', () => {
@@ -118,5 +121,51 @@ describe('middleware portal-host rewrite', () => {
   it('does not affect a request to a different host, even with a matching path', () => {
     const res = middleware(reqFor('/getting-started', { host: 'admin.example' }));
     expect(res.status).toBe(401);
+  });
+
+  it('404s a dotted admin-API-shaped path on the portal host (regression: matcher used to skip these)', () => {
+    const res = middleware(reqFor('/api/invites/victim@example.com', { host: 'plex.example.com' }));
+    expect(res.status).toBe(404);
+  });
+
+  it('strips an inbound forward-auth header before rewriting, rather than forwarding it verbatim', () => {
+    const res = middleware(
+      reqFor('/getting-started', { host: 'plex.example.com', headers: { 'remote-user': 'admin@x.io' } }),
+    );
+    expect(res.headers.get('x-middleware-request-remote-user')).toBeNull();
+  });
+
+  it('does not let a forged inbound x-portal-host header leak through unmarked', () => {
+    const res = middleware(
+      reqFor('/getting-started', { host: 'plex.example.com', headers: { 'x-portal-host': 'evil' } }),
+    );
+    expect(res.headers.get('x-middleware-request-x-portal-host')).toBe('1');
+  });
+
+  it('404s a non-GET/HEAD request on the portal host (blocks server-action-style dispatch)', () => {
+    const res = middleware(reqFor('/getting-started', { host: 'plex.example.com', method: 'POST' }));
+    expect(res.status).toBe(404);
+  });
+
+  it('404s a request carrying a Next-Action header on the portal host', () => {
+    const res = middleware(
+      reqFor('/getting-started', { host: 'plex.example.com', headers: { 'next-action': 'abc123' } }),
+    );
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('middleware matcher', () => {
+  const [pattern] = middlewareConfig.matcher;
+  const re = new RegExp(`^${pattern}$`);
+
+  it('matches dotted paths (previously excluded, hiding the portal-host 404 guard)', () => {
+    expect(re.test('/api/invites/victim@example.com')).toBe(true);
+    expect(re.test('/api/templates/a.b')).toBe(true);
+  });
+
+  it('still excludes _next assets and favicon.ico', () => {
+    expect(re.test('/_next/static/chunk.js')).toBe(false);
+    expect(re.test('/favicon.ico')).toBe(false);
   });
 });
