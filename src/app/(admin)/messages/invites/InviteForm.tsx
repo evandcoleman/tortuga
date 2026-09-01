@@ -34,6 +34,12 @@ export function InviteForm({ sections, sectionsUnavailable }: InviteFormProps) {
     });
   };
 
+  const allSelected = sections.length > 0 && selected.size === sections.length;
+
+  const toggleAll = () => {
+    setSelected(allSelected ? new Set() : new Set(sections.map(s => s.id)));
+  };
+
   const canSend = email.trim().length > 0 && selected.size > 0 && !isSending;
 
   const onSubmit = (e: React.FormEvent) => {
@@ -86,7 +92,18 @@ export function InviteForm({ sections, sectionsUnavailable }: InviteFormProps) {
         </label>
 
         <div>
-          <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Libraries</span>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Libraries</span>
+            {sections.length > 0 ? (
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="text-[11.5px] font-medium text-gold transition hover:text-gold-hi"
+              >
+                {allSelected ? 'Deselect all' : 'Select all'}
+              </button>
+            ) : null}
+          </div>
           {sectionsUnavailable ? (
             <p className="text-[12.5px] text-danger">Couldn&apos;t load libraries from plex.tv. Try again shortly.</p>
           ) : sections.length === 0 ? (
