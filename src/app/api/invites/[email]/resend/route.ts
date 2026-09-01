@@ -3,10 +3,17 @@ import { getAppContext } from '@/kernel/context';
 import { requireAdminSession, UnauthorizedError } from '@/kernel/auth/require-admin-session';
 import { recipientsCache } from '@/modules/newsletter/schema';
 import { eq } from 'drizzle-orm';
-import { getInviteByEmail, markWelcomeSent } from '@/modules/invites/service';
+import { getInviteByEmail, markWelcomeSent, upsertInviteAfterPlexInvite } from '@/modules/invites/service';
 import { sendWelcomeEmail } from '@/modules/invites/send-welcome';
+import type { PlexClient } from '@/kernel/integrations/plex';
 
 export const dynamic = 'force-dynamic';
+
+async function isPendingOnPlex(plex: PlexClient, email: string): Promise<boolean> {
+  const pending = await plex.getPendingInvites();
+  if (!pending.ok) return false;
+  return pending.data.some(p => p.invitedEmail.toLowerCase() === email.toLowerCase());
+}
 
 interface RouteParams {
   params: Promise<{ email: string }>;
@@ -28,8 +35,14 @@ export async function POST(_req: Request, { params }: RouteParams) {
     return NextResponse.json({ error: 'No email provider is configured' }, { status: 409 });
   }
 
-  const invite = getInviteByEmail(ctx.db, decoded);
-  if (!invite) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  let invite = getInviteByEmail(ctx.db, decoded);
+  if (!invite) {
+    const foundOnPlex = ctx.plex ? await isPendingOnPlex(ctx.plex, decoded) : false;
+    if (!foundOnPlex) {
+      return NextResponse.json({ error: "invite not found locally or on plex.tv" }, { status: 404 });
+    }
+    invite = upsertInviteAfterPlexInvite(ctx.db, decoded, []);
+  }
 
   const recipient = ctx.db.select().from(recipientsCache).where(eq(recipientsCache.email, decoded)).get();
   if (recipient && !recipient.active) {

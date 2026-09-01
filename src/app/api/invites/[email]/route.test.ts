@@ -68,6 +68,33 @@ describe('DELETE /api/invites/[email]', () => {
   });
 
   it('returns 404 for an unknown email', async () => {
+    getPendingInvites.mockResolvedValue({ ok: true, data: [] });
+    const res = await DELETE(new Request('http://localhost'), params('nope@x.io'));
+    expect(res.status).toBe(404);
+  });
+
+  it('cancels a plex.tv-only pending invite with no local row', async () => {
+    const pendingEntry = { id: '999', invitedEmail: 'B@X.IO', friend: true, home: false, server: true };
+    getPendingInvites.mockResolvedValue({ ok: true, data: [pendingEntry] });
+    cancelInvite.mockResolvedValue({ ok: true, data: undefined });
+
+    const res = await DELETE(new Request('http://localhost'), params('b@x.io'));
+
+    expect(res.status).toBe(200);
+    expect(cancelInvite).toHaveBeenCalledWith(pendingEntry);
+    const row = db.select().from(invites).where(eq(invites.email, 'b@x.io')).get();
+    expect(row).toBeUndefined();
+  });
+
+  it('returns 404 when there is no local row and the email is not pending on plex.tv either', async () => {
+    getPendingInvites.mockResolvedValue({ ok: true, data: [] });
+    const res = await DELETE(new Request('http://localhost'), params('nope@x.io'));
+    expect(res.status).toBe(404);
+    expect(cancelInvite).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when there is no local row and plex is not configured', async () => {
+    ctx = { ...ctx, plex: null };
     const res = await DELETE(new Request('http://localhost'), params('nope@x.io'));
     expect(res.status).toBe(404);
   });

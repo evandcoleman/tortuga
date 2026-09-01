@@ -21,7 +21,13 @@ vi.mock('@/modules/invites/send-welcome', () => ({
 }));
 
 const config = { newsletter: { from: { email: 'x@x.io', name: 'X' } } };
-let ctx: { db: typeof db; email: unknown; config: typeof config };
+const getPendingInvites = vi.fn();
+let ctx: {
+  db: typeof db;
+  email: unknown;
+  config: typeof config;
+  plex: { getPendingInvites: typeof getPendingInvites } | null;
+};
 vi.mock('@/kernel/context', () => ({
   getAppContext: () => ctx,
 }));
@@ -38,7 +44,8 @@ beforeEach(() => {
   requireAdminSession.mockReset();
   requireAdminSession.mockResolvedValue({ email: 'admin@x.io' });
   sendWelcomeEmailMock.mockReset();
-  ctx = { db, email: {}, config };
+  getPendingInvites.mockReset();
+  ctx = { db, email: {}, config, plex: { getPendingInvites } };
 });
 
 describe('POST /api/invites/[email]/resend', () => {
@@ -56,8 +63,40 @@ describe('POST /api/invites/[email]/resend', () => {
   });
 
   it('returns 404 for an email with no invite row', async () => {
+    getPendingInvites.mockResolvedValue({ ok: true, data: [] });
     const res = await POST(new Request('http://localhost'), params('nope@x.io'));
     expect(res.status).toBe(404);
+  });
+
+  it('sends the welcome email and creates a local row when the email has no local row but is a pending plex.tv invite', async () => {
+    getPendingInvites.mockResolvedValue({
+      ok: true,
+      data: [{ id: '1', invitedEmail: 'B@X.IO', friend: true, home: false, server: true }],
+    });
+    sendWelcomeEmailMock.mockResolvedValue({ ok: true });
+
+    const res = await POST(new Request('http://localhost'), params('b@x.io'));
+
+    expect(res.status).toBe(200);
+    expect(sendWelcomeEmailMock).toHaveBeenCalled();
+    const invite = db.select().from(invites).where(eq(invites.email, 'b@x.io')).get();
+    expect(invite).not.toBeNull();
+    expect(invite?.status).toBe('pending');
+    expect(invite?.welcomeSentAt).not.toBeNull();
+  });
+
+  it('returns 404 when there is no local row and the email is not a pending plex.tv invite either', async () => {
+    getPendingInvites.mockResolvedValue({ ok: true, data: [] });
+    const res = await POST(new Request('http://localhost'), params('nope@x.io'));
+    expect(res.status).toBe(404);
+    expect(sendWelcomeEmailMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when there is no local row and plex is not configured', async () => {
+    ctx = { ...ctx, plex: null };
+    const res = await POST(new Request('http://localhost'), params('nope@x.io'));
+    expect(res.status).toBe(404);
+    expect(sendWelcomeEmailMock).not.toHaveBeenCalled();
   });
 
   it('refuses a deactivated recipient with 409', async () => {

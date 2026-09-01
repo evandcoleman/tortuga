@@ -25,13 +25,14 @@ export async function DELETE(_req: Request, { params }: RouteParams) {
   const decoded = decodeURIComponent(email);
   const ctx = getAppContext();
   const invite = getInviteByEmail(ctx.db, decoded);
-  if (!invite) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
+  let matchedOnPlex = false;
   if (ctx.plex) {
     const pending = await ctx.plex.getPendingInvites();
     if (pending.ok) {
       const match = pending.data.find(p => p.invitedEmail.toLowerCase() === decoded.toLowerCase());
       if (match) {
+        matchedOnPlex = true;
         const cancelled = await ctx.plex.cancelInvite(match);
         if (!cancelled.ok) {
           log.error({ error: cancelled.error, email: decoded }, 'failed to cancel plex invite');
@@ -41,6 +42,12 @@ export async function DELETE(_req: Request, { params }: RouteParams) {
     }
   }
 
-  markInviteCancelled(ctx.db, decoded);
+  if (!invite && !matchedOnPlex) {
+    return NextResponse.json({ error: "invite not found locally or on plex.tv" }, { status: 404 });
+  }
+
+  if (invite) {
+    markInviteCancelled(ctx.db, decoded);
+  }
   return NextResponse.json({ status: 'cancelled' });
 }
