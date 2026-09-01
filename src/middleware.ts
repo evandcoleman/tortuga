@@ -22,6 +22,11 @@ const PORTAL_PAGE_PATTERN = /^\/[a-z0-9-]+$/;
 
 const NOT_FOUND = new NextResponse('Not found', { status: 404, headers: { 'content-type': 'text/plain' } });
 
+/** Header carrying the forward-auth principal, configurable per deployment. */
+function authForwardHeader(): string {
+  return process.env.AUTH_FORWARD_HEADER ?? 'Remote-User';
+}
+
 // Portal-host resolution needs `getAppContext()` (better-sqlite3, a native
 // Node module) — not available on the default Edge runtime. Node.js
 // middleware is stable since Next 15.5; this repo already only targets a
@@ -39,7 +44,7 @@ export const runtime = 'nodejs';
 // already covers those at the edge in `forward` mode, so this is consistent with
 // existing behavior for real deployments, not a new restriction.
 export const config = {
-  matcher: ['/((?!_next/|favicon.ico$).*)'],
+  matcher: ['/((?!_next/|favicon\\.ico$).*)'],
 };
 
 function normalizeHost(hostHeader: string | null): string {
@@ -71,9 +76,7 @@ function handlePortalHost(req: NextRequest): NextResponse {
   const url = req.nextUrl.clone();
   url.pathname = target;
   const requestHeaders = new Headers(req.headers);
-  const authHeader = process.env.AUTH_FORWARD_HEADER ?? 'Remote-User';
-  requestHeaders.delete(authHeader);
-  requestHeaders.delete(PORTAL_HOST_HEADER);
+  requestHeaders.delete(authForwardHeader());
   requestHeaders.set(PORTAL_HOST_HEADER, '1');
   return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
 }
@@ -95,8 +98,7 @@ export default function middleware(req: NextRequest) {
   }
   const mode = process.env.AUTH_MODE ?? 'session';
   if (mode === 'forward') {
-    const header = process.env.AUTH_FORWARD_HEADER ?? 'Remote-User';
-    if (!req.headers.get(header)) {
+    if (!req.headers.get(authForwardHeader())) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
   }

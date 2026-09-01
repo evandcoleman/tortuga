@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+// Next's own build-time matcher compiler (not a public API, but the most
+// faithful way to assert on matcher semantics — see usage below).
+import { getMiddlewareMatchers } from 'next/dist/build/analysis/get-page-static-info';
 
 interface MockPortalConfig {
   enabled: boolean;
@@ -155,9 +158,14 @@ describe('middleware portal-host rewrite', () => {
   });
 });
 
-describe('middleware matcher', () => {
-  const [pattern] = middlewareConfig.matcher;
-  const re = new RegExp(`^${pattern}$`);
+// Uses Next's own build-time matcher compiler instead of a hand-built regex,
+// so these assertions track what Next actually invokes middleware for —
+// including the `/_next/data/<build-id>/...` prefix and `.json`/`.rsc`/
+// `.segments/*.segment.rsc` transport suffixes it always adds, which a naive
+// `new RegExp('^' + pattern + '$')` would miss entirely.
+describe('middleware matcher (compiled with Next\'s own matcher builder)', () => {
+  const [compiled] = getMiddlewareMatchers(middlewareConfig.matcher, {});
+  const re = new RegExp(compiled.regexp);
 
   it('matches dotted paths (previously excluded, hiding the portal-host 404 guard)', () => {
     expect(re.test('/api/invites/victim@example.com')).toBe(true);
@@ -167,5 +175,33 @@ describe('middleware matcher', () => {
   it('still excludes _next assets and favicon.ico', () => {
     expect(re.test('/_next/static/chunk.js')).toBe(false);
     expect(re.test('/favicon.ico')).toBe(false);
+  });
+
+  it('matches the /_next/data/<build-id>/... transport prefix Next always adds', () => {
+    expect(re.test('/_next/data/abc123/newsletter/preview.json')).toBe(true);
+  });
+
+  it('matches the .rsc app-router transport suffix', () => {
+    expect(re.test('/newsletter/preview.rsc')).toBe(true);
+  });
+
+  it('matches the .segments/*.segment.rsc app-router transport suffix', () => {
+    expect(re.test('/newsletter/preview.segments/children.segment.rsc')).toBe(true);
+  });
+});
+
+describe('middleware behavior for transport-suffixed paths on the portal host', () => {
+  beforeEach(() => {
+    state.portal = { enabled: true, domain: 'plex.example.com' };
+  });
+
+  it('404s a .json data-route request for an admin path instead of leaking it', () => {
+    const res = middleware(reqFor('/_next/data/abc123/newsletter/preview.json', { host: 'plex.example.com' }));
+    expect(res.status).toBe(404);
+  });
+
+  it('404s a .rsc-suffixed request for an admin path instead of leaking it', () => {
+    const res = middleware(reqFor('/newsletter/preview.rsc', { host: 'plex.example.com' }));
+    expect(res.status).toBe(404);
   });
 });

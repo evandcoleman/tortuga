@@ -112,14 +112,32 @@ export async function invalidateAppContext(): Promise<void> {
  * cross-instance invalidation ever happening — this does a single DB row read
  * per call instead, reusing the existing override/YAML resolution helpers.
  */
+/**
+ * How long `getPortalHostConfigFresh()` may serve a memoized value before
+ * re-reading the DB/YAML. This request-scoped guard now runs on every
+ * request (including static assets), so a per-request DB read + YAML parse +
+ * Zod validation would add unnecessary load; a short TTL keeps settings
+ * changes visible within a few seconds without paying that cost per request.
+ */
+export const PORTAL_HOST_CONFIG_TTL_MS = 5_000;
+
+let portalHostConfigMemo: { value: { enabled: boolean; domain?: string }; expiresAt: number } | null = null;
+
 export function getPortalHostConfigFresh(): { enabled: boolean; domain?: string } {
+  const now = Date.now();
+  if (portalHostConfigMemo && now < portalHostConfigMemo.expiresAt) {
+    return portalHostConfigMemo.value;
+  }
   const ctx = getAppContext();
   const override = readConfigOverride(ctx.db, 'portal', PortalConfigSchema);
   const portal = override ?? loadYamlConfig(ctx.env.CONFIG_PATH).portal;
-  return { enabled: portal.enabled, domain: portal.domain };
+  const value = { enabled: portal.enabled, domain: portal.domain };
+  portalHostConfigMemo = { value, expiresAt: now + PORTAL_HOST_CONFIG_TTL_MS };
+  return value;
 }
 
 export function resetAppContextForTests() {
   if (cached) cached.scheduler.stopAll();
   cached = null;
+  portalHostConfigMemo = null;
 }

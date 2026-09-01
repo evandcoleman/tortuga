@@ -1,8 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { getAppContext, getPortalHostConfigFresh, invalidateAppContext, resetAppContextForTests } from './context';
+import {
+  getAppContext,
+  getPortalHostConfigFresh,
+  invalidateAppContext,
+  resetAppContextForTests,
+  PORTAL_HOST_CONFIG_TTL_MS,
+} from './context';
 import { writeConfigOverride, clearConfigOverride } from './config/overrides';
 import { NewsletterConfigSchema, PortalConfigSchema } from './config/schema';
 import { writeServiceSettings } from './config/service-settings';
@@ -121,7 +127,7 @@ describe('getPortalHostConfigFresh', () => {
     expect(getPortalHostConfigFresh()).toEqual({ enabled: true, domain: 'plex.example.com' });
   });
 
-  it('falls back to the YAML file, not a stale cached override, once the override is cleared', async () => {
+  it('falls back to the YAML file, not a stale cached override, once the override is cleared and the memo TTL elapses', async () => {
     const override = PortalConfigSchema.parse({ enabled: true, domain: 'plex.example.com' });
     writeConfigOverride(getAppContext().db, 'portal', override);
     await invalidateAppContext();
@@ -129,7 +135,42 @@ describe('getPortalHostConfigFresh', () => {
 
     clearConfigOverride(getAppContext().db, 'portal');
     // Again, no invalidateAppContext() — proves this doesn't read the cached ctx.config.portal.
+    // It does still honor the short memo TTL (see `memoization` below), so advance past it
+    // before asserting (switching back to real timers first would reset the clock to "now",
+    // which is still within the TTL window of the earlier real-time read).
+    vi.useFakeTimers();
+    vi.advanceTimersByTime(PORTAL_HOST_CONFIG_TTL_MS);
     expect(getPortalHostConfigFresh()).toEqual({ enabled: false, domain: undefined });
+    vi.useRealTimers();
+  });
+
+  describe('memoization', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('returns a memoized value within the TTL instead of re-reading the DB/YAML', () => {
+      vi.useFakeTimers();
+      expect(getPortalHostConfigFresh()).toEqual({ enabled: false, domain: undefined });
+
+      const override = PortalConfigSchema.parse({ enabled: true, domain: 'plex.example.com' });
+      writeConfigOverride(getAppContext().db, 'portal', override);
+
+      // Still within the TTL — should still see the stale memoized value.
+      vi.advanceTimersByTime(PORTAL_HOST_CONFIG_TTL_MS - 1);
+      expect(getPortalHostConfigFresh()).toEqual({ enabled: false, domain: undefined });
+    });
+
+    it('re-reads once the TTL has elapsed', () => {
+      vi.useFakeTimers();
+      expect(getPortalHostConfigFresh()).toEqual({ enabled: false, domain: undefined });
+
+      const override = PortalConfigSchema.parse({ enabled: true, domain: 'plex.example.com' });
+      writeConfigOverride(getAppContext().db, 'portal', override);
+
+      vi.advanceTimersByTime(PORTAL_HOST_CONFIG_TTL_MS);
+      expect(getPortalHostConfigFresh()).toEqual({ enabled: true, domain: 'plex.example.com' });
+    });
   });
 });
 
