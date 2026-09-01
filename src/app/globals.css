@@ -87,3 +87,65 @@
     color: inherit;
   }
 }
+
+/*
+ * Portal prose — the public portal has its own web design (see
+ * docs/specs/2026-08-31-user-portal.md "Theming") and does not reuse the
+ * admin/email theme tokens above. Styled off the `--portal-*` custom
+ * properties set by the portal layout from the resolved theme.
+ */
+.portal-prose {
+  line-height: 1.7;
+  font-size: 1rem;
+}
+.portal-prose > * + * {
+  margin-top: 1.1em;
+}
+.portal-prose h1,
+.portal-prose h2,
+.portal-prose h3 {
+  font-family: var(--portal-font-heading);
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1.6em;
+}
+.portal-prose h2 {
+  font-size: 1.4rem;
+}
+.portal-prose h3 {
+  font-size: 1.15rem;
+}
+.portal-prose a {
+  color: var(--portal-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.portal-prose ul,
+.portal-prose ol {
+  padding-left: 1.4em;
+}
+.portal-prose ul {
+  list-style: disc;
+}
+.portal-prose ol {
+  list-style: decimal;
+}
+.portal-prose li + li {
+  margin-top: 0.4em;
+}
+.portal-prose strong {
+  font-weight: 600;
+}
+.portal-prose blockquote {
+  border-left: 2px solid var(--portal-rule);
+  padding-left: 1em;
+  color: var(--portal-muted);
+  font-style: italic;
+}
+.portal-prose code {
+  background: var(--portal-chip-bg);
+  color: var(--portal-chip-fg);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.9em;
+}
