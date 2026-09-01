@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
+import { usePathname } from 'next/navigation';
 
 import { Button } from '../../_components/ui';
 import { revertToFileDefault } from '../_lib/revert-action';
@@ -10,11 +11,19 @@ import { revertToFileDefault } from '../_lib/revert-action';
  * config — every settings section plus appearance/customize overrides — and
  * reverts to the YAML file default. Confirmed via a native <dialog>, mirroring
  * the SendNowButton confirm pattern, since this wipes far more than one field.
+ *
+ * Hidden on `/settings/portal`: that tab edits a separate `portal` config
+ * section with its own scoped revert (`revertPortalSettings`), and this
+ * shared button reverts `newsletter`, not `portal` — showing both here would
+ * make "Revert to file default" silently discard the wrong section.
  */
 export function RevertButton() {
+  const pathname = usePathname();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [isReverting, startReverting] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  if (pathname === '/settings/portal' || pathname?.startsWith('/settings/portal/')) return null;
 
   const openConfirm = () => {
     setError(null);
