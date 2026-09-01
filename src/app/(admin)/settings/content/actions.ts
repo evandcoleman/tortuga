@@ -18,7 +18,7 @@ export async function saveContentSettings(_prev: SaveState, formData: FormData):
   const result = parseContentForm(formData, ctx.config.newsletter);
   if (!result.ok) return { status: 'error', errors: result.errors };
 
-  writeConfigOverride(ctx.db, result.config);
+  writeConfigOverride(ctx.db, 'newsletter', result.config);
   await invalidateAppContext();
 
   revalidatePath('/settings/content');

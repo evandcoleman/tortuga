@@ -82,7 +82,7 @@ export async function saveAppearance(
   const safeLayout = LAYOUTS[layout] ? layout : DEFAULT_LAYOUT_ID;
 
   const ctx = getAppContext();
-  writeConfigOverride(ctx.db, {
+  writeConfigOverride(ctx.db, 'newsletter', {
     ...ctx.config.newsletter,
     appearance: result.data,
     theme: safeTheme,

@@ -10,7 +10,7 @@ export async function revertToFileDefault(): Promise<void> {
   await requireAdminSession();
 
   const ctx = getAppContext();
-  clearConfigOverride(ctx.db);
+  clearConfigOverride(ctx.db, 'newsletter');
   await invalidateAppContext();
   revalidatePath('/settings', 'layout');
   revalidatePath('/');

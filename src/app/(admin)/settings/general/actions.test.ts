@@ -70,6 +70,7 @@ describe('saveGeneralSettings server action', () => {
     expect(r.status).toBe('success');
     expect(writeConfigOverride).toHaveBeenCalledWith(
       {},
+      'newsletter',
       expect.objectContaining({ schedule: '0 9 * * SUN', lookback_days: 7 }),
     );
     expect(invalidateAppContext).toHaveBeenCalled();
@@ -84,6 +85,7 @@ describe('saveGeneralSettings server action', () => {
     expect(r.status).toBe('success');
     expect(writeConfigOverride).toHaveBeenCalledWith(
       {},
+      'newsletter',
       expect.objectContaining({ from: { email: 'other@example.com', name: 'Other' } }),
     );
   });

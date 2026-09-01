@@ -81,6 +81,7 @@ describe('saveContentSettings server action', () => {
     expect(result.status).toBe('success');
     expect(writeConfigOverride).toHaveBeenCalledWith(
       {},
+      'newsletter',
       expect.objectContaining({
         leaving: expect.objectContaining({ excluded_collection_ids: [3, 9] }),
       }),
@@ -96,6 +97,7 @@ describe('saveContentSettings server action', () => {
     expect(result.status).toBe('success');
     expect(writeConfigOverride).toHaveBeenCalledWith(
       {},
+      'newsletter',
       expect.objectContaining({ schedule: '30 7 * * MON' }),
     );
   });

@@ -14,8 +14,11 @@ export const sessions = sqliteTable('sessions', {
 });
 
 export const configOverrides = sqliteTable('config_overrides', {
-  id: integer('id').primaryKey(), // always 1 — single row
-  value: text('value').notNull(), // JSON of the full newsletter config
+  id: integer('id').primaryKey(), // auto-assigned by sqlite rowid; not looked up directly
+  // Config section this row overrides, e.g. 'newsletter' or 'portal'. One row per section.
+  // Existing rows predate this column and were backfilled to 'newsletter' by migration 0011.
+  section: text('section').notNull().unique().default('newsletter'),
+  value: text('value').notNull(), // JSON of the section's config
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
 

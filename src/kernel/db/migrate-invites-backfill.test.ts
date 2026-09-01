@@ -10,20 +10,31 @@ import { recipientsCache } from '@/modules/newsletter/schema';
 const repoRoot = join(__dirname, '..', '..', '..');
 const realMigrationsFolder = join(repoRoot, 'drizzle');
 
-/** Same "prod is one migration behind" harness used in migrate.test.ts. */
-function makePriorMigrationsFolder(): string {
+/**
+ * Same "prod is behind" harness used in migrate.test.ts, generalized to strip
+ * migrations from a specific tag onward (not just the single latest one) — this
+ * test targets the 0010 invites/welcomed_at migration specifically, which is no
+ * longer necessarily the newest migration in the journal.
+ */
+function makePriorMigrationsFolder(fromTagPrefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'tortuga-migrations-'));
   cpSync(realMigrationsFolder, dir, { recursive: true });
 
   const journalPath = join(dir, 'meta', '_journal.json');
   const journal = JSON.parse(readFileSync(journalPath, 'utf8'));
-  const last = journal.entries[journal.entries.length - 1];
-  journal.entries = journal.entries.slice(0, -1);
+  const sorted = [...journal.entries].sort((a: { idx: number }, b: { idx: number }) => a.idx - b.idx);
+  const cutIdx = sorted.findIndex((e: { tag: string }) => e.tag.startsWith(fromTagPrefix));
+  if (cutIdx === -1) throw new Error(`no migration tagged ${fromTagPrefix} found`);
+  const kept = sorted.slice(0, cutIdx);
+  const removed = sorted.slice(cutIdx);
+  journal.entries = kept;
   writeFileSync(journalPath, JSON.stringify(journal, null, 2));
 
-  unlinkSync(join(dir, `${last.tag}.sql`));
-  const snapshotIdx = String(journal.entries.length).padStart(4, '0');
-  unlinkSync(join(dir, 'meta', `${snapshotIdx}_snapshot.json`));
+  for (const entry of removed) {
+    unlinkSync(join(dir, `${entry.tag}.sql`));
+    const snapshotIdx = String(entry.idx).padStart(4, '0');
+    unlinkSync(join(dir, 'meta', `${snapshotIdx}_snapshot.json`));
+  }
 
   return dir;
 }
@@ -40,7 +51,7 @@ describe('0010 invites + welcomedAt backfill migration', () => {
   });
 
   it('grandfathers every pre-existing recipient with a non-null welcomedAt', () => {
-    tmpMigrationsDir = makePriorMigrationsFolder();
+    tmpMigrationsDir = makePriorMigrationsFolder('0010');
     const dir = mkdtempSync(join(tmpdir(), 'tortuga-db-'));
     dbFile = join(dir, 'tortuga.db');
 

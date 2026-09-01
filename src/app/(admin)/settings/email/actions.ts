@@ -24,7 +24,7 @@ export async function saveEmailSettings(_prev: SaveState, formData: FormData): P
   const result = parseEmailConfigForm(formData, ctx.config.newsletter);
   if (!result.ok) return { status: 'error', errors: result.errors };
 
-  writeConfigOverride(ctx.db, result.config);
+  writeConfigOverride(ctx.db, 'newsletter', result.config);
   writeServiceSettings(ctx.db, parseEmailSecretsForm(formData), ctx.env);
   await invalidateAppContext();
 

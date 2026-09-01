@@ -118,7 +118,7 @@ export async function savePreviewDefault(themeId: string, layoutId: string): Pro
   await requireAdminSession();
 
   const ctx = getAppContext();
-  writeConfigOverride(ctx.db, { ...ctx.config.newsletter, theme: themeId, layout: layoutId });
+  writeConfigOverride(ctx.db, 'newsletter', { ...ctx.config.newsletter, theme: themeId, layout: layoutId });
   await invalidateAppContext();
   revalidatePath('/newsletter/preview');
   revalidatePath('/settings');
