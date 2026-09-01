@@ -30,6 +30,11 @@ const nextConfig = {
         destination: '/people/invites',
         permanent: true,
       },
+      {
+        source: '/settings/portal',
+        destination: '/portal-settings',
+        permanent: true,
+      },
     ];
   },
 };

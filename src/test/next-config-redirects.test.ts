@@ -44,4 +44,18 @@ describe('next.config redirects', () => {
       ])
     );
   });
+
+  it('permanently redirects the old /settings/portal tab to its own top-level /portal-settings page', async () => {
+    const redirects = await nextConfig.redirects!();
+
+    expect(redirects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: '/settings/portal',
+          destination: '/portal-settings',
+          permanent: true,
+        }),
+      ])
+    );
+  });
 });

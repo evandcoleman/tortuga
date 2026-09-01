@@ -28,7 +28,7 @@ export async function savePortalSettings(_prev: SaveState, candidate: unknown): 
   writeConfigOverride(ctx.db, 'portal', result.config);
   await invalidateAppContext();
 
-  revalidatePath('/settings/portal');
+  revalidatePath('/portal-settings');
   revalidatePath('/portal');
   return { status: 'success' };
 }
@@ -48,7 +48,7 @@ export async function revertPortalSettings(): Promise<PortalConfig> {
   clearConfigOverride(ctx.db, 'portal');
   await invalidateAppContext();
 
-  revalidatePath('/settings/portal');
+  revalidatePath('/portal-settings');
   revalidatePath('/portal');
   return getAppContext().config.portal;
 }

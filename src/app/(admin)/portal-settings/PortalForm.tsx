@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import type { PortalConfig, PortalCustomEntry, PortalPageConfigSchema } from '@/kernel/config/schema';
 import { z } from 'zod';
-import { Button, Card, CardHeader } from '../../_components/ui';
+import { Button, Card, CardHeader } from '../_components/ui';
 import { savePortalSettings, revertPortalSettings, type SaveState } from './actions';
 import { CustomEntriesEditor } from './CustomEntriesEditor';
 import { PortalAppearanceEditor } from './PortalAppearanceEditor';

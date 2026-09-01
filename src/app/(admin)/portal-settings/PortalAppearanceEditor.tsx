@@ -2,7 +2,7 @@
 
 import type { PortalAppearance } from '@/kernel/config/schema';
 import { THEME_OPTIONS, DEFAULT_THEME_ID } from '@/modules/newsletter/templates/themes';
-import { ThemeOverridesEditor } from '../../newsletter/customize/ThemeOverridesEditor';
+import { ThemeOverridesEditor } from '../newsletter/customize/ThemeOverridesEditor';
 
 interface PortalAppearanceEditorProps {
   value: PortalAppearance | undefined;
