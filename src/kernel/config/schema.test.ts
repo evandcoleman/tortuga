@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NewsletterConfigSchema, EnvSchema } from './schema';
+import { NewsletterConfigSchema, EnvSchema, PortalConfigSchema, YamlConfigSchema } from './schema';
 
 const base = { from: { email: 'a@b.io', name: 'T' } };
 
@@ -151,5 +151,91 @@ describe('NewsletterConfigSchema timezone', () => {
       const issue = result.error.issues.find(i => i.path.join('.') === 'timezone');
       expect(issue?.message).toBe('Invalid IANA timezone');
     }
+  });
+});
+
+describe('PortalConfigSchema', () => {
+  it('defaults to disabled with built-in pages enabled and no custom entries', () => {
+    const cfg = PortalConfigSchema.parse({});
+    expect(cfg.enabled).toBe(false);
+    expect(cfg.links.plex_url).toBe('https://app.plex.tv');
+    expect(cfg.pages.getting_started).toEqual({ enabled: true, markdown: null });
+    expect(cfg.pages.rules).toEqual({ enabled: true, markdown: null });
+    expect(cfg.pages.report_issue).toEqual({ enabled: true, markdown: null });
+    expect(cfg.custom).toEqual([]);
+    expect(cfg.appearance).toBeUndefined();
+  });
+
+  it('parses an absent portal key in YamlConfigSchema as disabled defaults', () => {
+    const cfg = YamlConfigSchema.parse({ newsletter: { from: { email: 'a@b.io', name: 'T' } } });
+    expect(cfg.portal.enabled).toBe(false);
+  });
+
+  it('parses a fully specified portal section', () => {
+    const cfg = PortalConfigSchema.parse({
+      enabled: true,
+      domain: 'plex.example.com',
+      links: { request_url: 'https://req.example', request_label: 'Overseerr', status_url: 'https://status.example' },
+      pages: { rules: { enabled: false } },
+      custom: [
+        { type: 'link', label: 'Wiki', url: 'https://wiki.example' },
+        { type: 'page', slug: 'faq', label: 'FAQ', markdown: '# hi' },
+      ],
+    });
+    expect(cfg.domain).toBe('plex.example.com');
+    expect(cfg.links.request_url).toBe('https://req.example');
+    expect(cfg.pages.rules.enabled).toBe(false);
+    expect(cfg.pages.getting_started.enabled).toBe(true);
+    expect(cfg.custom).toHaveLength(2);
+  });
+
+  it('rejects an invalid custom slug', () => {
+    expect(() => PortalConfigSchema.parse({
+      custom: [{ type: 'page', slug: 'Not Valid!', label: 'X', markdown: 'x' }],
+    })).toThrow();
+  });
+
+  it('rejects a reserved custom slug', () => {
+    for (const slug of ['getting-started', 'rules', 'report-issue', 'portal', 'issues', 'api', '_next']) {
+      expect(() => PortalConfigSchema.parse({
+        custom: [{ type: 'page', slug, label: 'X', markdown: 'x' }],
+      })).toThrow();
+    }
+  });
+
+  it('rejects a duplicate custom page slug', () => {
+    expect(() => PortalConfigSchema.parse({
+      custom: [
+        { type: 'page', slug: 'faq', label: 'FAQ', markdown: 'a' },
+        { type: 'page', slug: 'faq', label: 'FAQ2', markdown: 'b' },
+      ],
+    })).toThrow();
+  });
+
+  it('rejects a custom page with neither markdown nor html', () => {
+    expect(() => PortalConfigSchema.parse({
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ' }],
+    })).toThrow();
+  });
+
+  it('rejects a custom page with both markdown and html', () => {
+    expect(() => PortalConfigSchema.parse({
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ', markdown: 'a', html: '<p>a</p>' }],
+    })).toThrow();
+  });
+
+  it('accepts a custom page with only html', () => {
+    const cfg = PortalConfigSchema.parse({
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ', html: '<p>hi</p>' }],
+    });
+    expect(cfg.custom[0]).toMatchObject({ type: 'page', slug: 'faq', html: '<p>hi</p>' });
+  });
+
+  it('leaves appearance undefined by default and parses an explicit theme + overrides', () => {
+    expect(PortalConfigSchema.parse({}).appearance).toBeUndefined();
+    const cfg = PortalConfigSchema.parse({
+      appearance: { theme: 'editorial', theme_overrides: { colorScheme: 'dark' } },
+    });
+    expect(cfg.appearance).toEqual({ theme: 'editorial', theme_overrides: { colorScheme: 'dark' } });
   });
 });

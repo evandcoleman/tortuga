@@ -79,6 +79,42 @@ newsletter:
     rmSync(dir, { recursive: true });
   });
 
+  it('parses a top-level portal section', () => {
+    const path = join(dir, 'portal.yml');
+    writeFileSync(path, `
+newsletter:
+  from:
+    email: "from@example.com"
+    name: "Test"
+portal:
+  enabled: true
+  domain: plex.example.com
+  links:
+    request_url: "https://requests.example.com"
+  custom:
+    - { type: link, label: Wiki, url: "https://wiki.example.com" }
+`);
+    const cfg = loadYamlConfig(path);
+    expect(cfg.portal.enabled).toBe(true);
+    expect(cfg.portal.domain).toBe('plex.example.com');
+    expect(cfg.portal.links.request_url).toBe('https://requests.example.com');
+    expect(cfg.portal.custom).toHaveLength(1);
+    rmSync(dir, { recursive: true });
+  });
+
+  it('defaults portal to a disabled section when absent from the file', () => {
+    const path = join(dir, 'no-portal.yml');
+    writeFileSync(path, `
+newsletter:
+  from:
+    email: "from@example.com"
+    name: "Test"
+`);
+    const cfg = loadYamlConfig(path);
+    expect(cfg.portal.enabled).toBe(false);
+    rmSync(dir, { recursive: true });
+  });
+
   it('newsletter.email throws when mailgun selected but no domain', () => {
     const path = join(dir, 'mailgun-no-domain.yml');
     writeFileSync(path, `
