@@ -31,14 +31,17 @@ module with a UI editor ({{name}}, {{email}}, {{server_name}}), of which
 welcome is the first template. Spec:
 `docs/specs/2026-08-31-invites-welcome-onboarding.md`.
 
-### 2. User portal
+### ✅ 2. User portal — shipped 2026-08-31
 The web half of front-of-house: a small set of opinionated, templated
 public pages — getting started with Plex, recommended devices, request
-link, server status link, report an issue. Driven by existing YAML
-config and appearance theming, with an optional markdown blob per page
-for custom prose. Not a CMS. Pairs with invites/welcome (#1), which is
-what drives traffic to it; replaces hand-rolled portal sites like
-plex.example.com. Scope to be brainstormed when we get there.
+link, server status link, report an issue — plus custom link/page entries,
+served on your own domain via host-based routing in middleware (Authelia
+bypassed for that domain only). Driven by existing YAML config/DB overrides
+and appearance theming, with a markdown-or-HTML body per page for custom
+prose. Not a CMS. Pairs with invites/welcome (#1), which is what drives
+traffic to it; replaces hand-rolled portal sites like plex.example.com. Spec:
+`docs/specs/2026-08-31-user-portal.md`. Ops setup: see the "Portal" section
+in `docs/CONFIG.md`.
 
 ### 3. Resubscribe & recipient preferences
 Unsubscribe is currently one-way. Add a resubscribe link and a minimal

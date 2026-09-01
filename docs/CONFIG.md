@@ -145,6 +145,86 @@ extras:
 | `personal_label` | string | — | Label for the personal link. |
 | `freeform_markdown` | string | — | Arbitrary Markdown rendered in the footer. |
 
+## `portal` (optional)
+
+A small branded public site served on its own domain — separate from the
+newsletter/admin host. Configured via YAML like everything else, but also
+editable at runtime from Settings → Portal, which persists a DB override for
+the whole `portal` section (see "Config override shadows YAML" note below).
+
+```yaml
+portal:
+  enabled: true
+  domain: "plex.example.com"
+  links:
+    plex_url: "https://app.plex.tv"
+    status_url: "https://status.example.com"
+    request_url: "https://requests.example.com"
+    request_label: "Request a title"
+  pages:
+    getting_started: { enabled: true }
+    rules: { enabled: true }
+    report_issue: { enabled: true }
+  custom:
+    - type: link
+      label: "Wiki"
+      url: "https://wiki.example.com"
+    - type: page
+      slug: "faq"
+      label: "FAQ"
+      markdown: "..."
+```
+
+| Field | Type | Default | Notes |
+|---|---|---|---|
+| `enabled` | boolean | `false` | Off 404s the portal everywhere, including the `/portal` admin preview. |
+| `domain` | string | — | Host that serves the portal (see routing below). Required for the domain to actually route; the admin-host preview at `/portal` works regardless. |
+| `links.plex_url` | url | `https://app.plex.tv` | "Go to Plex" button. |
+| `links.status_url` | url | — | Optional server-status link. |
+| `links.request_url` / `request_label` | url / string | falls back to `extras.request_url` / `extras.request_label` | Optional request-service link. |
+| `pages.<key>.enabled` | boolean | `true` | Toggles each built-in page (`getting_started`, `rules`, `report_issue`). |
+| `pages.<key>.markdown` | string | — | Replaces the built-in page body entirely when set. |
+| `custom` | array | `[]` | Extra home-grid buttons: `type: link` (external URL) or `type: page` (a slug-addressed page with a body given as **exactly one** of `markdown` or `html`). Slugs must be lowercase alphanumeric-and-hyphen and may not collide with a built-in page slug or another custom entry. |
+| `appearance` | object | inherits the newsletter's theme | Optional standalone theme for the portal's chrome. |
+
+### Routing model
+
+The portal is served two ways:
+
+- **Admin host, behind auth** — `/portal` and `/portal/<page>` on the normal
+  admin domain, for previewing as a logged-in admin.
+- **Portal domain, public** — requests to `domain` are rewritten by
+  `src/middleware.ts` (`/` → `/portal`, `/<page>` → `/portal/<page>`) and
+  served with **no authentication** — that's the point, it's the public site.
+  Every other path on that host (admin routes, nested paths, non-GET/HEAD
+  requests, React server-action dispatch) 404s; the portal domain never
+  serves anything else. Middleware also strips any inbound forward-auth
+  header before rewriting, so a request to the portal domain can never smuggle
+  a forged identity into the admin app.
+
+### Ops checklist (deploying a portal domain)
+
+Getting `domain` live requires infrastructure changes outside the app —
+config alone will not route real traffic:
+
+1. **Cloudflare Tunnel**: add a public hostname for the portal domain pointing
+   at the same origin (Traefik) as the admin app.
+2. **Traefik**: add a router/host rule for the portal domain to the same
+   service as the main app. **The proxy chain must preserve the original
+   `Host` header end-to-end.** Host-based routing here reads the inbound
+   `Host` header directly — it does **not** consult `X-Forwarded-Host` — so a
+   proxy that rewrites `Host` (e.g. terminating TLS and re-issuing the
+   request under a different host) will make the portal fail closed (404
+   everywhere on that domain) rather than accidentally exposing admin routes.
+3. **Authelia**: add a bypass rule scoped to the portal domain **only** — do
+   not widen an existing admin-host bypass rule to cover it. Authelia is the
+   only thing standing between the public internet and the middleware guard
+   described above for that host.
+4. Verify: `enabled: true` + `domain` set in Settings → Portal, then load the
+   domain in a private/incognito window (no session cookie) and confirm the
+   home page renders, while an admin-only path like `/settings` on that same
+   domain 404s.
+
 ## Validation notes
 
 - URL fields (`request_url`, `personal_url`) must be valid URLs.
