@@ -60,7 +60,7 @@ const tiles: ReadonlyArray<Tile> = [
     ),
   },
   {
-    href: '/newsletter/recipients',
+    href: '/people/recipients',
     title: 'Recipients',
     description: 'Subscribers synced from Plex, plus unsubscribe state.',
     cta: 'Manage recipients',

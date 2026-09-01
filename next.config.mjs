@@ -20,6 +20,16 @@ const nextConfig = {
         destination: '/messages/history/:id',
         permanent: true,
       },
+      {
+        source: '/newsletter/recipients',
+        destination: '/people/recipients',
+        permanent: true,
+      },
+      {
+        source: '/messages/invites',
+        destination: '/people/invites',
+        permanent: true,
+      },
     ];
   },
 };

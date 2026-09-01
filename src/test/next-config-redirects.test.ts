@@ -25,4 +25,23 @@ describe('next.config redirects', () => {
       ])
     );
   });
+
+  it('permanently redirects old /newsletter/recipients and /messages/invites paths to /people/*', async () => {
+    const redirects = await nextConfig.redirects!();
+
+    expect(redirects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: '/newsletter/recipients',
+          destination: '/people/recipients',
+          permanent: true,
+        }),
+        expect.objectContaining({
+          source: '/messages/invites',
+          destination: '/people/invites',
+          permanent: true,
+        }),
+      ])
+    );
+  });
 });

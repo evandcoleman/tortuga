@@ -23,7 +23,7 @@ export type ActionResult =
   | { status: 'success'; message: string }
   | { status: 'error'; error: string };
 
-const RECIPIENTS_PATH = '/newsletter/recipients';
+const RECIPIENTS_PATH = '/people/recipients';
 
 function revalidateRecipients(): void {
   revalidatePath(RECIPIENTS_PATH);

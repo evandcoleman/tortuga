@@ -19,14 +19,17 @@ const newsletterItems: ReadonlyArray<NavItem> = [
   { href: '/newsletter/preview', label: 'Preview', icon: 'eye' },
   { href: '/newsletter/customize', label: 'Customize', icon: 'customize' },
   { href: '/newsletter/history', label: 'History', icon: 'history' },
-  { href: '/newsletter/recipients', label: 'Recipients', icon: 'users' },
+];
+
+const peopleItems: ReadonlyArray<NavItem> = [
+  { href: '/people/recipients', label: 'Recipients', icon: 'users' },
+  { href: '/people/invites', label: 'Invites', icon: 'invite' },
 ];
 
 const messagesItems: ReadonlyArray<NavItem> = [
   { href: '/messages', label: 'Compose', exact: true, icon: 'send' },
   { href: '/messages/history', label: 'History', icon: 'history' },
   { href: '/messages/templates', label: 'Templates', icon: 'mail' },
-  { href: '/messages/invites', label: 'Invites', icon: 'invite' },
 ];
 
 const settingsItem: NavItem = { href: '/settings', label: 'Settings', exact: true, icon: 'settings' };
@@ -66,6 +69,12 @@ export function Sidebar({ userEmail, providerName, authMode, signOutAction }: Si
         <SectionLabel>Newsletter</SectionLabel>
         <ul className="mb-2 grid gap-0.5">
           {newsletterItems.map(it => (
+            <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
+          ))}
+        </ul>
+        <SectionLabel>People</SectionLabel>
+        <ul className="mb-2 grid gap-0.5">
+          {peopleItems.map(it => (
             <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
           ))}
         </ul>

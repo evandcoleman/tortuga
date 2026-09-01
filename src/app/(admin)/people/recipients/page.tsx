@@ -32,7 +32,7 @@ export default function Recipients() {
   return (
     <div>
       <PageHeader
-        eyebrow="Newsletter"
+        eyebrow="People"
         title="Recipients"
         description="Synced from Plex and managed by hand. Manual recipients survive every Plex sync; unsubscribes are marked inactive automatically."
       />

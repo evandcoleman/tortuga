@@ -13,7 +13,7 @@ export default async function InvitesPage() {
     return (
       <div>
         <PageHeader
-          eyebrow="Messages"
+          eyebrow="People"
           title="Invites"
           description="Send Plex invites and the welcome email in one step."
         />
@@ -51,7 +51,7 @@ export default async function InvitesPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Messages"
+        eyebrow="People"
         title="Invites"
         description="Send Plex invites and the welcome email in one step."
       />
