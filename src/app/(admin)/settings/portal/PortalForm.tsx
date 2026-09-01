@@ -60,8 +60,8 @@ export function PortalForm({ config }: { config: PortalConfig }) {
     setRevertError(null);
     startReverting(async () => {
       try {
-        await revertPortalSettings();
-        setWorking(config);
+        const reverted = await revertPortalSettings();
+        setWorking(reverted);
       } catch {
         setRevertError('Revert failed. Please try again.');
       }

@@ -85,13 +85,20 @@ describe('savePortalSettings server action', () => {
 });
 
 describe('revertPortalSettings server action', () => {
+  const staleConfig = { enabled: true, domain: 'stale.example.com' };
+  const freshConfig = { enabled: false };
+
   beforeEach(() => {
     getAppContext.mockReset();
     invalidateAppContext.mockReset();
     clearConfigOverride.mockReset();
     requireAdminSession.mockReset();
     requireAdminSession.mockResolvedValue({ email: 'admin@example.com' });
-    getAppContext.mockReturnValue({ db: {} });
+    // First call (before clear/invalidate) sees the stale, pre-revert config;
+    // the second call (after invalidateAppContext) sees the reverted one.
+    getAppContext
+      .mockReturnValueOnce({ db: {}, config: { portal: staleConfig } })
+      .mockReturnValue({ db: {}, config: { portal: freshConfig } });
   });
 
   it('rejects when there is no admin session', async () => {
@@ -104,5 +111,10 @@ describe('revertPortalSettings server action', () => {
     await revertPortalSettings();
     expect(clearConfigOverride).toHaveBeenCalledWith({}, 'portal');
     expect(invalidateAppContext).toHaveBeenCalled();
+  });
+
+  it('returns the resolved config read AFTER invalidation, not the stale pre-revert value (regression: a subsequent Save must not re-write the cleared override)', async () => {
+    const result = await revertPortalSettings();
+    expect(result).toEqual(freshConfig);
   });
 });
