@@ -60,6 +60,54 @@ describe('middleware public paths (admin host, unaffected by portal)', () => {
   });
 });
 
+/**
+ * A vanilla `NextResponse.next()` carries no `x-middleware-override-headers`
+ * at all, so it can't be used to assert a header was *stripped* — absence of
+ * the override list looks identical to "nothing was touched". These checks
+ * require the override list to be present (proving the request headers were
+ * explicitly rebuilt) and to omit `x-portal-host`.
+ */
+function forwardedHeaderNames(res: Response): string[] {
+  return (res.headers.get('x-middleware-override-headers') ?? '').split(',').filter(Boolean);
+}
+
+describe('middleware strips a forged x-portal-host header on non-rewrite paths', () => {
+  it('does not forward a forged x-portal-host header on the admin host (forward mode)', () => {
+    const res = middleware(
+      reqFor('/newsletter/preview', {
+        headers: { 'remote-user': 'admin@x.io', 'x-portal-host': 'evil' },
+      }),
+    );
+    expect(res.status).toBe(200);
+    const forwarded = forwardedHeaderNames(res);
+    expect(forwarded.length).toBeGreaterThan(0);
+    expect(forwarded).not.toContain('x-portal-host');
+    expect(res.headers.get('x-middleware-request-x-portal-host')).toBeNull();
+  });
+
+  it('does not forward a forged x-portal-host header on the admin host (session mode)', () => {
+    process.env.AUTH_MODE = 'session';
+    const res = middleware(reqFor('/newsletter/preview', { headers: { 'x-portal-host': 'evil' } }));
+    expect(res.status).toBe(200);
+    const forwarded = forwardedHeaderNames(res);
+    expect(forwarded.length).toBeGreaterThan(0);
+    expect(forwarded).not.toContain('x-portal-host');
+    expect(res.headers.get('x-middleware-request-x-portal-host')).toBeNull();
+  });
+
+  it('does not forward a forged x-portal-host header on the portal domain when the portal is disabled', () => {
+    state.portal = { enabled: false, domain: 'plex.example.com' };
+    const res = middleware(
+      reqFor('/', { host: 'plex.example.com', headers: { 'remote-user': 'admin@x.io', 'x-portal-host': 'evil' } }),
+    );
+    expect(res.status).toBe(200);
+    const forwarded = forwardedHeaderNames(res);
+    expect(forwarded.length).toBeGreaterThan(0);
+    expect(forwarded).not.toContain('x-portal-host');
+    expect(res.headers.get('x-middleware-request-x-portal-host')).toBeNull();
+  });
+});
+
 describe('middleware portal-host rewrite', () => {
   beforeEach(() => {
     state.portal = { enabled: true, domain: 'plex.example.com' };

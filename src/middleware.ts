@@ -52,6 +52,20 @@ function normalizeHost(hostHeader: string | null): string {
 }
 
 /**
+ * Continues to the app while guaranteeing `PORTAL_HOST_HEADER` cannot survive
+ * from the inbound request unless middleware itself set it (in
+ * `handlePortalHost`). Every `NextResponse.next()` call in this file must go
+ * through here — otherwise a client can forge the header on any path that
+ * doesn't hit the portal-host rewrite and have it reach route handlers /
+ * layouts that trust it (see `(portal)/portal/layout.tsx`).
+ */
+function next(req: NextRequest): NextResponse {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.delete(PORTAL_HOST_HEADER);
+  return NextResponse.next({ request: { headers: requestHeaders } });
+}
+
+/**
  * Rewrites `/` -> `/portal` and `/<page>` -> `/portal/<page>` for requests
  * on the configured portal domain, marking them public. Any other path on
  * the portal host (admin/API routes, nested paths, mixed-case paths) 404s —
@@ -94,7 +108,7 @@ export default function middleware(req: NextRequest) {
   }
 
   if (PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith(p + '/'))) {
-    return NextResponse.next();
+    return next(req);
   }
   const mode = process.env.AUTH_MODE ?? 'session';
   if (mode === 'forward') {
@@ -107,5 +121,5 @@ export default function middleware(req: NextRequest) {
   // group has no `auth()` check of its own — its layout requires an admin
   // session directly (see `(portal)/portal/layout.tsx`) so the preview stays
   // admin-only even though this generic gate doesn't cover it.
-  return NextResponse.next();
+  return next(req);
 }
