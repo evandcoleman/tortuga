@@ -26,7 +26,7 @@ export default async function PortalHome() {
           const href = button.external ? button.href : `${basePath}/${button.href}`;
           return (
             <Link
-              key={button.label}
+              key={`${button.external ? 'external' : 'internal'}:${button.href}`}
               href={href}
               {...(button.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               className="group flex items-center justify-between px-6 py-5 text-lg font-medium shadow-sm transition-opacity hover:opacity-90"
