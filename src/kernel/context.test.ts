@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getAppContext, invalidateAppContext, resetAppContextForTests } from './context';
 import { writeConfigOverride } from './config/overrides';
-import { NewsletterConfigSchema } from './config/schema';
+import { NewsletterConfigSchema, PortalConfigSchema } from './config/schema';
 import { writeServiceSettings } from './config/service-settings';
 
 let dir: string;
@@ -42,7 +42,7 @@ describe('getAppContext config resolution', () => {
       from: { email: 'override@example.com', name: 'Override' },
       schedule: '30 7 * * MON',
     });
-    writeConfigOverride(getAppContext().db, override);
+    writeConfigOverride(getAppContext().db, 'newsletter', override);
     await invalidateAppContext();
     const ctx = getAppContext();
     expect(ctx.config.newsletter.from.email).toBe('override@example.com');
@@ -61,7 +61,7 @@ describe('getAppContext config resolution', () => {
       from: { email: 'a@b.com', name: 'A' },
       schedule_enabled: false,
     });
-    writeConfigOverride(getAppContext().db, override);
+    writeConfigOverride(getAppContext().db, 'newsletter', override);
     await invalidateAppContext();
     expect(getAppContext().scheduler.list()).toHaveLength(0);
   });
@@ -75,6 +75,34 @@ describe('getAppContext config resolution', () => {
     resetAppContextForTests();
     expect(getAppContext().maintainerr).toBeDefined();
     delete process.env.MAINTAINERR_URL;
+  });
+});
+
+describe('getAppContext portal resolution', () => {
+  it('defaults portal to disabled when absent from YAML and no override', () => {
+    expect(getAppContext().portal.enabled).toBe(false);
+    expect(getAppContext().portal.links.plexUrl).toBe('https://app.plex.tv');
+  });
+
+  it('prefers a DB portal override over YAML after invalidate', async () => {
+    const override = PortalConfigSchema.parse({ enabled: true, domain: 'plex.example.com' });
+    writeConfigOverride(getAppContext().db, 'portal', override);
+    await invalidateAppContext();
+    const ctx = getAppContext();
+    expect(ctx.portal.enabled).toBe(true);
+    expect(ctx.portal.domain).toBe('plex.example.com');
+  });
+
+  it('falls back portal request_url/request_label from newsletter extras', async () => {
+    const newsletterOverride = NewsletterConfigSchema.parse({
+      from: { email: 'a@b.com', name: 'A' },
+      extras: { request_url: 'https://req.example', request_label: 'Overseerr' },
+    });
+    writeConfigOverride(getAppContext().db, 'newsletter', newsletterOverride);
+    await invalidateAppContext();
+    const ctx = getAppContext();
+    expect(ctx.portal.links.requestUrl).toBe('https://req.example');
+    expect(ctx.portal.links.requestLabel).toBe('Overseerr');
   });
 });
 
@@ -125,7 +153,7 @@ describe('getAppContext service settings resolution', () => {
       from: { email: 'a@b.com', name: 'A' },
       commentary: { enabled: true, provider: 'anthropic', model: '', voice: '', disclaimer: false },
     });
-    writeConfigOverride(getAppContext().db, override);
+    writeConfigOverride(getAppContext().db, 'newsletter', override);
     await expect(invalidateAppContext()).resolves.not.toThrow();
     expect(getAppContext().llm).toBeNull();
   });

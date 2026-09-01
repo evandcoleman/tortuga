@@ -1,5 +1,6 @@
 import { loadEnv, loadYamlConfig } from './config/load';
-import type { Env, YamlConfig } from './config/schema';
+import { NewsletterConfigSchema, PortalConfigSchema, type Env, type YamlConfig } from './config/schema';
+import { resolvePortalConfig, type ResolvedPortalConfig } from './config/portal';
 import { createDb, type Db } from './db/client';
 import { applyMigrations } from './db/migrate';
 import { createTautulliClient, type TautulliClient } from './integrations/tautulli';
@@ -26,6 +27,7 @@ export interface AppContext {
   email: EmailProvider | null;
   llm: LlmClient | null;
   scheduler: Scheduler;
+  portal: ResolvedPortalConfig;
 }
 
 let cached: AppContext | null = null;
@@ -35,8 +37,10 @@ export function getAppContext(): AppContext {
   const env = loadEnv();
   const db = createDb(env.DATABASE_URL);
   applyMigrations(db);
-  const newsletter = readConfigOverride(db) ?? loadYamlConfig(env.CONFIG_PATH).newsletter;
-  const config: YamlConfig = { newsletter };
+  const yamlConfig = loadYamlConfig(env.CONFIG_PATH);
+  const newsletter = readConfigOverride(db, 'newsletter', NewsletterConfigSchema) ?? yamlConfig.newsletter;
+  const portalConfig = readConfigOverride(db, 'portal', PortalConfigSchema) ?? yamlConfig.portal;
+  const config: YamlConfig = { newsletter, portal: portalConfig };
   if (env.AUTH_MODE === 'session' && env.ADMIN_EMAIL && env.ADMIN_PASSWORD) {
     // dynamic import to keep argon2 out of edge runtimes
     import('./auth/bootstrap').then(({ bootstrapAdminUser }) =>
@@ -72,7 +76,8 @@ export function getAppContext(): AppContext {
     config.newsletter,
   );
   const scheduler = createScheduler();
-  cached = { env, config, db, tautulli, tmdb, maintainerr, plex, email, llm, scheduler };
+  const portal = resolvePortalConfig(config.portal, config.newsletter.extras);
+  cached = { env, config, db, tautulli, tmdb, maintainerr, plex, email, llm, scheduler, portal };
   return cached;
 }
 
