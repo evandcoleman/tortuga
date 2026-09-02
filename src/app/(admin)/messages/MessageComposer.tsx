@@ -7,6 +7,7 @@ import { Card, CardHeader } from '../_components/ui';
 import { RecipientChecklist } from './RecipientChecklist';
 import { SendMessageButton } from './SendMessageButton';
 import { ScheduleSection, type ScheduleEditingInfo } from './ScheduleSection';
+import { TemplatePicker, type TemplateOption } from './TemplatePicker';
 import {
   previewAnnouncement,
   sendAnnouncementToRecipients,
@@ -18,11 +19,15 @@ interface Recipient {
   name: string;
 }
 
-export interface MessageComposerEditing extends ScheduleEditingInfo {
+/** Prefill content for a new composition (from a template or a cloned previous send). */
+export interface MessageComposerInitial {
   subject: string;
   body: string;
   recipientEmails: string[];
 }
+
+/** Identifies an existing scheduled announcement the composer edits in place. */
+export type MessageComposerEditing = ScheduleEditingInfo;
 
 interface MessageComposerProps {
   recipients: Recipient[];
@@ -31,22 +36,33 @@ interface MessageComposerProps {
   defaultTestEmail: string;
   /** The configured newsletter timezone, shown next to the schedule time input. */
   timezone: string;
+  /** Templates available in the "Start from a template" picker. */
+  templates: TemplateOption[];
+  /** Prefills subject, body, and recipients — from a template or a cloned previous send. */
+  initial?: MessageComposerInitial;
   /** When set, the composer edits an existing scheduled announcement instead of composing a new one. */
   editing?: MessageComposerEditing;
 }
 
 type SendOutcome = { sent: number; failed: number; announcementId: string };
 
-export function MessageComposer({ recipients, defaultTestEmail, timezone, editing }: MessageComposerProps) {
-  const [subject, setSubject] = useState(editing?.subject ?? '');
-  const [body, setBody] = useState(editing?.body ?? '');
+export function MessageComposer({
+  recipients,
+  defaultTestEmail,
+  timezone,
+  templates,
+  initial,
+  editing,
+}: MessageComposerProps) {
+  const [subject, setSubject] = useState(initial?.subject ?? '');
+  const [body, setBody] = useState(initial?.body ?? '');
   const [selected, setSelected] = useState<Set<string>>(() => {
     const active = recipients.map(r => r.email);
-    if (!editing) return new Set(active);
-    // Drop stored recipients that went inactive since scheduling so the
-    // checklist count and the server's active-recipient check agree.
+    if (!initial) return new Set(active);
+    // Drop stored recipients that went inactive since scheduling/cloning so
+    // the checklist count and the server's active-recipient check agree.
     const activeSet = new Set(active);
-    return new Set(editing.recipientEmails.filter(email => activeSet.has(email)));
+    return new Set(initial.recipientEmails.filter(email => activeSet.has(email)));
   });
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -127,6 +143,15 @@ export function MessageComposer({ recipients, defaultTestEmail, timezone, editin
         <Card>
           <CardHeader title="Message" description="Subject and markdown body, rendered with the digest's theme." />
           <div className="flex flex-col gap-3">
+            <TemplatePicker
+              templates={templates}
+              subject={subject}
+              body={body}
+              onApply={template => {
+                setSubject(template.subject);
+                setBody(template.body);
+              }}
+            />
             <div>
               <label htmlFor="subject" className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
                 Subject
@@ -154,6 +179,9 @@ export function MessageComposer({ recipients, defaultTestEmail, timezone, editin
                 placeholder="Write your message in Markdown…"
                 className="w-full resize-y rounded-md border border-line bg-canvas px-3 py-2 font-mono text-[12.5px] leading-relaxed text-fg placeholder:text-faint focus:border-gold focus:outline-none"
               />
+              <p className="mt-1 text-[11.5px] text-faint">
+                Variables: {'{{name}}'}, {'{{email}}'}, {'{{server_name}}'} are filled in per recipient.
+              </p>
             </div>
           </div>
         </Card>

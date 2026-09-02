@@ -3,9 +3,11 @@ import { auth } from '@/kernel/auth/auth';
 import { getAppContext } from '@/kernel/context';
 import { recipientsCache } from '@/modules/newsletter/schema';
 import { listScheduledAnnouncements } from '@/modules/announcements/pipeline/schedule';
+import { cloneSource } from '@/modules/announcements/pipeline/clone-source';
+import { listTemplates } from '@/modules/templates/service';
 import { utcToWallClock } from '@/kernel/time/zoned';
 import { PageHeader } from '../_components/ui';
-import { MessageComposer } from './MessageComposer';
+import { MessageComposer, type MessageComposerInitial } from './MessageComposer';
 import { ScheduledList } from './ScheduledList';
 
 export const dynamic = 'force-dynamic';
@@ -19,8 +21,22 @@ async function resolveAdminEmail(ctx: ReturnType<typeof getAppContext>): Promise
   return ctx.env.ADMIN_EMAIL ?? '';
 }
 
-export default async function Messages() {
+export default async function Messages({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string | string[] }>;
+}) {
+  const { from } = await searchParams;
+  // Repeated ?from= params arrive as an array; only a single id is meaningful.
+  const fromId = typeof from === 'string' ? from : undefined;
   const ctx = getAppContext();
+  const templates = listTemplates(ctx.db).map(t => ({
+    slug: t.slug,
+    name: t.name,
+    subject: t.subject,
+    body: t.body,
+  }));
+  const initial: MessageComposerInitial | undefined = fromId ? (cloneSource(ctx.db, fromId) ?? undefined) : undefined;
   const recipients = ctx.db
     .select()
     .from(recipientsCache)
@@ -54,7 +70,13 @@ export default async function Messages() {
         }
       />
       <ScheduledList rows={scheduledRows} timezone={timezone} />
-      <MessageComposer recipients={recipients} defaultTestEmail={adminEmail} timezone={timezone} />
+      <MessageComposer
+        recipients={recipients}
+        defaultTestEmail={adminEmail}
+        timezone={timezone}
+        templates={templates}
+        initial={initial}
+      />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { auth } from '@/kernel/auth/auth';
 import { getAppContext } from '@/kernel/context';
 import { announcements } from '@/modules/announcements/schema';
 import { recipientsCache } from '@/modules/newsletter/schema';
+import { listTemplates } from '@/modules/templates/service';
 import { utcToWallClock } from '@/kernel/time/zoned';
 import { Card, EmptyState, PageHeader } from '../../../_components/ui';
 import { MessageComposer } from '../../MessageComposer';
@@ -52,6 +53,12 @@ export default async function EditScheduledMessage({ params }: { params: Promise
     .map(r => ({ email: r.email, name: r.name }))
     .sort((a, b) => a.email.localeCompare(b.email));
   const adminEmail = await resolveAdminEmail(ctx);
+  const templates = listTemplates(ctx.db).map(t => ({
+    slug: t.slug,
+    name: t.name,
+    subject: t.subject,
+    body: t.body,
+  }));
 
   return (
     <div>
@@ -69,11 +76,14 @@ export default async function EditScheduledMessage({ params }: { params: Promise
         recipients={recipients}
         defaultTestEmail={adminEmail}
         timezone={timezone}
-        editing={{
-          id: row.id,
+        templates={templates}
+        initial={{
           subject: row.subject,
           body: row.body,
           recipientEmails: JSON.parse(row.recipientEmails) as string[],
+        }}
+        editing={{
+          id: row.id,
           // row.scheduledAt is always set on scheduled rows.
           wallClock: utcToWallClock(row.scheduledAt as Date, timezone),
         }}

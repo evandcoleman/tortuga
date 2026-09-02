@@ -50,12 +50,20 @@ export default async function MessageDetail({ params }: { params: Promise<{ id: 
         title={announcement.subject}
         description="Per-recipient delivery status for this message."
         actions={
-          <Link
-            href="/messages/history"
-            className="text-[12.5px] font-medium text-gold hover:opacity-90"
-          >
-            ← All messages
-          </Link>
+          <>
+            <Link
+              href={`/messages?from=${announcement.id}`}
+              className="text-[12.5px] font-medium text-gold hover:opacity-90"
+            >
+              Use as starting point →
+            </Link>
+            <Link
+              href="/messages/history"
+              className="text-[12.5px] font-medium text-gold hover:opacity-90"
+            >
+              ← All messages
+            </Link>
+          </>
         }
       />
 
