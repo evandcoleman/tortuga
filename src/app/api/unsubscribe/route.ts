@@ -5,7 +5,7 @@ import { verifyUnsubscribeToken } from '@/kernel/email/unsubscribe';
 import { mintPreferencesToken, preferencesUrl } from '@/kernel/email/preferences-token';
 import { unsubscribes } from '@/modules/newsletter/schema';
 import { setCategory, type MessageCategory } from '@/modules/preferences/repo';
-import { htmlPage } from './page-template';
+import { htmlPage } from '@/kernel/email/html-page';
 
 export const dynamic = 'force-dynamic';
 

@@ -462,5 +462,28 @@ describe('runDigest', () => {
       expect(emails).toEqual(['b@x.io']);
       expect(sendRows[0].status).toBe('sent');
     });
+
+    it('marks the digest skipped (not failed) when every recipient is filtered out by library preferences', async () => {
+      const db = createDb(':memory:');
+      applyMigrations(db);
+      const { tautulli, tmdb, provider } = fakesWithThreeRecipients();
+
+      // All three recipients only want a library that has nothing in this digest.
+      upsertPreferences(db, 'a@x.io', { libraries: ['Anime'] });
+      upsertPreferences(db, 'b@x.io', { libraries: ['Anime'] });
+      upsertPreferences(db, 'c@x.io', { libraries: ['Anime'] });
+
+      const result = await runDigest({
+        db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+        config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+        scheduledAt: new Date('2026-05-26T13:00:00Z'),
+      });
+
+      expect(result.status).toBe('skipped');
+      const digestRow = db.select().from(digests).where(eq(digests.id, result.id)).all()[0];
+      expect(digestRow.status).toBe('skipped');
+      expect(db.select().from(sends).all()).toHaveLength(0);
+      expect(provider.send).not.toHaveBeenCalled();
+    });
   });
 });

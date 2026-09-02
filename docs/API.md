@@ -144,7 +144,32 @@ endpoints and signing keys.
 
 ## GET `/api/unsubscribe?token=<token>`
 
-Public. One-time unsubscribe link embedded in digest emails. Verifies the
-HMAC token against `SESSION_SECRET`; on success marks the recipient inactive
-and the token used, returning an HTML confirmation page. Invalid or
-already-used tokens return an HTML error page with `400`.
+Public. One-time unsubscribe link embedded in digest and announcement
+emails. Verifies the HMAC token against `SESSION_SECRET`; on success opts
+the recipient out of the token's message category (`digest` or
+`announcements`) and marks the token used, returning an HTML confirmation
+page with resubscribe, opt-out-of-the-other-category, and manage-preferences
+actions. Invalid or already-used tokens return an HTML error page with
+`400`. `POST` to the same URL is the RFC 8058 one-click form and returns a
+bare `200`.
+
+Manual unsubscribe never sets `active=false`. That flag is reserved for hard
+suppression (bounce, complaint, admin) and is recorded with a
+`suppressed_reason`.
+
+## POST `/api/unsubscribe/resubscribe`
+
+Public. Form fields `token` (a preferences token), `category`
+(`digest` | `announcements`), `enabled` (`true` | `false`). Flips one
+category for the recipient. Refused with `403` when the recipient is hard
+suppressed.
+
+## GET / POST `/preferences?token=<token>`
+
+Public, reachable on both the admin host and the portal domain. The
+"Manage preferences" link in every email footer carries a reusable
+preferences token (180-day TTL, distinct `kind` from unsubscribe tokens).
+`GET` renders category checkboxes plus one checkbox per library in
+`newsletter.include_libraries`. `POST` validates and upserts
+`recipient_preferences`; selecting every library stores `null` (all).
+Hard-suppressed recipients see an explanation instead of a form.

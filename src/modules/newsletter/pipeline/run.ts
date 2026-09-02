@@ -236,6 +236,16 @@ export async function runDigest(opts: RunDigestOpts) {
     }
     const recipientDigestByEmail = new Map(recipientDigests.map(rd => [rd.email, rd]));
 
+    // Every deliverable recipient was filtered out by their library preferences
+    // (or there were none) — mirror the earlier filtered.length === 0 path: no
+    // send attempted, digest marked 'skipped' rather than 'failed'. The
+    // renderedHtml/webHtml snapshot already computed above is left in place.
+    if (recipientDigests.length === 0) {
+      opts.db.update(digests).set({ status: 'skipped', ranAt: new Date() })
+        .where(eq(digests.id, digestId)).run();
+      return { id: digestId, status: 'skipped' as const, itemCount: filtered.length };
+    }
+
     const { sent, skippedAlreadySent } = await deliverToRecipients(
       { db: opts.db, provider: opts.provider, appUrl: opts.appUrl, sessionSecret: opts.sessionSecret },
       {

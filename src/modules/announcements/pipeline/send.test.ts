@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
-import { recipientsCache, sends } from '@/modules/newsletter/schema';
+import { recipientsCache, sends, unsubscribes } from '@/modules/newsletter/schema';
 import type { EmailProvider } from '@/kernel/email/types';
 import { setCategory } from '@/modules/preferences/repo';
 import { announcements } from '../schema';
@@ -97,6 +97,8 @@ describe('sendAnnouncement', () => {
     expect(provider.send).toHaveBeenCalledTimes(1);
     expect(db.select().from(announcements).all()).toHaveLength(0);
     expect(db.select().from(sends).all()).toHaveLength(0);
+    const [unsubRow] = db.select().from(unsubscribes).all();
+    expect(unsubRow.category).toBe('announcements');
   });
 
   it('one provider failure yields partial with correct counts', async () => {

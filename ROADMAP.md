@@ -43,12 +43,14 @@ traffic to it; replaces hand-rolled portal sites like plex.example.com. Spec:
 `docs/specs/2026-08-31-user-portal.md`. Ops setup: see the "Portal" section
 in `docs/CONFIG.md`.
 
-### 3. Resubscribe & recipient preferences
-Unsubscribe is currently one-way. Add a resubscribe link and a minimal
-per-recipient preferences page (frequency, which libraries) so opt-out
-isn't a dead end that generates support email. Include message
-categories (newsletter vs. announcements) so opting out of the digest
-doesn't also suppress operational notices.
+### ✅ 3. Resubscribe & recipient preferences — shipped 2026-09-02
+Unsubscribe now opts out of one category (digest or announcements)
+instead of hard-suppressing; the confirmation page offers resubscribe,
+opt out of the other category, and a signed-link preferences page with
+category and library checkboxes. Bounces and complaints record a
+suppression reason and cannot be self-revived. Per-recipient frequency
+was deferred; admin editing of preferences is not built. Spec:
+`docs/specs/2026-09-02-resubscribe-preferences.md`.
 
 ### 4. Scheduled announcement sends
 Compose exists but is fire-now only. Let "maintenance Saturday 9pm" be

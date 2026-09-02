@@ -116,7 +116,9 @@ export async function sendAnnouncement(
 
   if (input.testRecipient) {
     const tokenStr = generateUnsubscribeToken(input.testRecipient, deps.sessionSecret);
-    deps.db.insert(unsubscribes).values({ token: tokenStr, email: input.testRecipient, createdAt: new Date() }).run();
+    deps.db.insert(unsubscribes).values({
+      token: tokenStr, email: input.testRecipient, category: 'announcements', createdAt: new Date(),
+    }).run();
     const testHtml = await renderFn(deps, input, `${deps.appUrl}/api/unsubscribe?token=${tokenStr}`);
     let sent = 0;
     let failed = 0;
