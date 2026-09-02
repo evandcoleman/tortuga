@@ -165,7 +165,11 @@ portal:
     getting_started: { enabled: true }
     rules: { enabled: true }
     report_issue: { enabled: true }
-  custom:
+  entries:
+    - type: builtin_page
+      page: getting_started
+    - type: builtin_link
+      link: plex
     - type: link
       label: "Wiki"
       url: "https://wiki.example.com"
@@ -173,6 +177,9 @@ portal:
       slug: "faq"
       label: "FAQ"
       markdown: "..."
+  copy:
+    tagline: "Welcome to {{server_name}}"
+    footer: "Powered by {{server_name}}"
 ```
 
 | Field | Type | Default | Notes |
@@ -184,8 +191,66 @@ portal:
 | `links.request_url` / `request_label` | url / string | falls back to `extras.request_url` / `extras.request_label` | Optional request-service link. |
 | `pages.<key>.enabled` | boolean | `true` | Toggles each built-in page (`getting_started`, `rules`, `report_issue`). |
 | `pages.<key>.markdown` | string | — | Replaces the built-in page body entirely when set. |
-| `custom` | array | `[]` | Extra home-grid buttons: `type: link` (external URL) or `type: page` (a slug-addressed page with a body given as **exactly one** of `markdown` or `html`). Slugs must be lowercase alphanumeric-and-hyphen and may not collide with a built-in page slug or another custom entry. |
+| `pages.<key>.title` | string | see below | Overrides the page's `<h1>`/eyebrow context; falls back to the built-in title. |
+| `pages.<key>.eyebrow` | string | see below | Small heading shown above the title. |
+| `entries` | array | the six built-ins below | The ordered home-index list. See "Home index entries" below. |
+| `copy` | object | see "Chrome copy" below | Editable strings for the portal's chrome (tagline, footer, stuck-card text, etc). |
 | `appearance` | object | inherits the newsletter's theme | Optional standalone theme for the portal's chrome. |
+
+Per-page title/eyebrow defaults: `getting_started` → "Getting started" / "Guide",
+`rules` → "House rules" / "Rules", `report_issue` → "Report an issue" / "Help".
+Custom `page` entries always use their `label` as the title; their eyebrow comes
+from `copy.custom_page_eyebrow`.
+
+### Home index entries (`portal.entries`)
+
+The home page renders one ordered list of rows. Each row is one of four types:
+
+| type | fields | notes |
+|---|---|---|
+| `builtin_page` | `page` (`getting_started` \| `rules` \| `report_issue`), `label?`, `description?`, `hidden?` | Links to a built-in content page. Omitted automatically if that page is disabled. |
+| `builtin_link` | `link` (`plex` \| `request` \| `status`), `label?`, `description?`, `hidden?` | Uses `portal.links.*_url`. `request`/`status` rows are omitted automatically when their URL is unset. |
+| `link` | `label`, `url`, `description?`, `hidden?` | An external link. |
+| `page` | `slug`, `label`, `markdown` or `html` (exactly one), `description?`, `hidden?` | A custom, slug-addressed page. Slugs must be lowercase alphanumeric-and-hyphen and may not collide with a built-in page slug or another entry. |
+
+- `label`/`description` are optional on `builtin_page`/`builtin_link` rows and fall
+  back to the built-in copy (e.g. "Getting started" / "Accept the invite, install
+  an app..."); set them to override just that row's text.
+- `hidden: true` keeps a row's page/link reachable (it still serves at its slug or
+  URL) but removes it from the home index. Rows are numbered by visible position,
+  so hiding one renumbers the ones after it.
+- Each built-in page and built-in link may appear **at most once** across the
+  list — the schema rejects duplicate `builtin_page`/`builtin_link` entries.
+- If `entries` is omitted entirely, the default list is used: `getting_started`,
+  `rules`, `plex`, `request`, `status`, `report_issue` (in that order, all visible,
+  subject to the same disabled-page/unset-URL omission rules above).
+- **Legacy `custom`**: the old `custom` array (`type: link` / `type: page` only,
+  no `hidden`) is still accepted for backward compatibility. When `entries` is
+  unset, its rows are appended after the default list. It has no effect once
+  `entries` is set. New configs should use `entries`; the admin UI always writes
+  `entries`.
+
+### Chrome copy (`portal.copy`)
+
+All keys are optional strings; any key left unset falls back to the default text
+below. Every string in `entries`, `pages.<key>.title`/`eyebrow`, and `copy` runs
+through the same token substitution as page bodies (`server_name`, `plex_url`,
+`request_url`, `request_label`, `status_url`).
+
+| key | default |
+|---|---|
+| `tagline` | A private server for friends and family |
+| `intro` | Everything you need to get set up, find your way around, and get help when something breaks. |
+| `tab_title` | `{{server_name}}` |
+| `toc_heading` | On this page |
+| `stuck_title` | Stuck? |
+| `stuck_body` | Report an issue and include what you were trying to watch. |
+| `stuck_link_label` | Report an issue |
+| `back_label` | Back to index |
+| `footer` | Powered by Tortuga |
+| `custom_page_eyebrow` | Page |
+| `show_stuck_card` | `true` (boolean) — hides the "stuck?" card when `false`; also auto-hidden when the `report_issue` page is disabled |
+| `show_footer` | `true` (boolean) — hides the footer when `false` |
 
 ### Routing model
 

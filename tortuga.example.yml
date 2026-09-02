@@ -65,9 +65,18 @@ newsletter:
 #     getting_started: { enabled: true, markdown: null }
 #     rules:           { enabled: true, markdown: null }
 #     report_issue:    { enabled: true, markdown: null }
-#   custom:
+#   # Ordered home-index rows. Omit entirely to use the default six built-ins
+#   # (getting_started, rules, plex, request, status, report_issue).
+#   entries:
+#     - { type: builtin_link, link: plex, label: "Watch now" }   # reorder + relabel a built-in
+#     - { type: builtin_page, page: rules, hidden: true }        # keep the page live, hide the row
 #     - { type: link, label: Wiki, url: "https://wiki.example.com" }
 #     - { type: page, slug: faq, label: FAQ, markdown: "## Frequently asked questions" }
+#   # Editable chrome text; every key optional, default = today's copy.
+#   copy:
+#     tagline: "Welcome to the family server"
+#     footer: "Powered by {{server_name}}"
+#     show_stuck_card: true
 #   appearance:
 #     theme: editorial
 #     theme_overrides: {}
