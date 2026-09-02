@@ -79,6 +79,70 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'unknown error';
 }
 
+export interface DeliverAnnouncementInput {
+  announcementId: string;
+  subject: string;
+  body: string;
+  recipientEmails: string[];
+  html: string;
+}
+
+export interface DeliverAnnouncementResult {
+  sent: number;
+  failed: number;
+  status: 'sent' | 'partial' | 'failed';
+  error: string | null;
+}
+
+/**
+ * Shared "deliver to a fixed set of already-filtered recipients, then
+ * finalize the announcement row's status" step. Used by both an immediate
+ * send (which has already inserted the row) and the scheduled runner (which
+ * claims/updates an existing row instead of inserting a new one).
+ */
+export async function deliverAnnouncement(
+  deps: SendAnnouncementDeps,
+  input: DeliverAnnouncementInput,
+): Promise<DeliverAnnouncementResult> {
+  const renderFn = deps.renderEmail ?? renderEmail;
+  const deliverableRecipients = new Map(
+    selectDeliverableRecipients(deps.db, 'announcements').map(r => [r.email, r] as const),
+  );
+  const targetRecipients = input.recipientEmails
+    .filter(email => deliverableRecipients.has(email))
+    .map(email => ({ email, name: deliverableRecipients.get(email)!.name }));
+
+  const { sent, failed, firstFailureMessage } = await deliverToRecipients(
+    { db: deps.db, provider: deps.provider, appUrl: deps.appUrl, sessionSecret: deps.sessionSecret },
+    {
+      recipients: targetRecipients,
+      subject: input.subject,
+      from: deps.config.from,
+      replyTo: deps.config.reply_to,
+      category: 'announcements',
+      renderFor: urls => renderFn(
+        deps,
+        { subject: input.subject, body: input.body, recipientEmails: input.recipientEmails },
+        urls.unsubscribeUrl,
+        urls.preferencesUrl,
+      ),
+      sendRow: { announcementId: input.announcementId },
+    },
+  );
+
+  const status = sent === 0 ? 'failed' : failed === 0 ? 'sent' : 'partial';
+  const errorSummary = failed > 0 ? `${failed} of ${targetRecipients.length} failed: ${firstFailureMessage}` : null;
+  deps.db.update(announcements).set({
+    recipientEmails: JSON.stringify(targetRecipients.map(r => r.email)),
+    renderedHtml: input.html,
+    status,
+    sentAt: new Date(),
+    error: errorSummary,
+  }).where(eq(announcements.id, input.announcementId)).run();
+
+  return { sent, failed, status, error: errorSummary };
+}
+
 export async function sendAnnouncement(
   deps: SendAnnouncementDeps,
   input: SendAnnouncementInput,
@@ -159,23 +223,13 @@ export async function sendAnnouncement(
     createdAt: new Date(),
   }).run();
 
-  const targetRecipients = targets.map(email => ({ email, name: deliverableRecipients.get(email)!.name }));
-  const { sent, failed, firstFailureMessage } = await deliverToRecipients(
-    { db: deps.db, provider: deps.provider, appUrl: deps.appUrl, sessionSecret: deps.sessionSecret },
-    {
-      recipients: targetRecipients,
-      subject: input.subject,
-      from: deps.config.from,
-      replyTo: deps.config.reply_to,
-      category: 'announcements',
-      renderFor: urls => renderFn(deps, input, urls.unsubscribeUrl, urls.preferencesUrl),
-      sendRow: { announcementId },
-    },
-  );
-
-  const status = sent === 0 ? 'failed' : failed === 0 ? 'sent' : 'partial';
-  const errorSummary = failed > 0 ? `${failed} of ${targets.length} failed: ${firstFailureMessage}` : null;
-  deps.db.update(announcements).set({ status, sentAt: new Date(), error: errorSummary }).where(eq(announcements.id, announcementId)).run();
+  const { sent, failed } = await deliverAnnouncement(deps, {
+    announcementId,
+    subject: input.subject,
+    body: input.body,
+    recipientEmails: targets,
+    html,
+  });
 
   return { html, announcementId, sent, failed };
 }

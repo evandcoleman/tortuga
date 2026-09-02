@@ -92,6 +92,13 @@
       "when": 1788388041081,
       "tag": "0012_resubscribe_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788390371582,
+      "tag": "0013_scheduled_announcements",
+      "breakpoints": true
     }
   ]
 }

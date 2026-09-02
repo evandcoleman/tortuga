@@ -55,21 +55,22 @@ describe('getAppContext config resolution', () => {
     expect(ctx.config.newsletter.schedule).toBe('30 7 * * MON');
   });
 
-  it('re-registers exactly one cron job reflecting the new schedule', async () => {
+  it('re-registers the digest cron job reflecting the new schedule', async () => {
     await invalidateAppContext();
     const jobs = getAppContext().scheduler.list();
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0].name).toBe('newsletter.digest');
+    expect(jobs.map(j => j.name)).toContain('newsletter.digest');
   });
 
-  it('registers no cron when schedule_enabled is false', async () => {
+  it('registers no digest cron when schedule_enabled is false, but keeps announcements polling', async () => {
     const override = NewsletterConfigSchema.parse({
       from: { email: 'a@b.com', name: 'A' },
       schedule_enabled: false,
     });
     writeConfigOverride(getAppContext().db, 'newsletter', override);
     await invalidateAppContext();
-    expect(getAppContext().scheduler.list()).toHaveLength(0);
+    const jobs = getAppContext().scheduler.list().map(j => j.name);
+    expect(jobs).not.toContain('newsletter.digest');
+    expect(jobs).toContain('announcements.scheduled');
   });
 
   it('does not create a maintainerr client when MAINTAINERR_URL is unset', () => {

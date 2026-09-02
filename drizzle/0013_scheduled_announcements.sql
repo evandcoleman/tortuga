@@ -1,0 +1,1 @@
+ALTER TABLE `announcements` ADD `scheduled_at` integer;
