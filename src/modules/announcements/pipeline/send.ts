@@ -6,13 +6,13 @@ import { createElement } from 'react';
 import type { Db } from '@/kernel/db/client';
 import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
-import { deliverToRecipients } from '@/kernel/email/deliver';
+import { deliverToRecipients, selectDeliverableRecipients } from '@/kernel/email/deliver';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 
 /** The subset of NewsletterConfig this pipeline actually reads. */
 export type AnnouncementSendConfig = Pick<NewsletterConfig, 'from' | 'reply_to' | 'theme' | 'appearance'>;
 import { createLogger } from '@/kernel/logging/logger';
-import { recipientsCache, unsubscribes } from '@/modules/newsletter/schema';
+import { unsubscribes } from '@/modules/newsletter/schema';
 
 import { announcements } from '../schema';
 import { AnnouncementEmail } from '../templates/announcement';
@@ -25,6 +25,7 @@ type RenderEmailFn = (
   deps: SendAnnouncementDeps,
   input: SendAnnouncementInput,
   unsubscribeUrl: string,
+  preferencesUrl?: string,
 ) => Promise<string>;
 
 export interface SendAnnouncementDeps {
@@ -55,7 +56,12 @@ export interface SendAnnouncementResult {
   failed: number;
 }
 
-function renderEmail(deps: SendAnnouncementDeps, input: SendAnnouncementInput, unsubscribeUrl: string) {
+function renderEmail(
+  deps: SendAnnouncementDeps,
+  input: SendAnnouncementInput,
+  unsubscribeUrl: string,
+  preferencesUrl?: string,
+) {
   return render(
     createElement(AnnouncementEmail, {
       subject: input.subject,
@@ -64,6 +70,7 @@ function renderEmail(deps: SendAnnouncementDeps, input: SendAnnouncementInput, u
       themeId: deps.config.theme,
       appearance: deps.config.appearance,
       unsubscribeUrl,
+      preferencesUrl,
     }),
   );
 }
@@ -130,12 +137,10 @@ export async function sendAnnouncement(
     return { html, sent, failed };
   }
 
-  const activeRecipients = new Map(
-    deps.db.select().from(recipientsCache).all()
-      .filter(r => r.active)
-      .map(r => [r.email, r] as const),
+  const deliverableRecipients = new Map(
+    selectDeliverableRecipients(deps.db, 'announcements').map(r => [r.email, r] as const),
   );
-  const targets = input.recipientEmails.filter(email => activeRecipients.has(email));
+  const targets = input.recipientEmails.filter(email => deliverableRecipients.has(email));
 
   if (targets.length === 0) {
     return { html, sent: 0, failed: 0 };
@@ -152,7 +157,7 @@ export async function sendAnnouncement(
     createdAt: new Date(),
   }).run();
 
-  const targetRecipients = targets.map(email => ({ email, name: activeRecipients.get(email)!.name }));
+  const targetRecipients = targets.map(email => ({ email, name: deliverableRecipients.get(email)!.name }));
   const { sent, failed, firstFailureMessage } = await deliverToRecipients(
     { db: deps.db, provider: deps.provider, appUrl: deps.appUrl, sessionSecret: deps.sessionSecret },
     {
@@ -160,7 +165,8 @@ export async function sendAnnouncement(
       subject: input.subject,
       from: deps.config.from,
       replyTo: deps.config.reply_to,
-      renderFor: unsubscribeUrl => renderFn(deps, input, unsubscribeUrl),
+      category: 'announcements',
+      renderFor: urls => renderFn(deps, input, urls.unsubscribeUrl, urls.preferencesUrl),
       sendRow: { announcementId },
     },
   );

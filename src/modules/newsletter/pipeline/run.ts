@@ -9,18 +9,20 @@ import type { TmdbClient } from '@/kernel/integrations/tmdb';
 import type { MaintainerrClient } from '@/kernel/integrations/maintainerr';
 import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
-import { deliverToRecipients } from '@/kernel/email/deliver';
+import { deliverToRecipients, selectDeliverableRecipients } from '@/kernel/email/deliver';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import { ServiceNotConfiguredError } from '@/kernel/config/service-settings';
 import { createLogger } from '@/kernel/logging/logger';
+import { getPreferences } from '@/modules/preferences/repo';
 
-import { digests, recipientsCache } from '../schema';
+import { digests } from '../schema';
 import type { EnrichedItem } from '../types';
 import { applyFilters } from '../filters';
 import { generateDigestSlug } from '../slug';
 import { syncRecipients } from './recipients';
 import { enrichItems } from './enrich';
 import { fetchLeavingItems } from './leaving';
+import { filterItemsByLibraries } from './library-filter';
 import { DigestEmail } from '../templates/digest';
 import { THEMES } from '../templates/themes';
 import { LAYOUTS } from '../templates/layouts';
@@ -214,18 +216,44 @@ export async function runDigest(opts: RunDigestOpts) {
     }
 
     opts.db.update(digests).set({ status: 'sending' }).where(eq(digests.id, digestId)).run();
-    const recipients = opts.db.select().from(recipientsCache).all()
-      .filter(r => r.active)
+    const deliverable = selectDeliverableRecipients(opts.db, 'digest')
       .filter(r => !opts.recipientFilter || opts.recipientFilter(r.email));
+
+    // Applies each recipient's per-library preference before deciding whether
+    // to send them anything at all — a recipient whose preferred libraries
+    // match nothing in this digest is skipped entirely (no send row, no email).
+    interface RecipientDigest { email: string; name: string; items: EnrichedItem[]; leavingItems: EnrichedItem[] }
+    const recipientDigests: RecipientDigest[] = [];
+    for (const r of deliverable) {
+      const prefs = getPreferences(opts.db, r.email);
+      const items = filterItemsByLibraries(filteredWithPlexLinks, prefs.libraries);
+      const recipientLeaving = filterItemsByLibraries(leavingItemsWithPlexLinks, prefs.libraries);
+      if (items.length === 0 && recipientLeaving.length === 0) {
+        log.info({ digest_id: digestId, email: r.email, reason: 'no_matching_libraries' }, 'skipping recipient: no matching libraries');
+        continue;
+      }
+      recipientDigests.push({ email: r.email, name: r.name, items, leavingItems: recipientLeaving });
+    }
+    const recipientDigestByEmail = new Map(recipientDigests.map(rd => [rd.email, rd]));
 
     const { sent, skippedAlreadySent } = await deliverToRecipients(
       { db: opts.db, provider: opts.provider, appUrl: opts.appUrl, sessionSecret: opts.sessionSecret },
       {
-        recipients: recipients.map(r => ({ email: r.email, name: r.name })),
+        recipients: recipientDigests.map(rd => ({ email: rd.email, name: rd.name })),
         subject,
         from: opts.config.from,
         replyTo: opts.config.reply_to,
-        renderFor: unsubscribeUrl => render(createElement(DigestEmail, { ...emailProps, unsubscribeUrl })),
+        category: 'digest',
+        renderFor: (urls, recipient) => {
+          const rd = recipientDigestByEmail.get(recipient.email)!;
+          return render(createElement(DigestEmail, {
+            ...emailProps,
+            items: rd.items,
+            leavingItems: rd.leavingItems,
+            unsubscribeUrl: urls.unsubscribeUrl,
+            preferencesUrl: urls.preferencesUrl,
+          }));
+        },
         sendRow: { digestId },
         onRenderFailure: 'abort',
       },

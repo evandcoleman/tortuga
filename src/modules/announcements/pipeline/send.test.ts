@@ -3,6 +3,7 @@ import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
 import { recipientsCache, sends } from '@/modules/newsletter/schema';
 import type { EmailProvider } from '@/kernel/email/types';
+import { setCategory } from '@/modules/preferences/repo';
 import { announcements } from '../schema';
 import { sendAnnouncement, type AnnouncementSendConfig } from './send';
 
@@ -51,6 +52,20 @@ describe('sendAnnouncement', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].status).toBe('sent');
     expect(db.select().from(sends).all()).toHaveLength(2);
+  });
+
+  it('excludes a recipient opted out of the announcements category, without touching digest preference', async () => {
+    const db = makeDb();
+    const { provider } = fakes();
+    setCategory(db, 'a@x.io', 'announcements', false);
+    const result = await sendAnnouncement(
+      { db, provider, config: baseConfig, appUrl: 'http://x', sessionSecret: 'x'.repeat(32) },
+      { subject: 'Hi', body: 'Body', recipientEmails: ['a@x.io', 'b@x.io'] },
+    );
+    expect(result.sent).toBe(1);
+    const rows = db.select().from(sends).all();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].recipientEmail).toBe('b@x.io');
   });
 
   it('dryRun renders but writes nothing', async () => {

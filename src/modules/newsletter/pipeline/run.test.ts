@@ -9,6 +9,7 @@ import { getThemedPreviews } from './preview-cache';
 import { THEMES } from '../templates/themes';
 import { LAYOUTS } from '../templates/layouts';
 import { digests, sends } from '../schema';
+import { setCategory, upsertPreferences } from '@/modules/preferences/repo';
 
 vi.mock('@/kernel/email/deliver', async () => {
   const actual = await vi.importActual<typeof import('@/kernel/email/deliver')>('@/kernel/email/deliver');
@@ -416,6 +417,50 @@ describe('runDigest', () => {
         scheduledAt: new Date('2026-05-20T13:00:00Z'),
       });
       expect(result.status).toBe('sent');
+    });
+  });
+
+  describe('recipient preferences', () => {
+    function fakesWithThreeRecipients() {
+      const f = fakes();
+      f.tautulli.getUsers.mockResolvedValue([
+        { plexUserId: 1, name: 'A', plexUsername: 'a', email: 'a@x.io' },
+        { plexUserId: 2, name: 'B', plexUsername: 'b', email: 'b@x.io' },
+        { plexUserId: 3, name: 'C', plexUsername: 'c', email: 'c@x.io' },
+      ]);
+      f.tautulli.getRecentlyAdded.mockResolvedValue([
+        { guid: 'g1', title: 'M', mediaType: 'movie', libraryName: 'Movies', addedAt: new Date(), year: 2020, raw: {} },
+        { guid: 'g2', title: 'S', mediaType: 'show', libraryName: 'TV Shows', addedAt: new Date(), year: 2020, raw: {} },
+      ]);
+      f.tmdb.searchMovie.mockResolvedValue({ id: 1, title: 'M', rating: 8, posterUrl: null, overview: 'o' });
+      f.tmdb.searchTv.mockResolvedValue({ id: 2, title: 'S', rating: 7, posterUrl: null, overview: 'o' });
+      return f;
+    }
+
+    it('skips a recipient opted out of digest, sends a library subset to another, and skips a third with no matching library', async () => {
+      const db = createDb(':memory:');
+      applyMigrations(db);
+      const { tautulli, tmdb, provider } = fakesWithThreeRecipients();
+
+      // a: opted out of the digest category entirely.
+      setCategory(db, 'a@x.io', 'digest', false);
+      // b: only wants the Movies library (a subset of what's in this digest).
+      upsertPreferences(db, 'b@x.io', { libraries: ['Movies'] });
+      // c: only wants a library that has nothing in this digest.
+      upsertPreferences(db, 'c@x.io', { libraries: ['Anime'] });
+
+      const result = await runDigest({
+        db, tautulli: tautulli as any, tmdb: tmdb as any, provider: provider as any,
+        config: baseConfig as any, appUrl: 'http://x', sessionSecret: 'x'.repeat(32),
+        scheduledAt: new Date('2026-05-25T13:00:00Z'),
+      });
+
+      expect(result.status).toBe('sent');
+      const sendRows = db.select().from(sends).all();
+      const emails = sendRows.map(r => r.recipientEmail).sort();
+      // Only b received an email — a opted out, c had no matching library.
+      expect(emails).toEqual(['b@x.io']);
+      expect(sendRows[0].status).toBe('sent');
     });
   });
 });

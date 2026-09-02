@@ -36,6 +36,12 @@ describe('DigestEmail', () => {
     expect(html).toContain('Unsubscribe');
   });
 
+  it('renders a "Manage preferences" link next to Unsubscribe when preferencesUrl is set', async () => {
+    const html = await render(DigestEmail({ ...baseProps, preferencesUrl: 'https://x/preferences?token=abc' }));
+    expect(html).toContain('Manage preferences');
+    expect(html).toContain('https://x/preferences?token=abc');
+  });
+
   it('renders Open in Plex when plexUrl present', async () => {
     const html = await render(
       DigestEmail({

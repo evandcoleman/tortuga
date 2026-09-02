@@ -43,6 +43,16 @@ describe('middleware public paths (admin host, unaffected by portal)', () => {
     expect(res.status).toBe(200);
   });
 
+  it('allows GET /preferences without auth', () => {
+    const res = middleware(reqFor('/preferences?token=abc'));
+    expect(res.status).toBe(200);
+  });
+
+  it('allows POST /preferences without auth', () => {
+    const res = middleware(reqFor('/preferences', { method: 'POST' }));
+    expect(res.status).toBe(200);
+  });
+
   it('still requires auth for other admin paths', () => {
     const res = middleware(reqFor('/newsletter/preview'));
     expect(res.status).toBe(401);
@@ -155,6 +165,25 @@ describe('middleware portal-host rewrite', () => {
   it('404s mixed-case paths on the portal host', () => {
     const res = middleware(reqFor('/Getting-Started', { host: 'plex.example.com' }));
     expect(res.status).toBe(404);
+  });
+
+  it('passes GET /preferences through unrewritten (not the /portal/preferences page rewrite) on the portal host', () => {
+    const res = middleware(reqFor('/preferences?token=abc', { host: 'plex.example.com' }));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  it('allows POST /preferences on the portal host', () => {
+    const res = middleware(reqFor('/preferences', { host: 'plex.example.com', method: 'POST' }));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  it('strips a forwarded auth header on the public /preferences path on the portal host', () => {
+    const res = middleware(
+      reqFor('/preferences', { host: 'plex.example.com', headers: { 'remote-user': 'admin@x.io' } }),
+    );
+    expect(res.headers.get('x-middleware-request-remote-user')).toBeNull();
   });
 
   it('does not require a Remote-User header on the portal host', () => {

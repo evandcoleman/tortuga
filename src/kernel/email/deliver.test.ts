@@ -3,11 +3,12 @@ import { eq } from 'drizzle-orm';
 
 import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
-import { digests, sends, unsubscribes } from '@/modules/newsletter/schema';
+import { digests, recipientsCache, sends, unsubscribes } from '@/modules/newsletter/schema';
 import { announcements } from '@/modules/announcements/schema';
+import { setCategory } from '@/modules/preferences/repo';
 import type { EmailProvider } from './types';
 
-import { deliverToRecipients } from './deliver';
+import { deliverToRecipients, selectDeliverableRecipients } from './deliver';
 
 function fakeProvider(): EmailProvider {
   return {
@@ -55,6 +56,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor,
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
       },
     );
     expect(result).toEqual({ sent: 2, failed: 0, skippedAlreadySent: 0, firstFailureMessage: undefined });
@@ -85,6 +87,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor: async () => '<html>hi</html>',
         sendRow: { announcementId: 'ann-1' },
+        category: 'digest',
       },
     );
     expect(result).toEqual({ sent: 1, failed: 1, skippedAlreadySent: 0, firstFailureMessage: 'bounced' });
@@ -115,6 +118,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor,
         sendRow: { announcementId: 'ann-1' },
+        category: 'digest',
         onRenderFailure: 'continue',
       },
     );
@@ -141,6 +145,7 @@ describe('deliverToRecipients', () => {
           from,
           renderFor,
           sendRow: { digestId: 'digest-1' },
+          category: 'digest',
           onRenderFailure: 'abort',
         },
       ),
@@ -163,6 +168,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor: async () => '<html>hi</html>',
         sendRow: { announcementId: 'ann-42' },
+        category: 'digest',
       },
     );
     const [row] = db.select().from(sends).all();
@@ -183,11 +189,19 @@ describe('deliverToRecipients', () => {
         from,
         renderFor,
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
       },
     );
     const [row] = db.select().from(unsubscribes).all();
     expect(row.email).toBe('a@x.io');
-    expect(renderFor).toHaveBeenCalledWith(`http://x/api/unsubscribe?token=${row.token}`);
+    expect(row.category).toBe('digest');
+    expect(renderFor).toHaveBeenCalledWith(
+      {
+        unsubscribeUrl: `http://x/api/unsubscribe?token=${row.token}`,
+        preferencesUrl: expect.stringContaining('http://x/preferences?token='),
+      },
+      { email: 'a@x.io', name: 'A' },
+    );
   });
 
   it('passes subject, from, replyTo, and rendered html through to provider.send', async () => {
@@ -203,6 +217,7 @@ describe('deliverToRecipients', () => {
         replyTo: 'reply@x.io',
         renderFor: async () => '<html><body>body</body></html>',
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
       },
     );
     expect(provider.send).toHaveBeenCalledWith({
@@ -230,6 +245,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor: async () => '<html>hi</html>',
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
       },
     );
     const tokenRows = db.select().from(unsubscribes).all();
@@ -263,6 +279,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor: async () => '<html><body><h1>Hello</h1><p>World</p></body></html>',
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
       },
     );
     const [call] = (provider.send as ReturnType<typeof vi.fn>).mock.calls;
@@ -285,6 +302,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor: async () => '<html>hi</html>',
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
       },
     );
     expect(result).toEqual({ sent: 0, failed: 1, skippedAlreadySent: 0, firstFailureMessage: 'network down' });
@@ -325,6 +343,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor,
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
         onRenderFailure: 'abort',
       },
     );
@@ -356,6 +375,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor,
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
         onRenderFailure: 'abort',
       },
     );
@@ -374,6 +394,7 @@ describe('deliverToRecipients', () => {
         from,
         renderFor,
         sendRow: { digestId: 'digest-1' },
+        category: 'digest',
         onRenderFailure: 'abort',
       },
     );
@@ -383,5 +404,36 @@ describe('deliverToRecipients', () => {
     expect(second.failed).toBe(0);
     expect(second.skippedAlreadySent).toBe(2);
     expect(second.sent + second.skippedAlreadySent).toBeGreaterThan(0);
+  });
+});
+
+describe('selectDeliverableRecipients', () => {
+  function seedRecipient(db: ReturnType<typeof createDb>, email: string, active: boolean) {
+    db.insert(recipientsCache).values({
+      email, name: email, lastSynced: new Date(), active, source: 'manual',
+    }).run();
+  }
+
+  it('excludes inactive recipients regardless of preferences', () => {
+    const db = makeDb();
+    seedRecipient(db, 'active@x.io', true);
+    seedRecipient(db, 'inactive@x.io', false);
+    const result = selectDeliverableRecipients(db, 'digest');
+    expect(result.map(r => r.email)).toEqual(['active@x.io']);
+  });
+
+  it('excludes active recipients opted out of the given category, but includes them for the other category', () => {
+    const db = makeDb();
+    seedRecipient(db, 'a@x.io', true);
+    setCategory(db, 'a@x.io', 'digest', false);
+    expect(selectDeliverableRecipients(db, 'digest').map(r => r.email)).toEqual([]);
+    expect(selectDeliverableRecipients(db, 'announcements').map(r => r.email)).toEqual(['a@x.io']);
+  });
+
+  it('includes an active recipient with no preferences row (default opted-in)', () => {
+    const db = makeDb();
+    seedRecipient(db, 'a@x.io', true);
+    expect(selectDeliverableRecipients(db, 'digest').map(r => r.email)).toEqual(['a@x.io']);
+    expect(selectDeliverableRecipients(db, 'announcements').map(r => r.email)).toEqual(['a@x.io']);
   });
 });

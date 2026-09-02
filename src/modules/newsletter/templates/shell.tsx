@@ -7,6 +7,8 @@ export interface EmailShellProps {
   appName: string;
   /** Omitted for the web variant, which has no per-recipient unsubscribe link. */
   unsubscribeUrl?: string;
+  /** Omitted for the web variant. Links to the recipient preferences page. */
+  preferencesUrl?: string;
   previewText?: string;
   children: React.ReactNode;
 }
@@ -16,7 +18,7 @@ export interface EmailShellProps {
  * Html/Head/Body/Container scaffold, and the mandatory unsubscribe line
  * (never removable, regardless of appearance settings).
  */
-export function EmailShell({ theme, appName, unsubscribeUrl, previewText, children }: EmailShellProps) {
+export function EmailShell({ theme, appName, unsubscribeUrl, preferencesUrl, previewText, children }: EmailShellProps) {
   const { palette, fonts } = theme;
 
   return (
@@ -64,6 +66,17 @@ export function EmailShell({ theme, appName, unsubscribeUrl, previewText, childr
               >
                 Unsubscribe
               </Link>
+              {preferencesUrl ? (
+                <>
+                  {' · '}
+                  <Link
+                    href={preferencesUrl}
+                    style={{ color: palette.muted, textDecoration: 'underline' }}
+                  >
+                    Manage preferences
+                  </Link>
+                </>
+              ) : null}
             </Text>
           ) : null}
         </Container>

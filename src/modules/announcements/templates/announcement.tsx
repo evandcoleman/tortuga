@@ -10,6 +10,7 @@ export interface AnnouncementEmailProps {
   subject: string;
   body: string;
   unsubscribeUrl: string;
+  preferencesUrl?: string;
   appName: string;
   themeId?: string;
   appearance?: Appearance;
@@ -22,6 +23,7 @@ export function AnnouncementEmail({
   subject,
   body,
   unsubscribeUrl,
+  preferencesUrl,
   appName,
   themeId,
   appearance,
@@ -30,7 +32,13 @@ export function AnnouncementEmail({
   const bodyHtml = marked.parse(body, { async: false }) as string;
 
   return (
-    <EmailShell theme={theme} appName={appName} unsubscribeUrl={unsubscribeUrl} previewText={subject}>
+    <EmailShell
+      theme={theme}
+      appName={appName}
+      unsubscribeUrl={unsubscribeUrl}
+      preferencesUrl={preferencesUrl}
+      previewText={subject}
+    >
       <Section>
         <div
           style={{ fontSize: 15, lineHeight: 1.6, color: theme.palette.ink, fontFamily: theme.fonts.body }}

@@ -20,6 +20,14 @@ describe('AnnouncementEmail', () => {
     expect(html).toContain('Unsubscribe');
   });
 
+  it('renders a "Manage preferences" link next to Unsubscribe when preferencesUrl is set', async () => {
+    const html = await render(
+      createElement(AnnouncementEmail, { ...baseProps, preferencesUrl: 'https://x/preferences?token=abc' }),
+    );
+    expect(html).toContain('Manage preferences');
+    expect(html).toContain('https://x/preferences?token=abc');
+  });
+
   it('applies the requested theme palette', async () => {
     const html = await render(createElement(AnnouncementEmail, { ...baseProps, themeId: 'dark-luxury' }));
     expect(html).toContain('#0e0d0b'); // dark-luxury paper

@@ -32,6 +32,8 @@ export interface DigestEmailProps {
   items: EnrichedItem[];
   /** Omitted for the web variant, which has no per-recipient unsubscribe link. */
   unsubscribeUrl?: string;
+  /** Omitted for the web variant. Links to the recipient preferences page. */
+  preferencesUrl?: string;
   appName: string;
   windowStart: Date;
   windowEnd: Date;
@@ -92,6 +94,7 @@ export function formatDateRange(start: Date, end: Date): string {
 export function DigestEmail({
   items,
   unsubscribeUrl,
+  preferencesUrl,
   appName,
   windowStart,
   windowEnd,
@@ -456,6 +459,7 @@ export function DigestEmail({
       theme={theme}
       appName={appName}
       unsubscribeUrl={unsubscribeUrl}
+      preferencesUrl={preferencesUrl}
       previewText={`${items.length} new on ${appName} · ${dateRange}`}
     >
       {ordered

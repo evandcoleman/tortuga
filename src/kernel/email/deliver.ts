@@ -3,10 +3,12 @@ import { and, eq, ne } from 'drizzle-orm';
 import { toPlainText } from '@react-email/render';
 
 import type { Db } from '@/kernel/db/client';
-import { sends, unsubscribes } from '@/modules/newsletter/schema';
+import { recipientsCache, sends, unsubscribes } from '@/modules/newsletter/schema';
+import { getPreferences, type MessageCategory } from '@/modules/preferences/repo';
 
 import type { EmailProvider, EmailSendOpts } from './types';
 import { generateUnsubscribeToken } from './unsubscribe';
+import { preferencesUrl } from './preferences-token';
 
 /** RFC 8058 one-click unsubscribe headers for a given recipient's unsubscribe URL. */
 function listUnsubscribeHeaders(unsubscribeUrl: string): Record<string, string> {
@@ -31,13 +33,21 @@ export interface DeliverRecipient {
 /** Which parent row a batch of `sends` rows belongs to. */
 export type DeliverySendRow = { digestId: string } | { announcementId: string };
 
+/** Per-recipient links passed to `renderFor`: unsubscribe (one-shot, category-scoped) and preferences (reusable). */
+export interface DeliverUrls {
+  unsubscribeUrl: string;
+  preferencesUrl: string;
+}
+
 export interface DeliverToRecipientsArgs {
   recipients: DeliverRecipient[];
   subject: string;
   from: EmailSendOpts['from'];
   replyTo?: string;
-  /** Renders the per-recipient HTML given that recipient's unsubscribe URL. */
-  renderFor: (unsubscribeUrl: string) => string | Promise<string>;
+  /** Which message category this send belongs to. Recorded on the minted unsubscribe token. */
+  category: MessageCategory;
+  /** Renders the per-recipient HTML given that recipient's unsubscribe/preferences URLs. */
+  renderFor: (urls: DeliverUrls, recipient: DeliverRecipient) => string | Promise<string>;
   sendRow: DeliverySendRow;
   /**
    * How a `renderFor` exception is handled for a given recipient (a thrown
@@ -191,16 +201,18 @@ export async function deliverToRecipients(
     }
 
     const tokenStr = generateUnsubscribeToken(recipient.email, deps.sessionSecret);
-    // TODO(preferences slice): category is hard-coded to 'digest' until the
-    // announcement-send path threads its own category through deliverToRecipients.
     deps.db.insert(unsubscribes).values({
-      token: tokenStr, email: recipient.email, createdAt: new Date(), category: 'digest',
+      token: tokenStr, email: recipient.email, createdAt: new Date(), category: args.category,
     }).run();
     const unsubscribeUrl = `${deps.appUrl}/api/unsubscribe?token=${tokenStr}`;
+    const urls: DeliverUrls = {
+      unsubscribeUrl,
+      preferencesUrl: preferencesUrl(deps.appUrl, recipient.email, deps.sessionSecret),
+    };
     const headers = listUnsubscribeHeaders(unsubscribeUrl);
 
     if (mode === 'abort') {
-      const html = await args.renderFor(unsubscribeUrl);
+      const html = await args.renderFor(urls, recipient);
       const sendId = insertQueuedSend(deps, recipient, args.sendRow);
       try {
         const providerError = await sendAndRecord(deps, args, sendId, recipient.email, html, headers);
@@ -215,7 +227,7 @@ export async function deliverToRecipients(
 
     const sendId = insertQueuedSend(deps, recipient, args.sendRow);
     try {
-      const html = await args.renderFor(unsubscribeUrl);
+      const html = await args.renderFor(urls, recipient);
       const providerError = await sendAndRecord(deps, args, sendId, recipient.email, html, headers);
       tally = providerError ? recordFailure(tally, providerError) : recordSuccess(tally);
     } catch (e) {
@@ -231,4 +243,17 @@ export async function deliverToRecipients(
     skippedAlreadySent: tally.skippedAlreadySent,
     firstFailureMessage: tally.firstFailureMessage,
   };
+}
+
+/**
+ * Recipients eligible to receive a message in `category`: active in
+ * `recipientsCache` and opted in to that category (defaulting to opted-in
+ * when no preferences row exists). Shared by the digest and announcement
+ * send pipelines so "who can receive this" is defined in exactly one place.
+ */
+export function selectDeliverableRecipients(db: Db, category: MessageCategory): DeliverRecipient[] {
+  return db.select().from(recipientsCache).all()
+    .filter(r => r.active)
+    .filter(r => getPreferences(db, r.email)[category])
+    .map(r => ({ email: r.email, name: r.name }));
 }

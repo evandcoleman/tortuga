@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   '/login',
   '/api/healthz',
   '/api/unsubscribe',
+  '/preferences',
   '/api/webhooks/resend',
   '/api/webhooks/mailgun',
   '/api/auth',
@@ -81,8 +82,23 @@ function next(req: NextRequest): NextResponse {
  */
 function handlePortalHost(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
-  if (req.method !== 'GET' && req.method !== 'HEAD') return NOT_FOUND;
   if (req.headers.has(NEXT_ACTION_HEADER)) return NOT_FOUND;
+
+  // The preferences link is mailed with an `APP_URL`-rooted absolute link, but
+  // recipients read mail from any network — this keeps it reachable (GET the
+  // form, POST to save) on the public portal domain the same way
+  // `/api/unsubscribe` is public on the admin host, without going through the
+  // generic single-segment portal-page rewrite below (which would 404 or mis-route
+  // a POST) and without leaking a forwarded auth header into the page.
+  if (pathname === '/preferences') {
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'POST') return NOT_FOUND;
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.delete(PORTAL_HOST_HEADER);
+    requestHeaders.delete(authForwardHeader());
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  if (req.method !== 'GET' && req.method !== 'HEAD') return NOT_FOUND;
 
   const target = pathname === '/' ? '/portal' : PORTAL_PAGE_PATTERN.test(pathname) ? `/portal${pathname}` : null;
   if (!target) return NOT_FOUND;
