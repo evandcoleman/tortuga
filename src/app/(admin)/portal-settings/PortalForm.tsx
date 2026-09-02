@@ -2,14 +2,24 @@
 
 import { useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
-import type { PortalConfig, PortalCustomEntry, PortalPageConfigSchema } from '@/kernel/config/schema';
+import type { PortalConfig, PortalCopy, PortalEntry, PortalPageConfigSchema } from '@/kernel/config/schema';
 import { z } from 'zod';
+import { DEFAULT_PAGE_COPY, DEFAULT_PORTAL_COPY } from '@/modules/portal/copy';
 import { Button, Card, CardHeader } from '../_components/ui';
 import { savePortalSettings, revertPortalSettings, type SaveState } from './actions';
-import { CustomEntriesEditor } from './CustomEntriesEditor';
+import { IndexEditor } from './IndexEditor';
 import { PortalAppearanceEditor } from './PortalAppearanceEditor';
+import { deriveInitialEntries } from './validate';
 
 type PortalPageConfig = z.infer<typeof PortalPageConfigSchema>;
+
+/**
+ * Form working state. Same shape as `PortalConfig` except `entries` is always
+ * a concrete array (the form has already applied the legacy `custom` merge by
+ * the time it mounts — see `deriveInitialEntries`), so the editor never has to
+ * handle the "entries is unset" case itself.
+ */
+type PortalFormState = Omit<PortalConfig, 'entries'> & { entries: PortalEntry[] };
 
 const inputCls =
   'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
@@ -22,8 +32,18 @@ const BUILT_IN_PAGES: Array<{ key: 'getting_started' | 'rules' | 'report_issue';
   { key: 'report_issue', label: 'Report an Issue', hint: 'Points visitors at the request service’s issue flow.' },
 ];
 
+/** Builds form state from a `PortalConfig`, applying the legacy `custom` → `entries` merge on load (see spec §1). */
+function toFormState(config: PortalConfig): PortalFormState {
+  return { ...config, entries: deriveInitialEntries(config) };
+}
+
+/** Builds the save candidate: `entries` always wins, and `custom` is dropped rather than round-tripped stale. */
+function toCandidate(form: PortalFormState): PortalConfig {
+  return { ...form, custom: [] };
+}
+
 export function PortalForm({ config }: { config: PortalConfig }) {
-  const [working, setWorking] = useState<PortalConfig>(config);
+  const [working, setWorking] = useState<PortalFormState>(() => toFormState(config));
   const [state, setState] = useState<SaveState>(initial);
   const [isSaving, startSaving] = useTransition();
   const [isReverting, startReverting] = useTransition();
@@ -31,7 +51,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const err = state.status === 'error' ? state.errors : {};
 
-  function patch(next: Partial<PortalConfig>) {
+  function patch(next: Partial<PortalFormState>) {
     setWorking(prev => ({ ...prev, ...next }));
   }
 
@@ -43,14 +63,14 @@ export function PortalForm({ config }: { config: PortalConfig }) {
     setWorking(prev => ({ ...prev, pages: { ...prev.pages, [key]: { ...prev.pages[key], ...next } } }));
   }
 
-  function handleCustomChange(custom: PortalCustomEntry[]) {
-    patch({ custom });
+  function patchCopy(next: Partial<PortalCopy>) {
+    setWorking(prev => ({ ...prev, copy: { ...prev.copy, ...next } }));
   }
 
   function handleSave() {
     setState(initial);
     startSaving(async () => {
-      const result = await savePortalSettings(initial, working);
+      const result = await savePortalSettings(initial, toCandidate(working));
       setState(result);
     });
   }
@@ -61,7 +81,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
     startReverting(async () => {
       try {
         const reverted = await revertPortalSettings();
-        setWorking(reverted);
+        setWorking(toFormState(reverted));
       } catch {
         setRevertError('Revert failed. Please try again.');
       }
@@ -155,6 +175,43 @@ export function PortalForm({ config }: { config: PortalConfig }) {
       </Card>
 
       <Card>
+        <CardHeader title="Home" description="The home page's tagline, intro, and the ordered list of index buttons." />
+        <div className="grid gap-4">
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Tagline (optional)</span>
+            <input
+              className={inputCls}
+              value={working.copy.tagline ?? ''}
+              placeholder={DEFAULT_PORTAL_COPY.tagline}
+              maxLength={160}
+              onChange={e => patchCopy({ tagline: e.target.value || undefined })}
+            />
+            {err['copy.tagline'] ? <span className="mt-1 block text-[11.5px] text-danger">{err['copy.tagline']}</span> : null}
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Intro (optional)</span>
+            <textarea
+              className={inputCls}
+              rows={2}
+              value={working.copy.intro ?? ''}
+              placeholder={DEFAULT_PORTAL_COPY.intro}
+              maxLength={400}
+              onChange={e => patchCopy({ intro: e.target.value || undefined })}
+            />
+            {err['copy.intro'] ? <span className="mt-1 block text-[11.5px] text-danger">{err['copy.intro']}</span> : null}
+          </label>
+          <div>
+            <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">Index</span>
+            <IndexEditor
+              value={working.entries}
+              onChange={entries => patch({ entries })}
+              errors={pluckIndexedErrors(err, 'entries')}
+            />
+          </div>
+        </div>
+      </Card>
+
+      <Card>
         <CardHeader title="Pages" description="Each ships with built-in copy; a markdown override replaces the body entirely." />
         <div className="grid gap-4">
           {BUILT_IN_PAGES.map(({ key, label, hint }) => (
@@ -171,6 +228,28 @@ export function PortalForm({ config }: { config: PortalConfig }) {
                   <span className="mt-0.5 block text-[11.5px] text-muted">{hint}</span>
                 </span>
               </label>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">Title (optional)</span>
+                  <input
+                    className={inputCls}
+                    value={working.pages[key].title ?? ''}
+                    placeholder={DEFAULT_PAGE_COPY[key].title}
+                    maxLength={80}
+                    onChange={e => patchPage(key, { title: e.target.value || undefined })}
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">Eyebrow (optional)</span>
+                  <input
+                    className={inputCls}
+                    value={working.pages[key].eyebrow ?? ''}
+                    placeholder={DEFAULT_PAGE_COPY[key].eyebrow}
+                    maxLength={80}
+                    onChange={e => patchPage(key, { eyebrow: e.target.value || undefined })}
+                  />
+                </label>
+              </div>
               <div className="mt-2">
                 <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">
                   Markdown override (optional)
@@ -189,12 +268,124 @@ export function PortalForm({ config }: { config: PortalConfig }) {
       </Card>
 
       <Card>
-        <CardHeader title="Custom entries" description="Extra buttons on the home grid: external links or your own content pages." />
-        <CustomEntriesEditor
-          value={working.custom}
-          onChange={handleCustomChange}
-          errors={pluckIndexedErrors(err, 'custom')}
-        />
+        <CardHeader title="Copy" description="Chrome text shown around every page — the header, footer, and the stuck-card prompt." />
+        <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Tab title (optional)</span>
+              <input
+                className={inputCls}
+                value={working.copy.tab_title ?? ''}
+                placeholder={DEFAULT_PORTAL_COPY.tab_title}
+                maxLength={160}
+                onChange={e => patchCopy({ tab_title: e.target.value || undefined })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">"On this page" heading (optional)</span>
+              <input
+                className={inputCls}
+                value={working.copy.toc_heading ?? ''}
+                placeholder={DEFAULT_PORTAL_COPY.toc_heading}
+                maxLength={80}
+                onChange={e => patchCopy({ toc_heading: e.target.value || undefined })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Back label (optional)</span>
+              <input
+                className={inputCls}
+                value={working.copy.back_label ?? ''}
+                placeholder={DEFAULT_PORTAL_COPY.back_label}
+                maxLength={80}
+                onChange={e => patchCopy({ back_label: e.target.value || undefined })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Custom-page eyebrow (optional)</span>
+              <input
+                className={inputCls}
+                value={working.copy.custom_page_eyebrow ?? ''}
+                placeholder={DEFAULT_PORTAL_COPY.custom_page_eyebrow}
+                maxLength={80}
+                onChange={e => patchCopy({ custom_page_eyebrow: e.target.value || undefined })}
+              />
+            </label>
+          </div>
+
+          <div className="rounded-lg border border-line p-3">
+            <label className="flex items-start gap-2.5 py-1">
+              <input
+                className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+                type="checkbox"
+                checked={working.copy.show_stuck_card}
+                onChange={e => patchCopy({ show_stuck_card: e.target.checked })}
+              />
+              <span>
+                <span className="block text-[13.5px] text-fg">Show the "stuck?" card</span>
+                <span className="mt-0.5 block text-[11.5px] text-muted">
+                  Also hidden automatically when the Report an Issue page is disabled.
+                </span>
+              </span>
+            </label>
+            <div className="mt-2 grid gap-2">
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">Title (optional)</span>
+                <input
+                  className={inputCls}
+                  value={working.copy.stuck_title ?? ''}
+                  placeholder={DEFAULT_PORTAL_COPY.stuck_title}
+                  maxLength={80}
+                  onChange={e => patchCopy({ stuck_title: e.target.value || undefined })}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">Body (optional)</span>
+                <input
+                  className={inputCls}
+                  value={working.copy.stuck_body ?? ''}
+                  placeholder={DEFAULT_PORTAL_COPY.stuck_body}
+                  maxLength={300}
+                  onChange={e => patchCopy({ stuck_body: e.target.value || undefined })}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">Link label (optional)</span>
+                <input
+                  className={inputCls}
+                  value={working.copy.stuck_link_label ?? ''}
+                  placeholder={DEFAULT_PORTAL_COPY.stuck_link_label}
+                  maxLength={80}
+                  onChange={e => patchCopy({ stuck_link_label: e.target.value || undefined })}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-line p-3">
+            <label className="flex items-start gap-2.5 py-1">
+              <input
+                className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+                type="checkbox"
+                checked={working.copy.show_footer}
+                onChange={e => patchCopy({ show_footer: e.target.checked })}
+              />
+              <span className="block text-[13.5px] text-fg">Show the footer</span>
+            </label>
+            <div className="mt-2">
+              <label className="block">
+                <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">Footer text (optional)</span>
+                <input
+                  className={inputCls}
+                  value={working.copy.footer ?? ''}
+                  placeholder={DEFAULT_PORTAL_COPY.footer}
+                  maxLength={160}
+                  onChange={e => patchCopy({ footer: e.target.value || undefined })}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
       </Card>
 
       <Card>
