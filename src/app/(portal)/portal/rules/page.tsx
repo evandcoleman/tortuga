@@ -3,6 +3,7 @@ import { getAppContext } from '@/kernel/context';
 import { getBuiltinPortalPage } from '@/modules/portal/pages';
 import { getPortalVariables } from '@/modules/portal/variables';
 import { getPortalBasePath } from '@/modules/portal/base-path';
+import { buildStuckCard } from '@/modules/portal/stuck-card';
 import { PortalContentPage } from '../_components/portal-content-page';
 
 export const dynamic = 'force-dynamic';
@@ -14,15 +15,20 @@ export default async function RulesPage() {
   if (!page) notFound();
 
   const basePath = await getPortalBasePath();
+  const { copy } = ctx.portal;
   const reportIssueHref = ctx.portal.pages.report_issue.enabled ? `${basePath}/report-issue` : null;
+  const stuckCard = buildStuckCard(copy, reportIssueHref);
+
   return (
     <PortalContentPage
       title={page.title}
-      kind="Rules"
+      eyebrow={ctx.portal.pages.rules.eyebrow}
       html={page.html}
       serverName={ctx.config.newsletter.from.name}
       homeHref={basePath || '/'}
-      reportIssueHref={reportIssueHref}
+      tocHeading={copy.tocHeading}
+      backLabel={copy.backLabel}
+      stuckCard={stuckCard}
     />
   );
 }

@@ -1,14 +1,14 @@
+import type { PortalConfig, PortalEntry } from '@/kernel/config/schema';
 import type { ResolvedPortalConfig } from '@/kernel/config/portal';
+import { substituteTokens } from '@/modules/templates/substitute';
 import {
+  DEFAULT_PORTAL_ENTRIES,
   GETTING_STARTED_MARKDOWN,
-  GETTING_STARTED_TITLE,
   RULES_MARKDOWN,
-  RULES_TITLE,
   REPORT_ISSUE_MARKDOWN,
-  REPORT_ISSUE_TITLE,
 } from './copy';
 import { renderPortalMarkdown } from './render';
-import type { PortalVariables } from './variables';
+import { toPortalTokens, type PortalVariables } from './variables';
 
 export type BuiltinPortalPageKey = 'getting_started' | 'rules' | 'report_issue';
 
@@ -18,16 +18,18 @@ export interface PortalPageContent {
   html: string;
 }
 
-const BUILTIN_PAGES: Record<BuiltinPortalPageKey, { title: string; defaultMarkdown: string }> = {
-  getting_started: { title: GETTING_STARTED_TITLE, defaultMarkdown: GETTING_STARTED_MARKDOWN },
-  rules: { title: RULES_TITLE, defaultMarkdown: RULES_MARKDOWN },
-  report_issue: { title: REPORT_ISSUE_TITLE, defaultMarkdown: REPORT_ISSUE_MARKDOWN },
+const BUILTIN_DEFAULT_MARKDOWN: Record<BuiltinPortalPageKey, string> = {
+  getting_started: GETTING_STARTED_MARKDOWN,
+  rules: RULES_MARKDOWN,
+  report_issue: REPORT_ISSUE_MARKDOWN,
 };
 
 /**
  * Resolves one of the three built-in content pages. Returns `null` when the
  * page is disabled (callers should 404). A configured `markdown` override
- * *replaces* the default body entirely — no append mode, per spec.
+ * *replaces* the default body entirely — no append mode, per spec. Title
+ * comes from the already-resolved (and token-substituted) `portal.pages`
+ * config — resolution already applied the default/override fallback.
  */
 export function getBuiltinPortalPage(
   key: BuiltinPortalPageKey,
@@ -37,26 +39,40 @@ export function getBuiltinPortalPage(
   const page = portal.pages[key];
   if (!page.enabled) return null;
 
-  const def = BUILTIN_PAGES[key];
-  const markdown = page.markdown && page.markdown.trim().length > 0 ? page.markdown : def.defaultMarkdown;
-  return { title: def.title, html: renderPortalMarkdown(markdown, vars) };
+  const defaultMarkdown = BUILTIN_DEFAULT_MARKDOWN[key];
+  const markdown = page.markdown && page.markdown.trim().length > 0 ? page.markdown : defaultMarkdown;
+  return { title: page.title, html: renderPortalMarkdown(markdown, vars) };
 }
 
 /**
- * Resolves a custom `page`-type entry by slug. Returns `null` when there's
- * no such entry (callers should 404) — custom entries have no `enabled`
- * flag; being present in the list is enough. Markdown bodies go through the
- * same substitution + markdown pipeline as built-ins; `html` bodies are
- * rendered verbatim (admin-authored, trusted — no substitution).
+ * The full configured entry list, unfiltered — includes hidden rows and
+ * rows for disabled/unset built-ins. Mirrors `resolvePortalConfig`'s
+ * `entries ?? [...DEFAULT_PORTAL_ENTRIES, ...custom]` fallback (kernel
+ * doesn't expose this unfiltered list itself, since its resolved `entries`
+ * is visible-rows-only — see docs/specs/2026-09-01-portal-copy-and-index.md
+ * §1, "hidden pages still serve at their slug").
+ */
+function allConfiguredEntries(portal: PortalConfig): PortalEntry[] {
+  return portal.entries ?? [...DEFAULT_PORTAL_ENTRIES, ...portal.custom];
+}
+
+/**
+ * Resolves a custom `page`-type entry by slug, from the raw (unresolved)
+ * portal config — so hidden custom pages still serve at their slug even
+ * though they're dropped from `ResolvedPortalConfig.entries`. Returns `null`
+ * when there's no such entry (callers should 404). Markdown bodies go
+ * through the same substitution + markdown pipeline as built-ins; `html`
+ * bodies are rendered verbatim (admin-authored, trusted — no substitution).
  */
 export function getCustomPortalPage(
-  portal: ResolvedPortalConfig,
+  rawPortal: PortalConfig,
   slug: string,
   vars: PortalVariables,
 ): PortalPageContent | null {
-  const entry = portal.custom.find((e) => e.type === 'page' && e.slug === slug);
+  const entry = allConfiguredEntries(rawPortal).find((e) => e.type === 'page' && e.slug === slug);
   if (!entry || entry.type !== 'page') return null;
 
+  const title = substituteTokens(entry.label, toPortalTokens(vars));
   const html = entry.markdown ? renderPortalMarkdown(entry.markdown, vars) : (entry.html ?? '');
-  return { title: entry.label, html };
+  return { title, html };
 }

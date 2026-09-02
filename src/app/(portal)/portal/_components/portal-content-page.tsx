@@ -1,26 +1,34 @@
 import Link from 'next/link';
 import { splitLead, addHeadingIds } from '@/modules/portal/render';
 import { ArrowLeftIcon } from '@/modules/portal/icons';
+import type { PortalStuckCard } from '@/modules/portal/stuck-card';
 import { PortalHeaderRow } from './portal-header-row';
-
-export type PortalPageKind = 'Guide' | 'Rules' | 'Help' | 'Page';
 
 export interface PortalContentPageProps {
   title: string;
-  kind: PortalPageKind;
+  /** The eyebrow label above the title (page's configured/default eyebrow, or the custom-page eyebrow). */
+  eyebrow: string;
   /** Already-rendered HTML (substitution + markdown, or admin-authored HTML — both trusted). */
   html: string;
   serverName: string;
   homeHref: string;
-  /**
-   * Href for the "Stuck?" card's report-issue link, or `null` to hide the
-   * card entirely (report-issue disabled, or this *is* the report-issue page).
-   */
-  reportIssueHref: string | null;
+  tocHeading: string;
+  backLabel: string;
+  /** `null` hides the "Stuck?" card entirely (report_issue disabled, `show_stuck_card` false, or this *is* the report-issue page). */
+  stuckCard: PortalStuckCard | null;
 }
 
 /** Shared masthead chrome for the three built-in content pages and custom pages. */
-export function PortalContentPage({ title, kind, html, serverName, homeHref, reportIssueHref }: PortalContentPageProps) {
+export function PortalContentPage({
+  title,
+  eyebrow,
+  html,
+  serverName,
+  homeHref,
+  tocHeading,
+  backLabel,
+  stuckCard,
+}: PortalContentPageProps) {
   const { lead, rest } = splitLead(html);
   const { html: body, toc } = addHeadingIds(rest);
 
@@ -35,7 +43,7 @@ export function PortalContentPage({ title, kind, html, serverName, homeHref, rep
             style={{ color: 'var(--portal-muted)' }}
           >
             <ArrowLeftIcon width={16} height={16} />
-            <span>Back to index</span>
+            <span>{backLabel}</span>
           </Link>
         }
       />
@@ -45,7 +53,7 @@ export function PortalContentPage({ title, kind, html, serverName, homeHref, rep
         style={{ borderBottom: '1px solid var(--portal-rule)' }}
       >
         <span className="text-xs tracking-[0.15em]" style={{ color: 'var(--portal-accent)' }}>
-          {kind}
+          {eyebrow}
         </span>
         <h1
           className="m-0 text-[44px] leading-[0.95] font-semibold tracking-[-0.03em] sm:text-[96px]"
@@ -63,7 +71,7 @@ export function PortalContentPage({ title, kind, html, serverName, homeHref, rep
       </div>
 
       <div className="grid grid-cols-1 gap-10 py-12 sm:py-16 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-24">
-        {toc.length > 0 || reportIssueHref ? (
+        {toc.length > 0 || stuckCard ? (
           <div className="flex flex-col gap-0 lg:sticky lg:top-8 lg:self-start">
             {toc.length > 0 ? (
               <>
@@ -71,7 +79,7 @@ export function PortalContentPage({ title, kind, html, serverName, homeHref, rep
                   className="pb-3 text-xs tracking-[0.15em] uppercase"
                   style={{ color: 'var(--portal-muted)' }}
                 >
-                  On this page
+                  {tocHeading}
                 </span>
                 {toc.map((entry) => (
                   <a
@@ -85,7 +93,7 @@ export function PortalContentPage({ title, kind, html, serverName, homeHref, rep
                 ))}
               </>
             ) : null}
-            {reportIssueHref ? (
+            {stuckCard ? (
               <div
                 className="mt-8 flex flex-col gap-2 p-5"
                 style={{
@@ -95,13 +103,13 @@ export function PortalContentPage({ title, kind, html, serverName, homeHref, rep
                 }}
               >
                 <span className="text-lg" style={{ fontFamily: 'var(--portal-font-heading)' }}>
-                  Stuck?
+                  {stuckCard.title}
                 </span>
                 <span className="text-sm leading-relaxed" style={{ color: 'var(--portal-muted)' }}>
-                  Report an issue and include what you were trying to watch.
+                  {stuckCard.body}
                 </span>
-                <Link href={reportIssueHref} className="text-sm" style={{ color: 'var(--portal-accent)' }}>
-                  Report an issue →
+                <Link href={stuckCard.href} className="text-sm" style={{ color: 'var(--portal-accent)' }}>
+                  {stuckCard.linkLabel} →
                 </Link>
               </div>
             ) : null}

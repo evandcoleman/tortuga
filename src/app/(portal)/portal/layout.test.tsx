@@ -28,7 +28,11 @@ vi.mock('@/kernel/auth/require-admin-session', () => ({
 import PortalLayout from './layout';
 
 const baseCtx = {
-  portal: { enabled: true, appearance: undefined },
+  portal: {
+    enabled: true,
+    appearance: undefined,
+    copy: { showFooter: true, footer: 'Powered by Tortuga', tabTitle: 'Test Server' },
+  },
   config: {
     newsletter: {
       theme: 'classic',
@@ -104,5 +108,23 @@ describe('PortalLayout host-aware auth/enabled gating', () => {
     expect(notFound).not.toHaveBeenCalled();
     expect(html).toContain('child');
     expect(html.toLowerCase()).not.toContain('portal is disabled');
+  });
+
+  it('renders the configured footer text when show_footer is true', async () => {
+    getAppContext.mockReturnValue(baseCtx);
+    headersGet.mockReturnValue('1');
+    const element = await PortalLayout({ children: <div>child</div> });
+    const html = renderToStaticMarkup(element);
+    expect(html).toContain('Powered by Tortuga');
+  });
+
+  it('omits the footer entirely when show_footer is false', async () => {
+    const ctx = { ...baseCtx, portal: { ...baseCtx.portal, copy: { ...baseCtx.portal.copy, showFooter: false } } };
+    getAppContext.mockReturnValue(ctx);
+    headersGet.mockReturnValue('1');
+    const element = await PortalLayout({ children: <div>child</div> });
+    const html = renderToStaticMarkup(element);
+    expect(html).not.toContain('<footer');
+    expect(html).not.toContain('Powered by Tortuga');
   });
 });

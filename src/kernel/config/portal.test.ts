@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolvePortalConfig } from './portal';
 import { PortalConfigSchema } from './schema';
-import { buildHomeButtons } from '@/modules/portal/home-buttons';
 
 const SERVER_NAME = 'Orpheus';
 
@@ -51,17 +50,38 @@ describe('resolvePortalConfig', () => {
 });
 
 describe('resolvePortalConfig entries', () => {
-  it('default entry list is equivalent to buildHomeButtons for the same input, in the same order', () => {
+  it('default entry list matches the six spec-default rows verbatim', () => {
     const portal = PortalConfigSchema.parse({
       links: { request_url: 'https://req.example', status_url: 'https://status.example' },
     });
     const resolved = resolvePortalConfig(portal, undefined, SERVER_NAME);
-    const buttons = buildHomeButtons(resolvePortalConfig(portal), SERVER_NAME);
 
-    expect(resolved.entries.map((e) => e.label)).toEqual(buttons.map((b) => b.label));
-    expect(resolved.entries.map((e) => e.href)).toEqual(buttons.map((b) => b.href));
-    expect(resolved.entries.map((e) => e.external)).toEqual(buttons.map((b) => b.external));
-    expect(resolved.entries.map((e) => e.description)).toEqual(buttons.map((b) => b.description));
+    expect(resolved.entries.map((e) => e.label)).toEqual([
+      'Getting started',
+      'House rules',
+      'Open Plex',
+      'Make a request',
+      'Server status',
+      'Report an issue',
+    ]);
+    expect(resolved.entries.map((e) => e.description)).toEqual([
+      'Accept the invite, install an app, pick Orpheus, press play.',
+      'Short, and mostly about not sharing your login.',
+      'Watch in the browser at app.plex.tv.',
+      'Missing a movie or a show? Ask for it.',
+      'Check here first if nothing will play.',
+      "Wrong language, missing episodes, won't play.",
+    ]);
+    expect(resolved.entries.map((e) => e.href)).toEqual([
+      'getting-started',
+      'rules',
+      'https://app.plex.tv',
+      'https://req.example',
+      'https://status.example',
+      'report-issue',
+    ]);
+    expect(resolved.entries.map((e) => e.external)).toEqual([false, false, true, true, true, false]);
+    expect(resolved.entries.map((e) => e.number)).toEqual(['01', '02', '03', '04', '05', '06']);
   });
 
   it('default list is the six built-in rows in spec order, numbered 01-06', () => {

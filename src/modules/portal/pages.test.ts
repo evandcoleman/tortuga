@@ -40,11 +40,9 @@ describe('getBuiltinPortalPage', () => {
 
 describe('getCustomPortalPage', () => {
   it('renders a markdown custom page through substitution + markdown', () => {
-    const portal = resolvePortalConfig(
-      PortalConfigSchema.parse({
-        custom: [{ type: 'page', slug: 'faq', label: 'FAQ', markdown: 'Hi from {{server_name}}.' }],
-      }),
-    );
+    const portal = PortalConfigSchema.parse({
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ', markdown: 'Hi from {{server_name}}.' }],
+    });
     const page = getCustomPortalPage(portal, 'faq', vars);
     expect(page).not.toBeNull();
     expect(page!.title).toBe('FAQ');
@@ -52,24 +50,46 @@ describe('getCustomPortalPage', () => {
   });
 
   it('renders an html custom page verbatim, with no substitution', () => {
-    const portal = resolvePortalConfig(
-      PortalConfigSchema.parse({
-        custom: [{ type: 'page', slug: 'faq', label: 'FAQ', html: '<p>Raw {{server_name}}</p>' }],
-      }),
-    );
+    const portal = PortalConfigSchema.parse({
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ', html: '<p>Raw {{server_name}}</p>' }],
+    });
     const page = getCustomPortalPage(portal, 'faq', vars);
     expect(page!.html).toBe('<p>Raw {{server_name}}</p>');
   });
 
   it('returns null for an unknown slug', () => {
-    const portal = resolvePortalConfig(PortalConfigSchema.parse({}));
+    const portal = PortalConfigSchema.parse({});
     expect(getCustomPortalPage(portal, 'nope', vars)).toBeNull();
   });
 
   it('returns null for a link-type entry slug lookup (links have no slug/page)', () => {
-    const portal = resolvePortalConfig(
-      PortalConfigSchema.parse({ custom: [{ type: 'link', label: 'Wiki', url: 'https://wiki.example' }] }),
-    );
+    const portal = PortalConfigSchema.parse({ custom: [{ type: 'link', label: 'Wiki', url: 'https://wiki.example' }] });
     expect(getCustomPortalPage(portal, 'wiki', vars)).toBeNull();
+  });
+
+  it('still serves a hidden custom page (from legacy `custom`) at its slug', () => {
+    const portal = PortalConfigSchema.parse({
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ', markdown: 'hi', hidden: true }],
+    });
+    const page = getCustomPortalPage(portal, 'faq', vars);
+    expect(page).not.toBeNull();
+    expect(page!.title).toBe('FAQ');
+  });
+
+  it('still serves a hidden custom page defined via the new `entries` list', () => {
+    const portal = PortalConfigSchema.parse({
+      entries: [{ type: 'page', slug: 'faq', label: 'FAQ', markdown: 'hi', hidden: true }],
+    });
+    const page = getCustomPortalPage(portal, 'faq', vars);
+    expect(page).not.toBeNull();
+    expect(page!.title).toBe('FAQ');
+  });
+
+  it('substitutes tokens into the custom page title', () => {
+    const portal = PortalConfigSchema.parse({
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ for {{server_name}}', markdown: 'hi' }],
+    });
+    const page = getCustomPortalPage(portal, 'faq', vars);
+    expect(page!.title).toBe('FAQ for Olympus');
   });
 });

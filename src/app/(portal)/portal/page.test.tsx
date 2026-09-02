@@ -52,12 +52,62 @@ describe('PortalHome (masthead index)', () => {
   });
 
   it('renders the masthead H1 as "{server_name}." and includes row descriptions', async () => {
-    const portal = resolvePortalConfig(PortalConfigSchema.parse({}));
+    const portal = resolvePortalConfig(PortalConfigSchema.parse({}), undefined, 'Orpheus');
     getAppContext.mockReturnValue(ctxWith(portal));
 
     const html = renderToStaticMarkup(await PortalHome());
 
     expect(html).toContain('Orpheus.');
     expect(html).toContain('Accept the invite, install an app, pick Orpheus, press play.');
+  });
+
+  it('renders rows in configured order, honoring custom labels and hiding a disabled row', async () => {
+    const portal = resolvePortalConfig(
+      PortalConfigSchema.parse({
+        entries: [
+          { type: 'builtin_page', page: 'rules', label: 'Ground Rules' },
+          { type: 'builtin_page', page: 'getting_started', hidden: true },
+          { type: 'builtin_link', link: 'plex' },
+        ],
+      }),
+      undefined,
+      'Orpheus',
+    );
+    getAppContext.mockReturnValue(ctxWith(portal));
+
+    const html = renderToStaticMarkup(await PortalHome());
+    const rowOrder = [...html.matchAll(/data-testid="portal-home-row"/g)].length;
+
+    expect(rowOrder).toBe(2);
+    expect(html).toContain('Ground Rules');
+    expect(html).not.toContain('Getting started');
+    // Ground Rules (rules) comes before Open Plex in document order.
+    expect(html.indexOf('Ground Rules')).toBeLessThan(html.indexOf('Open Plex'));
+  });
+
+  it('renders the tagline and intro from resolved copy', async () => {
+    const portal = resolvePortalConfig(
+      PortalConfigSchema.parse({ copy: { tagline: 'Custom tagline', intro: 'Custom intro.' } }),
+    );
+    getAppContext.mockReturnValue(ctxWith(portal));
+
+    const html = renderToStaticMarkup(await PortalHome());
+
+    expect(html).toContain('Custom tagline');
+    expect(html).toContain('Custom intro.');
+  });
+
+  it('escapes HTML in an entry label instead of injecting it', async () => {
+    const portal = resolvePortalConfig(
+      PortalConfigSchema.parse({
+        entries: [{ type: 'builtin_page', page: 'rules', label: '<b>Rules</b>' }],
+      }),
+    );
+    getAppContext.mockReturnValue(ctxWith(portal));
+
+    const html = renderToStaticMarkup(await PortalHome());
+
+    expect(html).not.toContain('<b>Rules</b>');
+    expect(html).toContain('&lt;b&gt;Rules&lt;/b&gt;');
   });
 });

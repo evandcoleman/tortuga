@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getAppContext } from '@/kernel/context';
@@ -6,6 +7,11 @@ import { PORTAL_HOST_HEADER } from '@/modules/portal/constants';
 import { resolvePortalTheme, portalThemeCssVars } from '@/modules/portal/theme';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const ctx = getAppContext();
+  return { title: ctx.portal.copy.tabTitle };
+}
 
 /**
  * Shared chrome for every portal page: theme CSS variables from
@@ -45,6 +51,7 @@ export default async function PortalLayout({ children }: { children: React.React
   const cssVars = portalThemeCssVars(theme);
   const serverName = ctx.config.newsletter.from.name;
   const isDisabledPreview = !ctx.portal.enabled;
+  const { showFooter, footer } = ctx.portal.copy;
 
   return (
     <div
@@ -71,16 +78,18 @@ export default async function PortalLayout({ children }: { children: React.React
       <main className="flex-1">
         <div className="mx-auto max-w-[1440px] px-6 sm:px-12 lg:px-24">{children}</div>
       </main>
-      <footer>
-        <div
-          className="mx-auto flex max-w-[1440px] justify-between px-6 py-6 text-xs sm:px-12 lg:px-24"
-          style={{ color: 'var(--portal-muted)' }}
-        >
-          <span className="hidden sm:inline">{serverName}</span>
-          <span className="hidden sm:inline">Powered by Tortuga</span>
-          <span className="mx-auto sm:hidden">{serverName} · Powered by Tortuga</span>
-        </div>
-      </footer>
+      {showFooter ? (
+        <footer>
+          <div
+            className="mx-auto flex max-w-[1440px] justify-between px-6 py-6 text-xs sm:px-12 lg:px-24"
+            style={{ color: 'var(--portal-muted)' }}
+          >
+            <span className="hidden sm:inline">{serverName}</span>
+            <span className="hidden sm:inline">{footer}</span>
+            <span className="mx-auto sm:hidden">{serverName} · {footer}</span>
+          </div>
+        </footer>
+      ) : null}
     </div>
   );
 }

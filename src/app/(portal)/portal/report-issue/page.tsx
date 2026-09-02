@@ -14,14 +14,17 @@ export default async function ReportIssuePage() {
   if (!page) notFound();
 
   const basePath = await getPortalBasePath();
+  const { copy } = ctx.portal;
   return (
     <PortalContentPage
       title={page.title}
-      kind="Help"
+      eyebrow={ctx.portal.pages.report_issue.eyebrow}
       html={page.html}
       serverName={ctx.config.newsletter.from.name}
       homeHref={basePath || '/'}
-      reportIssueHref={null}
+      tocHeading={copy.tocHeading}
+      backLabel={copy.backLabel}
+      stuckCard={null}
     />
   );
 }
