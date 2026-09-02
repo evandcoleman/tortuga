@@ -60,12 +60,15 @@ preferences, and suppression at send time. Pending sends are listed on
 the compose page with edit and cancel; missed sends fire on the next tick
 with no cutoff. Spec: `docs/specs/2026-09-02-scheduled-announcements.md`.
 
-### 5. Transactional templates library
-Reusable templates for the recurring one-offs: "server is back up",
-password help, removal notice. The core engine (DB templates, variables,
-editor) shipped with item #1; what remains is the library: more seeded
-templates, drafts, clone-previous-send, and a send-from-template flow in
-compose.
+### ✅ 5. Transactional templates library — shipped 2026-09-02
+Three seeded library templates (server is back up, password help, removal
+notice), tracked once per slug so deletions stick. Compose can start from
+a template and every announcement substitutes {{name}}, {{email}}, and
+{{server_name}} per recipient at send time. History has "Use as starting
+point" to clone a previous send into the composer. Drafts were dropped in
+favour of scheduling and templates; compose stays announcement-only, so a
+transactional (preference-bypassing) send is not built. Spec:
+`docs/specs/2026-09-02-templates-library.md`.
 
 ## Later
 
