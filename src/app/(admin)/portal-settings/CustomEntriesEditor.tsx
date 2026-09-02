@@ -20,6 +20,8 @@ function emptyPage(): PortalCustomEntry {
   return { type: 'page', slug: '', label: '', markdown: '' };
 }
 
+const MAX_DESCRIPTION_LENGTH = 140;
+
 /**
  * Add/remove/reorder editor for `portal.custom` entries. Each entry is either
  * an external `link` (home-grid button only) or a `page` (slug + label + a
@@ -138,6 +140,18 @@ function CustomEntryRow({
           </label>
         )}
       </div>
+
+      <label className="mt-2 block">
+        <span className="mb-1 block text-[11px] font-medium uppercase tracking-[0.1em] text-faint">
+          Description <span className="normal-case text-faint/70">(optional, shown on the home index)</span>
+        </span>
+        <input
+          className={inputCls}
+          value={entry.description ?? ''}
+          maxLength={MAX_DESCRIPTION_LENGTH}
+          onChange={e => onChange({ description: e.target.value || undefined })}
+        />
+      </label>
 
       {entry.type === 'page' ? (
         <PageBodyEditor entry={entry} bodyId={bodyId} onChange={onChange} />

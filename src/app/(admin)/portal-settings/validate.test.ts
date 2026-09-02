@@ -88,6 +88,38 @@ describe('validatePortalConfig', () => {
     expect(r.ok).toBe(true);
   });
 
+  it('round-trips an optional description on a custom link entry', () => {
+    const r = validatePortalConfig({
+      ...valid,
+      custom: [{ type: 'link', label: 'Wiki', url: 'https://wiki.example.com', description: 'Community-run wiki.' }],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const entry = r.config.custom[0];
+      expect(entry.type === 'link' && entry.description).toBe('Community-run wiki.');
+    }
+  });
+
+  it('round-trips an optional description on a custom page entry', () => {
+    const r = validatePortalConfig({
+      ...valid,
+      custom: [{ type: 'page', slug: 'faq', label: 'FAQ', markdown: 'hi', description: 'Answers to common questions.' }],
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const entry = r.config.custom[0];
+      expect(entry.type === 'page' && entry.description).toBe('Answers to common questions.');
+    }
+  });
+
+  it('rejects a description over 140 characters', () => {
+    const r = validatePortalConfig({
+      ...valid,
+      custom: [{ type: 'link', label: 'Wiki', url: 'https://wiki.example.com', description: 'x'.repeat(141) }],
+    });
+    expect(r.ok).toBe(false);
+  });
+
   it('rejects an invalid domain (empty string)', () => {
     const r = validatePortalConfig({ ...valid, domain: '' });
     expect(r.ok).toBe(false);

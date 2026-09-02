@@ -121,6 +121,7 @@ export const PortalCustomLinkSchema = z.object({
   type: z.literal('link'),
   label: z.string().min(1),
   url: z.string().url(),
+  description: z.string().max(140).optional(),
 }).strict();
 
 export const PortalCustomPageSchema = z.object({
@@ -129,6 +130,7 @@ export const PortalCustomPageSchema = z.object({
   label: z.string().min(1),
   markdown: z.string().optional(),
   html: z.string().optional(),
+  description: z.string().max(140).optional(),
 }).strict();
 
 export const PortalCustomEntrySchema = z.discriminatedUnion('type', [
