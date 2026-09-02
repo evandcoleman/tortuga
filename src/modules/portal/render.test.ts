@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderPortalMarkdown } from './render';
+import { renderPortalMarkdown, splitLead, addHeadingIds } from './render';
 import type { PortalVariables } from './variables';
 
 const vars: PortalVariables = {
@@ -24,5 +24,64 @@ describe('renderPortalMarkdown', () => {
   it('leaves unknown variables literal rather than crashing', () => {
     const html = renderPortalMarkdown('{{not_a_real_var}}', vars);
     expect(html).toContain('{{not_a_real_var}}');
+  });
+});
+
+describe('splitLead', () => {
+  it('pulls out a leading paragraph as the lead', () => {
+    const { lead, rest } = splitLead('<p>Intro text.</p><h2>Next</h2><p>Body.</p>');
+    expect(lead).toBe('Intro text.');
+    expect(rest).toBe('<h2>Next</h2><p>Body.</p>');
+  });
+
+  it('preserves inline markup inside the lead', () => {
+    const { lead } = splitLead('<p>Hi <strong>there</strong>.</p><p>More.</p>');
+    expect(lead).toBe('Hi <strong>there</strong>.');
+  });
+
+  it('returns null lead when the body does not start with a paragraph', () => {
+    const html = '<h2>Heading</h2><p>Body.</p>';
+    const { lead, rest } = splitLead(html);
+    expect(lead).toBeNull();
+    expect(rest).toBe(html);
+  });
+
+  it('returns null lead for empty html', () => {
+    const { lead, rest } = splitLead('');
+    expect(lead).toBeNull();
+    expect(rest).toBe('');
+  });
+});
+
+describe('addHeadingIds', () => {
+  it('adds slugified ids to h2 headings and builds a matching TOC', () => {
+    const html = '<h2>Recommended devices</h2><p>a</p><h2>Here for music?</h2>';
+    const { html: out, toc } = addHeadingIds(html);
+    expect(out).toContain('<h2 id="recommended-devices">Recommended devices</h2>');
+    expect(out).toContain('<h2 id="here-for-music">Here for music?</h2>');
+    expect(toc).toEqual([
+      { id: 'recommended-devices', text: 'Recommended devices' },
+      { id: 'here-for-music', text: 'Here for music?' },
+    ]);
+  });
+
+  it('de-dupes repeated heading text', () => {
+    const html = '<h2>Notes</h2><h2>Notes</h2>';
+    const { toc } = addHeadingIds(html);
+    expect(toc.map((t) => t.id)).toEqual(['notes', 'notes-1']);
+  });
+
+  it('strips inline markup from heading text before slugifying', () => {
+    const html = '<h2>Here for <em>music</em>?</h2>';
+    const { toc } = addHeadingIds(html);
+    expect(toc[0].id).toBe('here-for-music');
+    expect(toc[0].text).toBe('Here for music?');
+  });
+
+  it('leaves html with no h2s unchanged and returns an empty toc', () => {
+    const html = '<p>No headings here.</p>';
+    const { html: out, toc } = addHeadingIds(html);
+    expect(out).toBe(html);
+    expect(toc).toEqual([]);
   });
 });

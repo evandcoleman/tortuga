@@ -15,5 +15,14 @@ export default async function CustomPortalPage({ params }: { params: Promise<{ s
   if (!page) notFound();
 
   const basePath = await getPortalBasePath();
-  return <PortalContentPage title={page.title} html={page.html} homeHref={basePath || '/'} />;
+  const reportIssueHref = ctx.portal.pages.report_issue.enabled ? `${basePath}/report-issue` : null;
+  return (
+    <PortalContentPage
+      title={page.title}
+      kind="Page"
+      html={page.html}
+      homeHref={basePath || '/'}
+      reportIssueHref={reportIssueHref}
+    />
+  );
 }

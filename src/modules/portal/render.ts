@@ -11,3 +11,65 @@ export function renderPortalMarkdown(markdown: string, vars: PortalVariables): s
   const substituted = substituteTokens(markdown, toPortalTokens(vars));
   return renderMarkdown(substituted);
 }
+
+export interface SplitLeadResult {
+  /** The rendered HTML of the first `<p>`, if the body starts with one — `null` otherwise. */
+  lead: string | null;
+  /** The remainder of the body with the lead paragraph removed (unchanged when there's no lead). */
+  rest: string;
+}
+
+const LEADING_P_RE = /^\s*<p>([\s\S]*?)<\/p>\s*/;
+
+/**
+ * Pulls the first paragraph out of rendered HTML for use as a masthead
+ * italic intro line — but only when the body actually starts with one (a
+ * page that opens with a heading or list gets no intro line).
+ */
+export function splitLead(html: string): SplitLeadResult {
+  const match = html.match(LEADING_P_RE);
+  if (!match) return { lead: null, rest: html };
+  return { lead: match[1], rest: html.slice(match[0].length) };
+}
+
+export interface TocEntry {
+  id: string;
+  text: string;
+}
+
+export interface AddHeadingIdsResult {
+  html: string;
+  toc: TocEntry[];
+}
+
+const H2_RE = /<h2(?:\s[^>]*)?>([\s\S]*?)<\/h2>/g;
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/<[^>]+>/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'section';
+}
+
+/**
+ * Adds `id` attributes to every `<h2>` in rendered HTML (slugified from its
+ * text, de-duped when headings repeat) and returns a table of contents built
+ * from the same headings, in document order.
+ */
+export function addHeadingIds(html: string): AddHeadingIdsResult {
+  const seen = new Map<string, number>();
+  const toc: TocEntry[] = [];
+
+  const result = html.replace(H2_RE, (fullMatch, inner: string) => {
+    const text = inner.replace(/<[^>]+>/g, '').trim();
+    const base = slugify(text);
+    const count = seen.get(base) ?? 0;
+    seen.set(base, count + 1);
+    const id = count === 0 ? base : `${base}-${count}`;
+    toc.push({ id, text });
+    return fullMatch.replace(/^<h2/, `<h2 id="${id}"`);
+  });
+
+  return { html: result, toc };
+}

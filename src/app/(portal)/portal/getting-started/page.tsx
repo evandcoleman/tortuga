@@ -14,5 +14,14 @@ export default async function GettingStartedPage() {
   if (!page) notFound();
 
   const basePath = await getPortalBasePath();
-  return <PortalContentPage title={page.title} html={page.html} homeHref={basePath || '/'} />;
+  const reportIssueHref = ctx.portal.pages.report_issue.enabled ? `${basePath}/report-issue` : null;
+  return (
+    <PortalContentPage
+      title={page.title}
+      kind="Guide"
+      html={page.html}
+      homeHref={basePath || '/'}
+      reportIssueHref={reportIssueHref}
+    />
+  );
 }

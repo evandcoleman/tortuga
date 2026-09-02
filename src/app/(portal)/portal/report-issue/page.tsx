@@ -14,5 +14,13 @@ export default async function ReportIssuePage() {
   if (!page) notFound();
 
   const basePath = await getPortalBasePath();
-  return <PortalContentPage title={page.title} html={page.html} homeHref={basePath || '/'} />;
+  return (
+    <PortalContentPage
+      title={page.title}
+      kind="Help"
+      html={page.html}
+      homeHref={basePath || '/'}
+      reportIssueHref={null}
+    />
+  );
 }
