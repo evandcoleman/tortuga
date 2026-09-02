@@ -76,7 +76,7 @@ export function getAppContext(): AppContext {
     config.newsletter,
   );
   const scheduler = createScheduler();
-  const portal = resolvePortalConfig(config.portal, config.newsletter.extras);
+  const portal = resolvePortalConfig(config.portal, config.newsletter.extras, config.newsletter.from.name);
   cached = { env, config, db, tautulli, tmdb, maintainerr, plex, email, llm, scheduler, portal };
   return cached;
 }

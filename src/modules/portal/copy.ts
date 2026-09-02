@@ -63,6 +63,66 @@ export const RULES_MARKDOWN = `A few ground rules so **{{server_name}}** stays g
 
 Thanks for keeping things running smoothly.`;
 
+// ---------------------------------------------------------------------------
+// Home index + chrome copy defaults — docs/specs/2026-09-01-portal-copy-and-index.md
+// §§1-3. These are the fallback strings `resolvePortalConfig` substitutes in
+// whenever the admin hasn't overridden the corresponding `portal.entries` /
+// `portal.pages.*` / `portal.copy` field. Kept verbatim from what
+// `buildHomeButtons` and the page renderers hard-coded before this spec.
+// ---------------------------------------------------------------------------
+
+import type { PortalEntry } from '@/kernel/config/schema';
+
+/** The home index shown when `portal.entries` is unset, in spec order. */
+export const DEFAULT_PORTAL_ENTRIES: PortalEntry[] = [
+  { type: 'builtin_page', page: 'getting_started', hidden: false },
+  { type: 'builtin_page', page: 'rules', hidden: false },
+  { type: 'builtin_link', link: 'plex', hidden: false },
+  { type: 'builtin_link', link: 'request', hidden: false },
+  { type: 'builtin_link', link: 'status', hidden: false },
+  { type: 'builtin_page', page: 'report_issue', hidden: false },
+];
+
+export interface DefaultEntryCopy {
+  label: string;
+  description: string;
+}
+
+export const DEFAULT_BUILTIN_PAGE_COPY: Record<'getting_started' | 'rules' | 'report_issue', DefaultEntryCopy> = {
+  getting_started: {
+    label: 'Getting started',
+    description: 'Accept the invite, install an app, pick {{server_name}}, press play.',
+  },
+  rules: {
+    label: 'House rules',
+    description: 'Short, and mostly about not sharing your login.',
+  },
+  report_issue: {
+    label: 'Report an issue',
+    description: "Wrong language, missing episodes, won't play.",
+  },
+};
+
+export const DEFAULT_BUILTIN_LINK_COPY: Record<'plex' | 'request' | 'status', DefaultEntryCopy> = {
+  plex: {
+    label: 'Open Plex',
+    description: 'Watch in the browser at app.plex.tv.',
+  },
+  request: {
+    label: 'Make a request',
+    description: 'Missing a movie or a show? Ask for it.',
+  },
+  status: {
+    label: 'Server status',
+    description: 'Check here first if nothing will play.',
+  },
+};
+
+export interface DefaultPageCopy {
+  title: string;
+  eyebrow: string;
+}
+
 export const REPORT_ISSUE_TITLE = 'Report an issue';
 
 export const REPORT_ISSUE_MARKDOWN = `Something not playing right, missing, or broken? Here's how to report it.
@@ -85,3 +145,36 @@ outside of a specific title is broken — reach out directly instead of using
 the request flow above.
 
 There's no form here: everything routes through {{request_label}}.`;
+
+export const DEFAULT_PAGE_COPY: Record<'getting_started' | 'rules' | 'report_issue', DefaultPageCopy> = {
+  getting_started: { title: GETTING_STARTED_TITLE, eyebrow: 'Guide' },
+  rules: { title: RULES_TITLE, eyebrow: 'Rules' },
+  report_issue: { title: REPORT_ISSUE_TITLE, eyebrow: 'Help' },
+};
+
+export interface DefaultPortalCopy {
+  tagline: string;
+  intro: string;
+  tab_title: string;
+  toc_heading: string;
+  stuck_title: string;
+  stuck_body: string;
+  stuck_link_label: string;
+  back_label: string;
+  footer: string;
+  custom_page_eyebrow: string;
+}
+
+/** Default chrome copy — docs/specs/2026-09-01-portal-copy-and-index.md §3, table. */
+export const DEFAULT_PORTAL_COPY: DefaultPortalCopy = {
+  tagline: 'A private server for friends and family',
+  intro: 'Everything you need to get set up, find your way around, and get help when something breaks.',
+  tab_title: '{{server_name}}',
+  toc_heading: 'On this page',
+  stuck_title: 'Stuck?',
+  stuck_body: 'Report an issue and include what you were trying to watch.',
+  stuck_link_label: 'Report an issue',
+  back_label: 'Back to index',
+  footer: 'Powered by Tortuga',
+  custom_page_eyebrow: 'Page',
+};

@@ -231,6 +231,99 @@ describe('PortalConfigSchema', () => {
     expect(cfg.custom[0]).toMatchObject({ type: 'page', slug: 'faq', html: '<p>hi</p>' });
   });
 
+  it('accepts legacy custom entries and defaults entries to undefined', () => {
+    const cfg = PortalConfigSchema.parse({
+      custom: [{ type: 'link', label: 'Wiki', url: 'https://wiki.example' }],
+    });
+    expect(cfg.entries).toBeUndefined();
+    expect(cfg.custom).toHaveLength(1);
+  });
+
+  it('round-trips hidden on custom and built-in entries', () => {
+    const cfg = PortalConfigSchema.parse({
+      entries: [
+        { type: 'builtin_page', page: 'getting_started', hidden: true },
+        { type: 'link', label: 'Wiki', url: 'https://wiki.example', hidden: true },
+      ],
+    });
+    expect(cfg.entries?.[0]).toMatchObject({ type: 'builtin_page', page: 'getting_started', hidden: true });
+    expect(cfg.entries?.[1]).toMatchObject({ type: 'link', hidden: true });
+  });
+
+  it('preserves entry order', () => {
+    const cfg = PortalConfigSchema.parse({
+      entries: [
+        { type: 'builtin_link', link: 'status' },
+        { type: 'builtin_page', page: 'rules' },
+        { type: 'link', label: 'Wiki', url: 'https://wiki.example' },
+      ],
+    });
+    expect(cfg.entries?.map((e) => e.type)).toEqual(['builtin_link', 'builtin_page', 'link']);
+  });
+
+  it('rejects a duplicate built-in page entry', () => {
+    expect(() => PortalConfigSchema.parse({
+      entries: [
+        { type: 'builtin_page', page: 'rules' },
+        { type: 'builtin_page', page: 'rules' },
+      ],
+    })).toThrow();
+  });
+
+  it('rejects a duplicate built-in link entry', () => {
+    expect(() => PortalConfigSchema.parse({
+      entries: [
+        { type: 'builtin_link', link: 'plex' },
+        { type: 'builtin_link', link: 'plex' },
+      ],
+    })).toThrow();
+  });
+
+  it('rejects a duplicate custom page slug within entries', () => {
+    expect(() => PortalConfigSchema.parse({
+      entries: [
+        { type: 'page', slug: 'faq', label: 'FAQ', markdown: 'a' },
+        { type: 'page', slug: 'faq', label: 'FAQ2', markdown: 'b' },
+      ],
+    })).toThrow();
+  });
+
+  it('allows the same built-in to appear via entries and default list independently (no cross-list dedupe)', () => {
+    // Sanity: a single builtin_page/builtin_link of each kind is fine, mixed with customs.
+    const cfg = PortalConfigSchema.parse({
+      entries: [
+        { type: 'builtin_page', page: 'getting_started' },
+        { type: 'builtin_link', link: 'plex' },
+        { type: 'link', label: 'Wiki', url: 'https://wiki.example' },
+      ],
+    });
+    expect(cfg.entries).toHaveLength(3);
+  });
+
+  it('accepts title/eyebrow on a built-in page config', () => {
+    const cfg = PortalConfigSchema.parse({
+      pages: { getting_started: { title: 'Welcome', eyebrow: 'Start here' } },
+    });
+    expect(cfg.pages.getting_started.title).toBe('Welcome');
+    expect(cfg.pages.getting_started.eyebrow).toBe('Start here');
+  });
+
+  it('defaults portal.copy booleans to true and leaves strings unset', () => {
+    const cfg = PortalConfigSchema.parse({});
+    expect(cfg.copy.show_stuck_card).toBe(true);
+    expect(cfg.copy.show_footer).toBe(true);
+    expect(cfg.copy.tagline).toBeUndefined();
+  });
+
+  it('parses an explicit portal.copy override', () => {
+    const cfg = PortalConfigSchema.parse({
+      copy: { tagline: 'Custom tagline', show_footer: false },
+    });
+    expect(cfg.copy.tagline).toBe('Custom tagline');
+    expect(cfg.copy.show_footer).toBe(false);
+    expect(cfg.copy.show_stuck_card).toBe(true);
+  });
+
   it('leaves appearance undefined by default and parses an explicit theme + overrides', () => {
     expect(PortalConfigSchema.parse({}).appearance).toBeUndefined();
     const cfg = PortalConfigSchema.parse({

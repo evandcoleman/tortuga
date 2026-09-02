@@ -122,6 +122,7 @@ export const PortalCustomLinkSchema = z.object({
   label: z.string().min(1),
   url: z.string().url(),
   description: z.string().max(140).optional(),
+  hidden: z.boolean().optional(),
 }).strict();
 
 export const PortalCustomPageSchema = z.object({
@@ -131,6 +132,7 @@ export const PortalCustomPageSchema = z.object({
   markdown: z.string().optional(),
   html: z.string().optional(),
   description: z.string().max(140).optional(),
+  hidden: z.boolean().optional(),
 }).strict();
 
 export const PortalCustomEntrySchema = z.discriminatedUnion('type', [
@@ -139,37 +141,124 @@ export const PortalCustomEntrySchema = z.discriminatedUnion('type', [
 ]);
 export type PortalCustomEntry = z.infer<typeof PortalCustomEntrySchema>;
 
+/** The three built-in content pages an `entries` row may point at via `builtin_page`. */
+export const PORTAL_BUILTIN_PAGES = ['getting_started', 'rules', 'report_issue'] as const;
+/** The three built-in external/derived links an `entries` row may point at via `builtin_link`. */
+export const PORTAL_BUILTIN_LINKS = ['plex', 'request', 'status'] as const;
+
+export const PortalBuiltinPageEntrySchema = z.object({
+  type: z.literal('builtin_page'),
+  page: z.enum(PORTAL_BUILTIN_PAGES),
+  label: z.string().min(1).optional(),
+  description: z.string().max(140).optional(),
+  hidden: z.boolean().optional(),
+}).strict();
+
+export const PortalBuiltinLinkEntrySchema = z.object({
+  type: z.literal('builtin_link'),
+  link: z.enum(PORTAL_BUILTIN_LINKS),
+  label: z.string().min(1).optional(),
+  description: z.string().max(140).optional(),
+  hidden: z.boolean().optional(),
+}).strict();
+
+export const PortalEntrySchema = z.discriminatedUnion('type', [
+  PortalBuiltinPageEntrySchema,
+  PortalBuiltinLinkEntrySchema,
+  PortalCustomLinkSchema,
+  PortalCustomPageSchema,
+]);
+export type PortalEntry = z.infer<typeof PortalEntrySchema>;
+
+/** `page`-type entries must set exactly one of markdown/html, and custom slugs must be unique within the list. */
+function validatePageEntryRules(entries: readonly PortalEntry[], ctx: z.RefinementCtx): void {
+  const seenSlugs = new Set<string>();
+  entries.forEach((entry, idx) => {
+    if (entry.type !== 'page') return;
+    const hasMarkdown = typeof entry.markdown === 'string' && entry.markdown.length > 0;
+    const hasHtml = typeof entry.html === 'string' && entry.html.length > 0;
+    if (hasMarkdown === hasHtml) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'custom page entries must set exactly one of markdown or html',
+        path: [idx, hasMarkdown ? 'html' : 'markdown'],
+      });
+    }
+    if (seenSlugs.has(entry.slug)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `duplicate custom page slug: ${entry.slug}`,
+        path: [idx, 'slug'],
+      });
+    }
+    seenSlugs.add(entry.slug);
+  });
+}
+
+/** Each built-in page/link may appear at most once across an entry list. */
+function validateBuiltinEntryRules(entries: readonly PortalEntry[], ctx: z.RefinementCtx): void {
+  const seenPages = new Set<string>();
+  const seenLinks = new Set<string>();
+  entries.forEach((entry, idx) => {
+    if (entry.type === 'builtin_page') {
+      if (seenPages.has(entry.page)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `duplicate built-in page entry: ${entry.page}`,
+          path: [idx, 'page'],
+        });
+      }
+      seenPages.add(entry.page);
+    } else if (entry.type === 'builtin_link') {
+      if (seenLinks.has(entry.link)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `duplicate built-in link entry: ${entry.link}`,
+          path: [idx, 'link'],
+        });
+      }
+      seenLinks.add(entry.link);
+    }
+  });
+}
+
 const PortalCustomListSchema = z.array(PortalCustomEntrySchema)
   .default([])
+  .superRefine(validatePageEntryRules);
+
+/** The ordered home-index list. Absent means "use the default six built-ins" (see `resolvePortalConfig`). */
+const PortalEntryListSchema = z.array(PortalEntrySchema)
   .superRefine((entries, ctx) => {
-    const seenSlugs = new Set<string>();
-    entries.forEach((entry, idx) => {
-      if (entry.type !== 'page') return;
-      const hasMarkdown = typeof entry.markdown === 'string' && entry.markdown.length > 0;
-      const hasHtml = typeof entry.html === 'string' && entry.html.length > 0;
-      if (hasMarkdown === hasHtml) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'custom page entries must set exactly one of markdown or html',
-          path: [idx, hasMarkdown ? 'html' : 'markdown'],
-        });
-      }
-      if (seenSlugs.has(entry.slug)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `duplicate custom page slug: ${entry.slug}`,
-          path: [idx, 'slug'],
-        });
-      }
-      seenSlugs.add(entry.slug);
-    });
-  });
+    validatePageEntryRules(entries, ctx);
+    validateBuiltinEntryRules(entries, ctx);
+  })
+  .optional();
 
 export const PortalPageConfigSchema = z.object({
   enabled: z.boolean().default(true),
   markdown: z.string().nullish(),
+  title: z.string().min(1).max(80).optional(),
+  eyebrow: z.string().min(1).max(80).optional(),
 }).strict();
 const defaultPortalPage = () => ({ enabled: true, markdown: null });
+
+/** Chrome copy shown around the portal — see docs/specs/2026-09-01-portal-copy-and-index.md §3. Every string is optional; unset falls back to today's hard-coded text at resolution time. */
+export const PortalCopySchema = z.object({
+  tagline: z.string().max(160).optional(),
+  intro: z.string().max(400).optional(),
+  tab_title: z.string().max(160).optional(),
+  toc_heading: z.string().max(80).optional(),
+  stuck_title: z.string().max(80).optional(),
+  stuck_body: z.string().max(300).optional(),
+  stuck_link_label: z.string().max(80).optional(),
+  back_label: z.string().max(80).optional(),
+  footer: z.string().max(160).optional(),
+  custom_page_eyebrow: z.string().max(80).optional(),
+  show_stuck_card: z.boolean().default(true),
+  show_footer: z.boolean().default(true),
+}).strict();
+export type PortalCopy = z.infer<typeof PortalCopySchema>;
+const defaultPortalCopy = () => ({ show_stuck_card: true, show_footer: true });
 
 /**
  * Portal-specific appearance: a preset theme id plus overrides, mirroring the
@@ -205,6 +294,8 @@ export const PortalConfigSchema = z.object({
     report_issue: defaultPortalPage(),
   })),
   custom: PortalCustomListSchema,
+  entries: PortalEntryListSchema,
+  copy: PortalCopySchema.default(defaultPortalCopy),
   appearance: PortalAppearanceSchema.optional(),
 }).strict();
 export type PortalConfig = z.infer<typeof PortalConfigSchema>;
