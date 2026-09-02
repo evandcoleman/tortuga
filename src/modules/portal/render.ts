@@ -58,15 +58,30 @@ const NAMED_ENTITIES: Record<string, string> = {
  * and hex references) so React doesn't double-escape them when the text is
  * rendered as a plain string.
  */
+function isValidCodePoint(code: number): boolean {
+  return Number.isInteger(code) && code > 0 && code <= 0x10ffff && (code < 0xd800 || code > 0xdfff);
+}
+
+function decodeNumericEntity(fullMatch: string, code: number): string {
+  if (!isValidCodePoint(code)) {
+    return fullMatch;
+  }
+  try {
+    return String.fromCodePoint(code);
+  } catch {
+    return fullMatch;
+  }
+}
+
 function decodeHtmlEntities(text: string): string {
   return text.replace(/&(#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);/g, (fullMatch, entity: string) => {
     if (entity.startsWith('#x') || entity.startsWith('#X')) {
       const code = parseInt(entity.slice(2), 16);
-      return Number.isNaN(code) ? fullMatch : String.fromCodePoint(code);
+      return Number.isNaN(code) ? fullMatch : decodeNumericEntity(fullMatch, code);
     }
     if (entity.startsWith('#')) {
       const code = parseInt(entity.slice(1), 10);
-      return Number.isNaN(code) ? fullMatch : String.fromCodePoint(code);
+      return Number.isNaN(code) ? fullMatch : decodeNumericEntity(fullMatch, code);
     }
     return NAMED_ENTITIES[entity] ?? fullMatch;
   });

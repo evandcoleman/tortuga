@@ -97,4 +97,11 @@ describe('addHeadingIds', () => {
     expect(toc[0].text).toBe("Foo & Bar's");
     expect(toc[0].id).toBe('foo-amp-bar-39-s');
   });
+
+  it('leaves out-of-range numeric character references untouched instead of throwing', () => {
+    const html = '<h2>Bad &#99999999999; and &#x110000; refs</h2>';
+    expect(() => addHeadingIds(html)).not.toThrow();
+    const { toc } = addHeadingIds(html);
+    expect(toc[0].text).toBe('Bad &#99999999999; and &#x110000; refs');
+  });
 });
