@@ -96,24 +96,35 @@
  */
 .portal-prose {
   line-height: 1.7;
-  font-size: 1rem;
+  font-size: 17px;
+  color: var(--portal-muted);
 }
 .portal-prose > * + * {
-  margin-top: 1.1em;
+  margin-top: 0.9em;
 }
 .portal-prose h1,
 .portal-prose h2,
 .portal-prose h3 {
   font-family: var(--portal-font-heading);
   font-weight: 600;
-  line-height: 1.25;
-  margin-top: 1.6em;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--portal-ink);
 }
+/* "Masthead" section rhythm: every h2 opens a new section with a hairline
+   above it and generous top padding, per the content-page mock. */
 .portal-prose h2 {
-  font-size: 1.4rem;
+  font-size: 30px;
+  margin-top: 3em;
+  padding-top: 48px;
+  border-top: 1px solid var(--portal-rule);
+}
+.portal-prose h2:first-child {
+  margin-top: 0;
 }
 .portal-prose h3 {
   font-size: 1.15rem;
+  margin-top: 1.6em;
 }
 .portal-prose a {
   color: var(--portal-accent);
@@ -135,6 +146,7 @@
 }
 .portal-prose strong {
   font-weight: 600;
+  color: var(--portal-ink);
 }
 .portal-prose blockquote {
   border-left: 2px solid var(--portal-rule);

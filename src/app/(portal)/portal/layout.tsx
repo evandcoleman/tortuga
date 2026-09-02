@@ -68,25 +68,30 @@ export default async function PortalLayout({ children }: { children: React.React
           Portal is disabled — this is a preview
         </div>
       ) : null}
-      <header style={{ borderBottom: '1px solid var(--portal-hairline)' }}>
-        <div className="mx-auto max-w-3xl px-6 py-6 sm:px-10">
+      <header>
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 pt-7 sm:px-12 lg:px-24">
           <span
-            className="text-sm font-semibold tracking-[0.08em] uppercase"
+            className="text-[13px] tracking-[0.3em] uppercase"
             style={{ color: 'var(--portal-muted)', fontFamily: 'var(--portal-font-heading)' }}
           >
-            {serverName}
+            {serverName} · Plex
+          </span>
+          <span className="hidden text-[13px] sm:inline" style={{ color: 'var(--portal-muted)' }}>
+            A private server for friends and family
           </span>
         </div>
       </header>
       <main className="flex-1">
-        <div className="mx-auto max-w-3xl px-6 py-12 sm:px-10">{children}</div>
+        <div className="mx-auto max-w-[1440px] px-6 sm:px-12 lg:px-24">{children}</div>
       </main>
-      <footer style={{ borderTop: '1px solid var(--portal-hairline)' }}>
+      <footer>
         <div
-          className="mx-auto max-w-3xl px-6 py-6 text-center text-xs sm:px-10"
+          className="mx-auto flex max-w-[1440px] justify-between px-6 py-6 text-xs sm:px-12 lg:px-24"
           style={{ color: 'var(--portal-muted)' }}
         >
-          Powered by {serverName}
+          <span className="hidden sm:inline">{serverName}</span>
+          <span className="hidden sm:inline">Powered by Tortuga</span>
+          <span className="mx-auto sm:hidden">{serverName} · Powered by Tortuga</span>
         </div>
       </footer>
     </div>
