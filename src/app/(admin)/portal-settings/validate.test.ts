@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { PortalConfigSchema } from '@/kernel/config/schema';
 import { DEFAULT_PORTAL_ENTRIES } from '@/modules/portal/copy';
+import { buildRawEntries } from '@/kernel/config/portal';
 import { validatePortalConfig, deriveInitialEntries } from './validate';
 
 const valid = PortalConfigSchema.parse({
@@ -260,5 +261,13 @@ describe('deriveInitialEntries', () => {
   it('falls back to defaults + legacy custom when entries is unset', () => {
     const custom = [{ type: 'link' as const, label: 'Wiki', url: 'https://wiki.example.com' }];
     expect(deriveInitialEntries({ entries: undefined, custom })).toEqual([...DEFAULT_PORTAL_ENTRIES, ...custom]);
+  });
+
+  it('matches the kernel\'s buildRawEntries for a legacy-custom config, so the two cannot silently drift', () => {
+    const legacyConfig = PortalConfigSchema.parse({
+      ...valid,
+      custom: [{ type: 'link', label: 'Wiki', url: 'https://wiki.example.com' }],
+    });
+    expect(deriveInitialEntries(legacyConfig)).toEqual(buildRawEntries(legacyConfig));
   });
 });

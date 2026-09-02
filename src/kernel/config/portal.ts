@@ -127,7 +127,7 @@ function resolveCopy(copy: PortalConfig['copy'], substitute: (value: string) => 
 }
 
 /** `entries ?? [...DEFAULT_PORTAL_ENTRIES, ...custom]`, per spec §1. */
-function buildRawEntries(portal: PortalConfig): PortalEntry[] {
+export function buildRawEntries(portal: PortalConfig): PortalEntry[] {
   if (portal.entries) return portal.entries;
   return [...DEFAULT_PORTAL_ENTRIES, ...portal.custom];
 }

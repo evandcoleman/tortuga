@@ -3,10 +3,11 @@
 import { PORTAL_BUILTIN_LINKS, PORTAL_BUILTIN_PAGES, type PortalEntry } from '@/kernel/config/schema';
 import { DEFAULT_BUILTIN_LINK_COPY, DEFAULT_BUILTIN_PAGE_COPY } from '@/modules/portal/copy';
 import { IndexEntryRow } from './IndexEntryRow';
+import type { IndexEntryRowState } from './entryRows';
 
 interface IndexEditorProps {
-  value: PortalEntry[];
-  onChange: (next: PortalEntry[]) => void;
+  value: IndexEntryRowState[];
+  onChange: (next: IndexEntryRowState[]) => void;
   errors: Record<string, string>;
 }
 
@@ -30,56 +31,68 @@ const addButtonCls =
  * whichever built-ins aren't already in the list.
  */
 export function IndexEditor({ value, onChange, errors }: IndexEditorProps) {
-  function update(index: number, patch: Partial<PortalEntry>) {
-    const next = value.map((entry, i) => (i === index ? ({ ...entry, ...patch } as PortalEntry) : entry));
+  function update(id: string, patch: Partial<PortalEntry>) {
+    const next = value.map(row => (row.id === id ? { ...row, entry: { ...row.entry, ...patch } as PortalEntry } : row));
     onChange(next);
   }
 
-  function remove(index: number) {
-    onChange(value.filter((_, i) => i !== index));
+  function remove(id: string) {
+    onChange(value.filter(row => row.id !== id));
   }
 
-  function move(index: number, dir: -1 | 1) {
+  function move(id: string, dir: -1 | 1) {
+    const index = value.findIndex(row => row.id === id);
     const target = index + dir;
-    if (target < 0 || target >= value.length) return;
+    if (index < 0 || target < 0 || target >= value.length) return;
     const next = [...value];
     [next[index], next[target]] = [next[target], next[index]];
     onChange(next);
   }
 
-  const presentPages = new Set(value.filter(e => e.type === 'builtin_page').map(e => e.page));
-  const presentLinks = new Set(value.filter(e => e.type === 'builtin_link').map(e => e.link));
+  const entries = value.map(row => row.entry);
+  const presentPages = new Set(entries.filter(e => e.type === 'builtin_page').map(e => e.page));
+  const presentLinks = new Set(entries.filter(e => e.type === 'builtin_link').map(e => e.link));
   const missingPages = PORTAL_BUILTIN_PAGES.filter(page => !presentPages.has(page));
   const missingLinks = PORTAL_BUILTIN_LINKS.filter(link => !presentLinks.has(link));
 
   return (
     <div className="grid gap-3">
-      {value.map((entry, index) => (
+      {value.map((row, index) => (
         <IndexEntryRow
-          key={index}
-          entry={entry}
+          key={row.id}
+          entry={row.entry}
           index={index}
           total={value.length}
           error={errors[String(index)]}
-          onChange={patch => update(index, patch)}
-          onRemove={() => remove(index)}
-          onMoveUp={() => move(index, -1)}
-          onMoveDown={() => move(index, 1)}
+          onChange={patch => update(row.id, patch)}
+          onRemove={() => remove(row.id)}
+          onMoveUp={() => move(row.id, -1)}
+          onMoveDown={() => move(row.id, 1)}
         />
       ))}
 
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={() => onChange([...value, emptyLink()])} className={addButtonCls}>
+        <button
+          type="button"
+          onClick={() => onChange([...value, { id: crypto.randomUUID(), entry: emptyLink() }])}
+          className={addButtonCls}
+        >
           + Add link
         </button>
-        <button type="button" onClick={() => onChange([...value, emptyPage()])} className={addButtonCls}>
+        <button
+          type="button"
+          onClick={() => onChange([...value, { id: crypto.randomUUID(), entry: emptyPage() }])}
+          className={addButtonCls}
+        >
           + Add page
         </button>
         {missingPages.map(page => (
           <button
             key={page}
             type="button"
-            onClick={() => onChange([...value, { type: 'builtin_page', page, hidden: false }])}
+            onClick={() =>
+              onChange([...value, { id: `builtin_page:${page}`, entry: { type: 'builtin_page', page, hidden: false } }])
+            }
             className={addButtonCls}
           >
             + Add {DEFAULT_BUILTIN_PAGE_COPY[page].label}
@@ -89,7 +102,9 @@ export function IndexEditor({ value, onChange, errors }: IndexEditorProps) {
           <button
             key={link}
             type="button"
-            onClick={() => onChange([...value, { type: 'builtin_link', link, hidden: false }])}
+            onClick={() =>
+              onChange([...value, { id: `builtin_link:${link}`, entry: { type: 'builtin_link', link, hidden: false } }])
+            }
             className={addButtonCls}
           >
             + Add {DEFAULT_BUILTIN_LINK_COPY[link].label}

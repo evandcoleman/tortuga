@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
-import type { PortalConfig, PortalCopy, PortalEntry, PortalPageConfigSchema } from '@/kernel/config/schema';
+import type { PortalConfig, PortalCopy, PortalPageConfigSchema } from '@/kernel/config/schema';
 import { z } from 'zod';
 import { DEFAULT_PAGE_COPY, DEFAULT_PORTAL_COPY } from '@/modules/portal/copy';
 import { Button, Card, CardHeader } from '../_components/ui';
@@ -10,16 +10,18 @@ import { savePortalSettings, revertPortalSettings, type SaveState } from './acti
 import { IndexEditor } from './IndexEditor';
 import { PortalAppearanceEditor } from './PortalAppearanceEditor';
 import { deriveInitialEntries } from './validate';
+import { toEntries, toEntryRows, type IndexEntryRowState } from './entryRows';
 
 type PortalPageConfig = z.infer<typeof PortalPageConfigSchema>;
 
 /**
  * Form working state. Same shape as `PortalConfig` except `entries` is always
- * a concrete array (the form has already applied the legacy `custom` merge by
- * the time it mounts — see `deriveInitialEntries`), so the editor never has to
- * handle the "entries is unset" case itself.
+ * a concrete array of id-tagged rows (the form has already applied the legacy
+ * `custom` merge by the time it mounts — see `deriveInitialEntries` — and
+ * assigned each row a stable id — see `toEntryRows`), so the editor never has
+ * to handle the "entries is unset" case, or key rows by array index, itself.
  */
-type PortalFormState = Omit<PortalConfig, 'entries'> & { entries: PortalEntry[] };
+type PortalFormState = Omit<PortalConfig, 'entries'> & { entries: IndexEntryRowState[] };
 
 const inputCls =
   'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
@@ -32,14 +34,17 @@ const BUILT_IN_PAGES: Array<{ key: 'getting_started' | 'rules' | 'report_issue';
   { key: 'report_issue', label: 'Report an Issue', hint: 'Points visitors at the request service’s issue flow.' },
 ];
 
-/** Builds form state from a `PortalConfig`, applying the legacy `custom` → `entries` merge on load (see spec §1). */
+/**
+ * Builds form state from a `PortalConfig`, applying the legacy `custom` → `entries`
+ * merge on load (see spec §1) and assigning each row a stable id for the editor.
+ */
 function toFormState(config: PortalConfig): PortalFormState {
-  return { ...config, entries: deriveInitialEntries(config) };
+  return { ...config, entries: toEntryRows(deriveInitialEntries(config)) };
 }
 
-/** Builds the save candidate: `entries` always wins, and `custom` is dropped rather than round-tripped stale. */
+/** Builds the save candidate: `entries` always wins (ids stripped), and `custom` is dropped rather than round-tripped stale. */
 function toCandidate(form: PortalFormState): PortalConfig {
-  return { ...form, custom: [] };
+  return { ...form, entries: toEntries(form.entries), custom: [] };
 }
 
 export function PortalForm({ config }: { config: PortalConfig }) {

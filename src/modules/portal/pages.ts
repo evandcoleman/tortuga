@@ -1,12 +1,7 @@
-import type { PortalConfig, PortalEntry } from '@/kernel/config/schema';
-import type { ResolvedPortalConfig } from '@/kernel/config/portal';
+import type { PortalConfig } from '@/kernel/config/schema';
+import { buildRawEntries, type ResolvedPortalConfig } from '@/kernel/config/portal';
 import { substituteTokens } from '@/modules/templates/substitute';
-import {
-  DEFAULT_PORTAL_ENTRIES,
-  GETTING_STARTED_MARKDOWN,
-  RULES_MARKDOWN,
-  REPORT_ISSUE_MARKDOWN,
-} from './copy';
+import { GETTING_STARTED_MARKDOWN, RULES_MARKDOWN, REPORT_ISSUE_MARKDOWN } from './copy';
 import { renderPortalMarkdown } from './render';
 import { toPortalTokens, type PortalVariables } from './variables';
 
@@ -45,18 +40,6 @@ export function getBuiltinPortalPage(
 }
 
 /**
- * The full configured entry list, unfiltered — includes hidden rows and
- * rows for disabled/unset built-ins. Mirrors `resolvePortalConfig`'s
- * `entries ?? [...DEFAULT_PORTAL_ENTRIES, ...custom]` fallback (kernel
- * doesn't expose this unfiltered list itself, since its resolved `entries`
- * is visible-rows-only — see docs/specs/2026-09-01-portal-copy-and-index.md
- * §1, "hidden pages still serve at their slug").
- */
-function allConfiguredEntries(portal: PortalConfig): PortalEntry[] {
-  return portal.entries ?? [...DEFAULT_PORTAL_ENTRIES, ...portal.custom];
-}
-
-/**
  * Resolves a custom `page`-type entry by slug, from the raw (unresolved)
  * portal config — so hidden custom pages still serve at their slug even
  * though they're dropped from `ResolvedPortalConfig.entries`. Returns `null`
@@ -69,7 +52,7 @@ export function getCustomPortalPage(
   slug: string,
   vars: PortalVariables,
 ): PortalPageContent | null {
-  const entry = allConfiguredEntries(rawPortal).find((e) => e.type === 'page' && e.slug === slug);
+  const entry = buildRawEntries(rawPortal).find((e) => e.type === 'page' && e.slug === slug);
   if (!entry || entry.type !== 'page') return null;
 
   const title = substituteTokens(entry.label, toPortalTokens(vars));
