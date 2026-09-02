@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Card, CardHeader } from '../_components/ui';
 import { RecipientChecklist } from './RecipientChecklist';
 import { SendMessageButton } from './SendMessageButton';
+import { ScheduleSection, type ScheduleEditingInfo } from './ScheduleSection';
 import {
   previewAnnouncement,
   sendAnnouncementToRecipients,
@@ -17,19 +18,36 @@ interface Recipient {
   name: string;
 }
 
+export interface MessageComposerEditing extends ScheduleEditingInfo {
+  subject: string;
+  body: string;
+  recipientEmails: string[];
+}
+
 interface MessageComposerProps {
   recipients: Recipient[];
   /** Signed-in admin's email (or ADMIN_EMAIL fallback), may be empty. Display-only —
    * the server resolves the real test recipient from the session, ignoring this. */
   defaultTestEmail: string;
+  /** The configured newsletter timezone, shown next to the schedule time input. */
+  timezone: string;
+  /** When set, the composer edits an existing scheduled announcement instead of composing a new one. */
+  editing?: MessageComposerEditing;
 }
 
 type SendOutcome = { sent: number; failed: number; announcementId: string };
 
-export function MessageComposer({ recipients, defaultTestEmail }: MessageComposerProps) {
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(recipients.map(r => r.email)));
+export function MessageComposer({ recipients, defaultTestEmail, timezone, editing }: MessageComposerProps) {
+  const [subject, setSubject] = useState(editing?.subject ?? '');
+  const [body, setBody] = useState(editing?.body ?? '');
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    const active = recipients.map(r => r.email);
+    if (!editing) return new Set(active);
+    // Drop stored recipients that went inactive since scheduling so the
+    // checklist count and the server's active-recipient check agree.
+    const activeSet = new Set(active);
+    return new Set(editing.recipientEmails.filter(email => activeSet.has(email)));
+  });
 
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -200,37 +218,47 @@ export function MessageComposer({ recipients, defaultTestEmail }: MessageCompose
           </div>
         </Card>
 
-        <Card>
-          <CardHeader title="Send" description="Delivers to every selected recipient. This cannot be undone." />
-          <div className="flex flex-col gap-2">
-            <SendMessageButton
-              recipientCount={selected.size}
-              disabled={!canSend}
-              isSending={isSending}
-              onConfirm={onSend}
-            />
-            {sendError ? <span className="text-[12px] font-medium text-red-600">{sendError}</span> : null}
-            {sendOutcome ? (
-              <div className="rounded-md bg-elevated px-3 py-2.5 text-[12.5px] text-fg ring-1 ring-inset ring-line">
-                <div>
-                  Sent to <strong>{sendOutcome.sent}</strong>
-                  {sendOutcome.failed > 0 ? (
-                    <>
-                      {' '}
-                      · <strong className="text-danger">{sendOutcome.failed} failed</strong>
-                    </>
-                  ) : null}
+        {editing ? null : (
+          <Card>
+            <CardHeader title="Send" description="Delivers to every selected recipient. This cannot be undone." />
+            <div className="flex flex-col gap-2">
+              <SendMessageButton
+                recipientCount={selected.size}
+                disabled={!canSend}
+                isSending={isSending}
+                onConfirm={onSend}
+              />
+              {sendError ? <span className="text-[12px] font-medium text-red-600">{sendError}</span> : null}
+              {sendOutcome ? (
+                <div className="rounded-md bg-elevated px-3 py-2.5 text-[12.5px] text-fg ring-1 ring-inset ring-line">
+                  <div>
+                    Sent to <strong>{sendOutcome.sent}</strong>
+                    {sendOutcome.failed > 0 ? (
+                      <>
+                        {' '}
+                        · <strong className="text-danger">{sendOutcome.failed} failed</strong>
+                      </>
+                    ) : null}
+                  </div>
+                  <Link
+                    href={`/messages/history/${sendOutcome.announcementId}`}
+                    className="mt-1 inline-block font-medium text-gold hover:opacity-90"
+                  >
+                    View delivery details →
+                  </Link>
                 </div>
-                <Link
-                  href={`/messages/history/${sendOutcome.announcementId}`}
-                  className="mt-1 inline-block font-medium text-gold hover:opacity-90"
-                >
-                  View delivery details →
-                </Link>
-              </div>
-            ) : null}
-          </div>
-        </Card>
+              ) : null}
+            </div>
+          </Card>
+        )}
+
+        <ScheduleSection
+          subject={subject}
+          body={body}
+          recipientEmails={selectedEmails}
+          timezone={timezone}
+          editing={editing ? { id: editing.id, wallClock: editing.wallClock } : undefined}
+        />
       </div>
     </div>
   );

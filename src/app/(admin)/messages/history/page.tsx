@@ -20,6 +20,8 @@ import {
 export const dynamic = 'force-dynamic';
 
 const STATUS_TONE: Record<string, 'neutral' | 'success' | 'warning' | 'danger'> = {
+  scheduled: 'neutral',
+  cancelled: 'neutral',
   sending: 'warning',
   sent: 'success',
   partial: 'warning',
@@ -95,7 +97,11 @@ export default function MessagesHistory() {
                     </Link>
                   </TD>
                   <TD>
-                    {a.sentAt ? (
+                    {a.status === 'cancelled' ? (
+                      <span className="text-faint">—</span>
+                    ) : a.status === 'scheduled' && a.scheduledAt ? (
+                      <div className="text-[13px] text-fg">{formatDateTime(a.scheduledAt)}</div>
+                    ) : a.sentAt ? (
                       <>
                         <div className="text-[13px] text-fg">{formatDateTime(a.sentAt)}</div>
                         <div className="text-[11.5px] text-subtle">{formatRelative(a.sentAt)}</div>

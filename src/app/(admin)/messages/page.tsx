@@ -2,8 +2,11 @@ import Link from 'next/link';
 import { auth } from '@/kernel/auth/auth';
 import { getAppContext } from '@/kernel/context';
 import { recipientsCache } from '@/modules/newsletter/schema';
+import { listScheduledAnnouncements } from '@/modules/announcements/pipeline/schedule';
+import { utcToWallClock } from '@/kernel/time/zoned';
 import { PageHeader } from '../_components/ui';
 import { MessageComposer } from './MessageComposer';
+import { ScheduledList } from './ScheduledList';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +29,14 @@ export default async function Messages() {
     .map(r => ({ email: r.email, name: r.name }))
     .sort((a, b) => a.email.localeCompare(b.email));
   const adminEmail = await resolveAdminEmail(ctx);
+  const timezone = ctx.config.newsletter.timezone;
+  const scheduledRows = listScheduledAnnouncements(ctx.db).map(row => ({
+    id: row.id,
+    subject: row.subject,
+    // scheduledAt is always set on rows created via schedule().
+    wallClock: utcToWallClock(row.scheduledAt as Date, timezone),
+    recipientCount: (JSON.parse(row.recipientEmails) as string[]).length,
+  }));
 
   return (
     <div>
@@ -42,7 +53,8 @@ export default async function Messages() {
           </Link>
         }
       />
-      <MessageComposer recipients={recipients} defaultTestEmail={adminEmail} />
+      <ScheduledList rows={scheduledRows} timezone={timezone} />
+      <MessageComposer recipients={recipients} defaultTestEmail={adminEmail} timezone={timezone} />
     </div>
   );
 }
