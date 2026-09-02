@@ -47,7 +47,8 @@ export async function POST(req: Request) {
     const shouldSuppress = event.type === 'complained'
       || (event.type === 'bounced' && event.bounceType === 'permanent');
     if (event.providerMessageId && shouldSuppress) {
-      suppressRecipientForSend(ctx.db, { provider: 'resend', providerMessageId: event.providerMessageId });
+      const reason = event.type === 'complained' ? 'complaint' : 'bounce';
+      suppressRecipientForSend(ctx.db, { provider: 'resend', providerMessageId: event.providerMessageId, reason });
     }
   } catch (err) {
     log.error({ err }, 'failed to process resend webhook payload');

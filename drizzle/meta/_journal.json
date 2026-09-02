@@ -85,6 +85,13 @@
       "when": 1788225184858,
       "tag": "0011_config_overrides_section",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1788388041081,
+      "tag": "0012_resubscribe_preferences",
+      "breakpoints": true
     }
   ]
 }

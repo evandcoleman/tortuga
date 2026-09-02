@@ -112,6 +112,7 @@ describe('POST /api/webhooks/mailgun', () => {
     expect(res.status).toBe(200);
     const row = db.select().from(recipientsCache).where(eq(recipientsCache.email, 'bounced@b.io')).all()[0];
     expect(row.active).toBe(false);
+    expect(row.suppressedReason).toBe('bounce');
   });
 
   it('deactivates the recipient on a complained event', async () => {
@@ -126,6 +127,7 @@ describe('POST /api/webhooks/mailgun', () => {
     expect(res.status).toBe(200);
     const row = db.select().from(recipientsCache).where(eq(recipientsCache.email, 'complained@b.io')).all()[0];
     expect(row.active).toBe(false);
+    expect(row.suppressedReason).toBe('complaint');
   });
 
   it('keeps the recipient active on a delivered event', async () => {

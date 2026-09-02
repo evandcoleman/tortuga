@@ -48,7 +48,8 @@ export async function POST(req: Request) {
         .run();
     }
     if (event.providerMessageId && SUPPRESSING_TYPES.has(event.type)) {
-      suppressRecipientForSend(ctx.db, { provider: 'mailgun', providerMessageId: event.providerMessageId });
+      const reason = event.type === 'complained' ? 'complaint' : 'bounce';
+      suppressRecipientForSend(ctx.db, { provider: 'mailgun', providerMessageId: event.providerMessageId, reason });
     }
   } catch (err) {
     log.error({ err }, 'failed to process mailgun webhook payload');

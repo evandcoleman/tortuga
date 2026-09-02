@@ -4,14 +4,17 @@ import type { Db } from '@/kernel/db/client';
 
 import { recipientsCache, sends } from './schema';
 
+export type SuppressionReason = 'bounce' | 'complaint' | 'admin';
+
 /** Deactivates a cached recipient so future digests/announcements skip them. No-op if the email isn't cached. */
-export function suppressRecipient(db: Db, email: string): void {
-  db.update(recipientsCache).set({ active: false }).where(eq(recipientsCache.email, email)).run();
+export function suppressRecipient(db: Db, email: string, reason: SuppressionReason): void {
+  db.update(recipientsCache).set({ active: false, suppressedReason: reason }).where(eq(recipientsCache.email, email)).run();
 }
 
 export interface SuppressRecipientForSendOpts {
   provider: 'resend' | 'mailgun';
   providerMessageId: string;
+  reason: SuppressionReason;
 }
 
 /**
@@ -25,5 +28,5 @@ export function suppressRecipientForSend(db: Db, opts: SuppressRecipientForSendO
     .where(and(eq(sends.providerMessageId, opts.providerMessageId), eq(sends.provider, opts.provider)))
     .get();
   if (!send) return;
-  suppressRecipient(db, send.recipientEmail);
+  suppressRecipient(db, send.recipientEmail, opts.reason);
 }

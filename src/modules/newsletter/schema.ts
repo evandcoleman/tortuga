@@ -61,6 +61,9 @@ export const recipientsCache = sqliteTable('recipients_cache', {
   // column backfills existing rows to non-null so pre-feature users are
   // grandfathered rather than flagged.
   welcomedAt: integer('welcomed_at', { mode: 'timestamp_ms' }),
+  // Only meaningful when active = false. Null on active rows and on legacy
+  // inactive rows predating this column (backfilled to 'admin' by migration).
+  suppressedReason: text('suppressed_reason').$type<'bounce' | 'complaint' | 'admin'>(),
 });
 
 export const itemsCache = sqliteTable('items_cache', {
@@ -75,4 +78,7 @@ export const unsubscribes = sqliteTable('unsubscribes', {
   email: text('email').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   usedAt: integer('used_at', { mode: 'timestamp_ms' }),
+  // Which category this token's claim opts the recipient out of. Existing
+  // rows predate this column and are backfilled to 'digest' by migration.
+  category: text('category').$type<'digest' | 'announcements'>().notNull().default('digest'),
 });

@@ -191,7 +191,11 @@ export async function deliverToRecipients(
     }
 
     const tokenStr = generateUnsubscribeToken(recipient.email, deps.sessionSecret);
-    deps.db.insert(unsubscribes).values({ token: tokenStr, email: recipient.email, createdAt: new Date() }).run();
+    // TODO(preferences slice): category is hard-coded to 'digest' until the
+    // announcement-send path threads its own category through deliverToRecipients.
+    deps.db.insert(unsubscribes).values({
+      token: tokenStr, email: recipient.email, createdAt: new Date(), category: 'digest',
+    }).run();
     const unsubscribeUrl = `${deps.appUrl}/api/unsubscribe?token=${tokenStr}`;
     const headers = listUnsubscribeHeaders(unsubscribeUrl);
 

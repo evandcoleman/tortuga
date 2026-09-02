@@ -94,6 +94,7 @@ describe('POST /api/webhooks/resend', () => {
     expect(res.status).toBe(200);
     const row = db.select().from(recipientsCache).where(eq(recipientsCache.email, 'bounced@b.io')).all()[0];
     expect(row.active).toBe(false);
+    expect(row.suppressedReason).toBe('bounce');
   });
 
   it('keeps the recipient active on a soft (Transient) bounce event', async () => {
@@ -145,6 +146,7 @@ describe('POST /api/webhooks/resend', () => {
     expect(res.status).toBe(200);
     const row = db.select().from(recipientsCache).where(eq(recipientsCache.email, 'complained@b.io')).all()[0];
     expect(row.active).toBe(false);
+    expect(row.suppressedReason).toBe('complaint');
   });
 
   it('keeps the recipient active on a delivered event', async () => {

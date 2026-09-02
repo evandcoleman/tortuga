@@ -19,14 +19,15 @@ describe('suppressRecipient', () => {
       email: 'a@b.io', name: 'A', lastSynced: new Date(), active: true,
     }).run();
 
-    suppressRecipient(db, 'a@b.io');
+    suppressRecipient(db, 'a@b.io', 'bounce');
 
     const row = db.select().from(recipientsCache).all()[0];
     expect(row.active).toBe(false);
+    expect(row.suppressedReason).toBe('bounce');
   });
 
   it('does nothing when the email is not cached', () => {
-    expect(() => suppressRecipient(db, 'missing@b.io')).not.toThrow();
+    expect(() => suppressRecipient(db, 'missing@b.io', 'bounce')).not.toThrow();
     expect(db.select().from(recipientsCache).all()).toHaveLength(0);
   });
 });
@@ -41,10 +42,11 @@ describe('suppressRecipientForSend', () => {
       providerMessageId: 'msg_abc', provider: 'mailgun', status: 'sent',
     }).run();
 
-    suppressRecipientForSend(db, { provider: 'mailgun', providerMessageId: 'msg_abc' });
+    suppressRecipientForSend(db, { provider: 'mailgun', providerMessageId: 'msg_abc', reason: 'complaint' });
 
     const row = db.select().from(recipientsCache).all()[0];
     expect(row.active).toBe(false);
+    expect(row.suppressedReason).toBe('complaint');
   });
 
   it('does nothing when no send matches the provider + message id', () => {
@@ -52,7 +54,7 @@ describe('suppressRecipientForSend', () => {
       email: 'a@b.io', name: 'A', lastSynced: new Date(), active: true,
     }).run();
 
-    expect(() => suppressRecipientForSend(db, { provider: 'mailgun', providerMessageId: 'nope' })).not.toThrow();
+    expect(() => suppressRecipientForSend(db, { provider: 'mailgun', providerMessageId: 'nope', reason: 'bounce' })).not.toThrow();
 
     const row = db.select().from(recipientsCache).all()[0];
     expect(row.active).toBe(true);
@@ -67,7 +69,7 @@ describe('suppressRecipientForSend', () => {
       providerMessageId: 'shared-id', provider: 'resend', status: 'sent',
     }).run();
 
-    suppressRecipientForSend(db, { provider: 'mailgun', providerMessageId: 'shared-id' });
+    suppressRecipientForSend(db, { provider: 'mailgun', providerMessageId: 'shared-id', reason: 'bounce' });
 
     const row = db.select().from(recipientsCache).all()[0];
     expect(row.active).toBe(true);
