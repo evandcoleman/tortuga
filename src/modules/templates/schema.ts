@@ -11,3 +11,12 @@ export const templates = sqliteTable('templates', {
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
+
+// Tracks one-shot seeding of library templates by slug: once a row exists
+// here, the corresponding library template is never re-inserted, even if an
+// admin deletes it. The `welcome` template is not tracked here — it keeps
+// its own `ON CONFLICT DO NOTHING` semantics.
+export const templateSeeds = sqliteTable('template_seeds', {
+  slug: text('slug').primaryKey(),
+  seededAt: integer('seeded_at', { mode: 'timestamp_ms' }).notNull(),
+});

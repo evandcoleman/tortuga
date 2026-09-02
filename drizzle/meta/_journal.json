@@ -99,6 +99,13 @@
       "when": 1788390371582,
       "tag": "0013_scheduled_announcements",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1788392157207,
+      "tag": "0014_template_seeds",
+      "breakpoints": true
     }
   ]
 }

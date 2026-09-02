@@ -6,8 +6,9 @@ import { createElement } from 'react';
 import type { Db } from '@/kernel/db/client';
 import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
-import { deliverToRecipients, selectDeliverableRecipients } from '@/kernel/email/deliver';
+import { deliverToRecipients, selectDeliverableRecipients, type DeliverRecipient } from '@/kernel/email/deliver';
 import type { NewsletterConfig } from '@/kernel/config/schema';
+import { substituteVariables, type TemplateVariables } from '@/modules/templates/substitute';
 
 /** The subset of NewsletterConfig this pipeline actually reads. */
 export type AnnouncementSendConfig = Pick<NewsletterConfig, 'from' | 'reply_to' | 'theme' | 'appearance'>;
@@ -79,6 +80,11 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'unknown error';
 }
 
+/** Substitution variables for a given recipient, per the "Variable substitution" spec. */
+function recipientVars(deps: SendAnnouncementDeps, recipient: DeliverRecipient): TemplateVariables {
+  return { name: recipient.name, email: recipient.email, serverName: deps.config.from.name };
+}
+
 export interface DeliverAnnouncementInput {
   announcementId: string;
   subject: string;
@@ -116,16 +122,23 @@ export async function deliverAnnouncement(
     { db: deps.db, provider: deps.provider, appUrl: deps.appUrl, sessionSecret: deps.sessionSecret },
     {
       recipients: targetRecipients,
-      subject: input.subject,
+      subject: recipient => substituteVariables(input.subject, recipientVars(deps, recipient)),
       from: deps.config.from,
       replyTo: deps.config.reply_to,
       category: 'announcements',
-      renderFor: urls => renderFn(
-        deps,
-        { subject: input.subject, body: input.body, recipientEmails: input.recipientEmails },
-        urls.unsubscribeUrl,
-        urls.preferencesUrl,
-      ),
+      renderFor: (urls, recipient) => {
+        const vars = recipientVars(deps, recipient);
+        return renderFn(
+          deps,
+          {
+            subject: substituteVariables(input.subject, vars),
+            body: substituteVariables(input.body, vars),
+            recipientEmails: input.recipientEmails,
+          },
+          urls.unsubscribeUrl,
+          urls.preferencesUrl,
+        );
+      },
       sendRow: { announcementId: input.announcementId },
     },
   );
@@ -149,10 +162,19 @@ export async function sendAnnouncement(
 ): Promise<SendAnnouncementResult> {
   const renderFn = deps.renderEmail ?? renderEmail;
   const placeholderUnsub = generateUnsubscribeToken(PLACEHOLDER_EMAIL, deps.sessionSecret);
+  const previewVars: TemplateVariables = { name: 'Preview', email: PLACEHOLDER_EMAIL, serverName: deps.config.from.name };
 
   let html: string;
   try {
-    html = await renderFn(deps, input, `${deps.appUrl}/api/unsubscribe?token=${placeholderUnsub}`);
+    html = await renderFn(
+      deps,
+      {
+        ...input,
+        subject: substituteVariables(input.subject, previewVars),
+        body: substituteVariables(input.body, previewVars),
+      },
+      `${deps.appUrl}/api/unsubscribe?token=${placeholderUnsub}`,
+    );
   } catch (e) {
     const message = errorMessage(e);
     log.error({ err: e }, 'announcement render failed');
@@ -183,14 +205,21 @@ export async function sendAnnouncement(
     deps.db.insert(unsubscribes).values({
       token: tokenStr, email: input.testRecipient, category: 'announcements', createdAt: new Date(),
     }).run();
-    const testHtml = await renderFn(deps, input, `${deps.appUrl}/api/unsubscribe?token=${tokenStr}`);
+    const testVars: TemplateVariables = { name: null, email: input.testRecipient, serverName: deps.config.from.name };
+    const testSubject = substituteVariables(input.subject, testVars);
+    const testBody = substituteVariables(input.body, testVars);
+    const testHtml = await renderFn(
+      deps,
+      { ...input, subject: testSubject, body: testBody },
+      `${deps.appUrl}/api/unsubscribe?token=${tokenStr}`,
+    );
     let sent = 0;
     let failed = 0;
     try {
       const result = await deps.provider.send({
         from: deps.config.from,
         to: input.testRecipient,
-        subject: input.subject,
+        subject: testSubject,
         html: testHtml,
         text: toPlainText(testHtml),
         replyTo: deps.config.reply_to,

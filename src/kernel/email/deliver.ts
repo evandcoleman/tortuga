@@ -41,7 +41,8 @@ export interface DeliverUrls {
 
 export interface DeliverToRecipientsArgs {
   recipients: DeliverRecipient[];
-  subject: string;
+  /** A plain string is sent to every recipient as-is; a function is resolved per recipient. */
+  subject: string | ((recipient: DeliverRecipient) => string);
   from: EmailSendOpts['from'];
   replyTo?: string;
   /** Which message category this send belongs to. Recorded on the minted unsubscribe token. */
@@ -98,10 +99,19 @@ function insertQueuedSend(
   return sendId;
 }
 
+/** Resolves a possibly per-recipient subject to a concrete string for one recipient. */
+function resolveSubject(
+  subject: DeliverToRecipientsArgs['subject'],
+  recipient: DeliverRecipient,
+): string {
+  return typeof subject === 'function' ? subject(recipient) : subject;
+}
+
 /** Sends the rendered email and records the outcome on the `sends` row. Returns the provider error, if any. */
 async function sendAndRecord(
   deps: DeliverToRecipientsDeps,
-  args: Pick<DeliverToRecipientsArgs, 'from' | 'subject' | 'replyTo'>,
+  args: Pick<DeliverToRecipientsArgs, 'from' | 'replyTo'>,
+  subject: string,
   sendId: string,
   to: string,
   html: string,
@@ -110,7 +120,7 @@ async function sendAndRecord(
   const result = await deps.provider.send({
     from: args.from,
     to,
-    subject: args.subject,
+    subject,
     html,
     text: toPlainText(html),
     replyTo: args.replyTo,
@@ -211,11 +221,13 @@ export async function deliverToRecipients(
     };
     const headers = listUnsubscribeHeaders(unsubscribeUrl);
 
+    const subject = resolveSubject(args.subject, recipient);
+
     if (mode === 'abort') {
       const html = await args.renderFor(urls, recipient);
       const sendId = insertQueuedSend(deps, recipient, args.sendRow);
       try {
-        const providerError = await sendAndRecord(deps, args, sendId, recipient.email, html, headers);
+        const providerError = await sendAndRecord(deps, args, subject, sendId, recipient.email, html, headers);
         tally = providerError ? recordFailure(tally, providerError) : recordSuccess(tally);
       } catch (e) {
         const message = errorMessage(e);
@@ -228,7 +240,7 @@ export async function deliverToRecipients(
     const sendId = insertQueuedSend(deps, recipient, args.sendRow);
     try {
       const html = await args.renderFor(urls, recipient);
-      const providerError = await sendAndRecord(deps, args, sendId, recipient.email, html, headers);
+      const providerError = await sendAndRecord(deps, args, subject, sendId, recipient.email, html, headers);
       tally = providerError ? recordFailure(tally, providerError) : recordSuccess(tally);
     } catch (e) {
       const message = errorMessage(e);

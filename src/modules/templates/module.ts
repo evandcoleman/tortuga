@@ -1,8 +1,8 @@
 import { getAppContext } from '@/kernel/context';
-import { seedWelcomeTemplate } from './seed';
+import { seedDefaultTemplates } from './seed';
 
-/** Seeds the default `welcome` template on startup. Idempotent — safe to call every boot. */
+/** Seeds the default templates (welcome plus the library) on startup. Idempotent — safe to call every boot. */
 export function registerTemplatesModule() {
   const ctx = getAppContext();
-  seedWelcomeTemplate(ctx.db);
+  seedDefaultTemplates(ctx.db);
 }

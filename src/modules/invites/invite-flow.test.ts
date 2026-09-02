@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createDb } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
 import { recipientsCache } from '@/modules/newsletter/schema';
-import { seedWelcomeTemplate } from '@/modules/templates/seed';
+import { seedDefaultTemplates } from '@/modules/templates/seed';
 import type { PlexClient, PlexResult } from '@/kernel/integrations/plex';
 import type { EmailProvider } from '@/kernel/email/types';
 
@@ -12,7 +12,7 @@ import { getInviteByEmail, markInviteCancelled } from './service';
 function makeDb() {
   const db = createDb(':memory:');
   applyMigrations(db);
-  seedWelcomeTemplate(db);
+  seedDefaultTemplates(db);
   return db;
 }
 

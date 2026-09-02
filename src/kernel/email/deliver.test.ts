@@ -233,6 +233,25 @@ describe('deliverToRecipients', () => {
     });
   });
 
+  it('resolves a function-valued subject per recipient', async () => {
+    const db = makeDb();
+    seedDigest(db, 'digest-1');
+    const provider = fakeProvider();
+    await deliverToRecipients(
+      { db, provider, appUrl: 'http://x', sessionSecret: 's'.repeat(32) },
+      {
+        recipients: [{ email: 'a@x.io', name: 'A' }, { email: 'b@x.io', name: 'B' }],
+        subject: recipient => `Hi ${recipient.name}`,
+        from,
+        renderFor: async () => '<html>hi</html>',
+        sendRow: { digestId: 'digest-1' },
+        category: 'digest',
+      },
+    );
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'a@x.io', subject: 'Hi A' }));
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'b@x.io', subject: 'Hi B' }));
+  });
+
   it('sends per-recipient List-Unsubscribe headers pointing at that recipient\'s own token URL', async () => {
     const db = makeDb();
     seedDigest(db, 'digest-1');

@@ -118,6 +118,22 @@ describe('sendScheduledAnnouncement', () => {
     expect(row.error).toBe('template exploded');
   });
 
+  it('substitutes {{name}} per recipient for a scheduled send', async () => {
+    const db = makeDb();
+    const { provider } = fakes();
+    const id = scheduleAnnouncement(db, {
+      subject: 'Hi {{name}}', body: 'Body for {{name}}', recipientEmails: ['a@x.io', 'b@x.io'], scheduledAt: new Date(),
+    });
+    const result = await sendScheduledAnnouncement(makeDeps(db, provider), id);
+    expect(result).toEqual({ outcome: 'sent', sent: 2, failed: 0 });
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'a@x.io', subject: 'Hi A', html: expect.stringContaining('Body for A'),
+    }));
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'b@x.io', subject: 'Hi B', html: expect.stringContaining('Body for B'),
+    }));
+  });
+
   it('returns skipped for an unknown id', async () => {
     const db = makeDb();
     const { provider } = fakes();

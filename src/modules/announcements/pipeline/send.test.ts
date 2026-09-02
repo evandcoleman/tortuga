@@ -199,6 +199,69 @@ describe('sendAnnouncement', () => {
     expect(rows[0].error).toBe('1 of 2 failed: bounced: mailbox full');
   });
 
+  it('substitutes {{name}} per recipient in both subject and body', async () => {
+    const db = makeDb();
+    const { provider } = fakes();
+    await sendAnnouncement(
+      { db, provider, config: baseConfig, appUrl: 'http://x', sessionSecret: 'x'.repeat(32) },
+      { subject: 'Hi {{name}}', body: 'Body for {{name}}', recipientEmails: ['a@x.io', 'b@x.io'] },
+    );
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'a@x.io', subject: 'Hi A', html: expect.stringContaining('Body for A'),
+    }));
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'b@x.io', subject: 'Hi B', html: expect.stringContaining('Body for B'),
+    }));
+  });
+
+  it('resolves {{server_name}} to config.from.name', async () => {
+    const db = makeDb();
+    const { provider } = fakes();
+    await sendAnnouncement(
+      { db, provider, config: baseConfig, appUrl: 'http://x', sessionSecret: 'x'.repeat(32) },
+      { subject: 'Update from {{server_name}}', body: 'Sent by {{server_name}}', recipientEmails: ['a@x.io'] },
+    );
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({
+      subject: 'Update from T', html: expect.stringContaining('Sent by T'),
+    }));
+  });
+
+  it('dryRun preview substitutes the Preview sample values', async () => {
+    const db = makeDb();
+    const { provider } = fakes();
+    const result = await sendAnnouncement(
+      { db, provider, config: baseConfig, appUrl: 'http://x', sessionSecret: 'x'.repeat(32) },
+      { subject: 'Hi {{name}}', body: 'Body {{email}} {{server_name}}', recipientEmails: ['a@x.io'], dryRun: true },
+    );
+    expect(result.html).toContain('preview@tortuga.local');
+    expect(result.html).toMatch(/Body\s*<a href="mailto:preview@tortuga\.local">preview@tortuga\.local<\/a> T/);
+  });
+
+  it('test send falls back to the email local part when name is unknown', async () => {
+    const db = makeDb();
+    const { provider } = fakes();
+    const result = await sendAnnouncement(
+      { db, provider, config: baseConfig, appUrl: 'http://x', sessionSecret: 'x'.repeat(32) },
+      { subject: 'Hi {{name}}', body: 'Body {{name}}', recipientEmails: [], testRecipient: 'admin@x.io' },
+    );
+    expect(result.sent).toBe(1);
+    expect(provider.send).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'admin@x.io', subject: 'Hi admin', html: expect.stringContaining('Body admin'),
+    }));
+  });
+
+  it('announcements row stores the raw subject/body with tokens', async () => {
+    const db = makeDb();
+    const { provider } = fakes();
+    await sendAnnouncement(
+      { db, provider, config: baseConfig, appUrl: 'http://x', sessionSecret: 'x'.repeat(32) },
+      { subject: 'Hi {{name}}', body: 'Body {{name}}', recipientEmails: ['a@x.io'] },
+    );
+    const [row] = db.select().from(announcements).all();
+    expect(row.subject).toBe('Hi {{name}}');
+    expect(row.body).toBe('Body {{name}}');
+  });
+
   it('skips an inactive email even if passed in', async () => {
     const db = makeDb();
     const { provider } = fakes();

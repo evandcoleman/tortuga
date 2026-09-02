@@ -10,7 +10,7 @@ import {
   UndeletableTemplateError,
   DuplicateSlugError,
 } from './service';
-import { seedWelcomeTemplate } from './seed';
+import { seedDefaultTemplates } from './seed';
 
 function makeDb() {
   const db = createDb(':memory:');
@@ -73,14 +73,14 @@ describe('templates service', () => {
 
   it('refuses to delete the seeded welcome template', () => {
     const db = makeDb();
-    seedWelcomeTemplate(db);
+    seedDefaultTemplates(db);
     expect(() => deleteTemplate(db, 'welcome')).toThrow(UndeletableTemplateError);
     expect(getTemplateBySlug(db, 'welcome')).not.toBeNull();
   });
 
   it('still allows editing the welcome template', () => {
     const db = makeDb();
-    seedWelcomeTemplate(db);
+    seedDefaultTemplates(db);
     const updated = updateTemplate(db, 'welcome', { subject: 'Custom welcome subject' });
     expect(updated?.subject).toBe('Custom welcome subject');
   });

@@ -3,9 +3,11 @@ import { eq } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { createDb, type Db } from '@/kernel/db/client';
 import { applyMigrations } from '@/kernel/db/migrate';
-import { templates } from './schema';
-import { seedWelcomeTemplate } from './seed';
+import { templates, templateSeeds } from './schema';
+import { seedWelcomeTemplate, seedDefaultTemplates, DEFAULT_TEMPLATES } from './seed';
 import { WELCOME_TEMPLATE_SLUG } from './welcome-content';
+import { LIBRARY_TEMPLATES } from './library-content';
+import { deleteTemplate } from './service';
 
 function makeDb() {
   const db = createDb(':memory:');
@@ -32,7 +34,7 @@ describe('seedWelcomeTemplate', () => {
   it('inserts the welcome template on first run', () => {
     const db = makeDb();
     seedWelcomeTemplate(db);
-    const rows = db.select().from(templates).all();
+    const rows = db.select().from(templates).where(eq(templates.slug, WELCOME_TEMPLATE_SLUG)).all();
     expect(rows).toHaveLength(1);
     expect(rows[0].slug).toBe(WELCOME_TEMPLATE_SLUG);
   });
@@ -47,7 +49,7 @@ describe('seedWelcomeTemplate', () => {
 
     seedWelcomeTemplate(db);
 
-    const after = db.select().from(templates).all();
+    const after = db.select().from(templates).where(eq(templates.slug, WELCOME_TEMPLATE_SLUG)).all();
     expect(after).toHaveLength(1);
     expect(after[0].subject).toBe('Admin-edited subject');
   });
@@ -67,8 +69,92 @@ describe('seedWelcomeTemplate', () => {
 
     expect(() => seedWelcomeTemplate(racingDb(db))).not.toThrow();
 
-    const rows = db.select().from(templates).all();
+    const rows = db.select().from(templates).where(eq(templates.slug, WELCOME_TEMPLATE_SLUG)).all();
     expect(rows).toHaveLength(1);
     expect(rows[0].subject).toBe('Winner subject');
+  });
+});
+
+describe('seedDefaultTemplates', () => {
+  it('seeds welcome plus all library templates on an empty db', () => {
+    const db = makeDb();
+    seedDefaultTemplates(db);
+
+    const rows = db.select().from(templates).all();
+    expect(rows).toHaveLength(DEFAULT_TEMPLATES.length);
+    const slugs = rows.map((row) => row.slug).sort();
+    expect(slugs).toEqual(
+      [WELCOME_TEMPLATE_SLUG, ...LIBRARY_TEMPLATES.map((t) => t.slug)].sort(),
+    );
+
+    // Every library slug (not welcome) gets a seed-tracking row.
+    const seedRows = db.select().from(templateSeeds).all();
+    expect(seedRows.map((r) => r.slug).sort()).toEqual(
+      LIBRARY_TEMPLATES.map((t) => t.slug).sort(),
+    );
+  });
+
+  it('running it again inserts nothing new', () => {
+    const db = makeDb();
+    seedDefaultTemplates(db);
+    seedDefaultTemplates(db);
+
+    const rows = db.select().from(templates).all();
+    expect(rows).toHaveLength(DEFAULT_TEMPLATES.length);
+    const seedRows = db.select().from(templateSeeds).all();
+    expect(seedRows).toHaveLength(LIBRARY_TEMPLATES.length);
+  });
+
+  it('deleting a library template then re-seeding does not restore it', () => {
+    const db = makeDb();
+    seedDefaultTemplates(db);
+
+    const deleted = deleteTemplate(db, 'password-help');
+    expect(deleted).toBe(true);
+
+    seedDefaultTemplates(db);
+
+    const row = db.select().from(templates).where(eq(templates.slug, 'password-help')).get();
+    expect(row).toBeUndefined();
+
+    // Other library templates and welcome are unaffected.
+    const rows = db.select().from(templates).all();
+    expect(rows).toHaveLength(DEFAULT_TEMPLATES.length - 1);
+  });
+
+  it('leaves an edited welcome row untouched', () => {
+    const db = makeDb();
+    seedDefaultTemplates(db);
+    db.update(templates)
+      .set({ subject: 'Admin-edited subject' })
+      .where(eq(templates.slug, WELCOME_TEMPLATE_SLUG))
+      .run();
+
+    seedDefaultTemplates(db);
+
+    const row = db.select().from(templates).where(eq(templates.slug, WELCOME_TEMPLATE_SLUG)).get();
+    expect(row?.subject).toBe('Admin-edited subject');
+  });
+
+  it('does not overwrite a library-slug row that pre-existed without a seed row, but tracks it going forward', () => {
+    const db = makeDb();
+    const now = new Date();
+    db.insert(templates).values({
+      id: createId(),
+      slug: 'password-help',
+      name: 'Custom name before seeding ever ran',
+      subject: 'Custom subject',
+      body: 'Custom body',
+      createdAt: now,
+      updatedAt: now,
+    }).run();
+
+    seedDefaultTemplates(db);
+
+    const row = db.select().from(templates).where(eq(templates.slug, 'password-help')).get();
+    expect(row?.subject).toBe('Custom subject');
+
+    const seedRow = db.select().from(templateSeeds).where(eq(templateSeeds.slug, 'password-help')).get();
+    expect(seedRow).toBeDefined();
   });
 });
