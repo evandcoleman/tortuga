@@ -21,6 +21,7 @@ export default async function CustomPortalPage({ params }: { params: Promise<{ s
       title={page.title}
       kind="Page"
       html={page.html}
+      serverName={ctx.config.newsletter.from.name}
       homeHref={basePath || '/'}
       reportIssueHref={reportIssueHref}
     />

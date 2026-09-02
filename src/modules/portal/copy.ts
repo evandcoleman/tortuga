@@ -3,7 +3,7 @@
 // through `renderPortalMarkdown` (substitution + markdown), and replaced
 // wholesale by a per-page `markdown` override when one is configured.
 
-export const GETTING_STARTED_TITLE = 'Getting Started';
+export const GETTING_STARTED_TITLE = 'Getting started';
 
 export const GETTING_STARTED_MARKDOWN = `Welcome! Here's how to get watching in a few minutes.
 
@@ -47,7 +47,7 @@ with the same account and gives you a much better listening experience than
 the general Plex app: gapless playback, better queueing, and a music-first
 interface.`;
 
-export const RULES_TITLE = 'Rules';
+export const RULES_TITLE = 'House rules';
 
 export const RULES_MARKDOWN = `A few ground rules so **{{server_name}}** stays good for everyone.
 
@@ -63,7 +63,7 @@ export const RULES_MARKDOWN = `A few ground rules so **{{server_name}}** stays g
 
 Thanks for keeping things running smoothly.`;
 
-export const REPORT_ISSUE_TITLE = 'Report an Issue';
+export const REPORT_ISSUE_TITLE = 'Report an issue';
 
 export const REPORT_ISSUE_MARKDOWN = `Something not playing right, missing, or broken? Here's how to report it.
 

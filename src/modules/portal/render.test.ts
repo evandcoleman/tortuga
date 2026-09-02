@@ -51,6 +51,12 @@ describe('splitLead', () => {
     expect(lead).toBeNull();
     expect(rest).toBe('');
   });
+
+  it('tolerates attributes on the leading <p>', () => {
+    const { lead, rest } = splitLead('<p class="x">Intro text.</p><h2>Next</h2>');
+    expect(lead).toBe('Intro text.');
+    expect(rest).toBe('<h2>Next</h2>');
+  });
 });
 
 describe('addHeadingIds', () => {
@@ -83,5 +89,12 @@ describe('addHeadingIds', () => {
     const { html: out, toc } = addHeadingIds(html);
     expect(out).toBe(html);
     expect(toc).toEqual([]);
+  });
+
+  it('decodes HTML entities in the TOC text but not in the slugified id', () => {
+    const html = "<h2>Foo &amp; Bar&#39;s</h2>";
+    const { toc } = addHeadingIds(html);
+    expect(toc[0].text).toBe("Foo & Bar's");
+    expect(toc[0].id).toBe('foo-amp-bar-39-s');
   });
 });

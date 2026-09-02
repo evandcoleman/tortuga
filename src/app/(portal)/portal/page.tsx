@@ -3,6 +3,7 @@ import { getAppContext } from '@/kernel/context';
 import { buildHomeButtons } from '@/modules/portal/home-buttons';
 import { getPortalBasePath } from '@/modules/portal/base-path';
 import { ArrowRightIcon, ArrowUpRightIcon } from '@/modules/portal/icons';
+import { PortalHeaderRow } from './_components/portal-header-row';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,14 @@ export default async function PortalHome() {
 
   return (
     <div>
+      <PortalHeaderRow
+        serverName={serverName}
+        right={
+          <span className="hidden text-[13px] sm:inline" style={{ color: 'var(--portal-muted)' }}>
+            A private server for friends and family
+          </span>
+        }
+      />
       <div className="flex flex-col gap-4 pt-16 pb-10 sm:gap-5 sm:pt-24 sm:pb-14">
         <h1
           className="m-0 text-[76px] leading-[0.92] font-semibold tracking-[-0.03em] sm:text-[148px]"

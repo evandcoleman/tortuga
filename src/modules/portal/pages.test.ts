@@ -17,7 +17,7 @@ describe('getBuiltinPortalPage', () => {
     const portal = resolvePortalConfig(PortalConfigSchema.parse({}));
     const page = getBuiltinPortalPage('getting_started', portal, vars);
     expect(page).not.toBeNull();
-    expect(page!.title).toBe('Getting Started');
+    expect(page!.title).toBe('Getting started');
     expect(page!.html).toContain('Olympus');
   });
 

@@ -20,6 +20,7 @@ export default async function GettingStartedPage() {
       title={page.title}
       kind="Guide"
       html={page.html}
+      serverName={ctx.config.newsletter.from.name}
       homeHref={basePath || '/'}
       reportIssueHref={reportIssueHref}
     />

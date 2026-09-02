@@ -20,6 +20,7 @@ export default async function RulesPage() {
       title={page.title}
       kind="Rules"
       html={page.html}
+      serverName={ctx.config.newsletter.from.name}
       homeHref={basePath || '/'}
       reportIssueHref={reportIssueHref}
     />

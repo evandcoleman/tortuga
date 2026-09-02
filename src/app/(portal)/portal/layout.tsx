@@ -68,19 +68,6 @@ export default async function PortalLayout({ children }: { children: React.React
           Portal is disabled — this is a preview
         </div>
       ) : null}
-      <header>
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 pt-7 sm:px-12 lg:px-24">
-          <span
-            className="text-[13px] tracking-[0.3em] uppercase"
-            style={{ color: 'var(--portal-muted)', fontFamily: 'var(--portal-font-heading)' }}
-          >
-            {serverName} · Plex
-          </span>
-          <span className="hidden text-[13px] sm:inline" style={{ color: 'var(--portal-muted)' }}>
-            A private server for friends and family
-          </span>
-        </div>
-      </header>
       <main className="flex-1">
         <div className="mx-auto max-w-[1440px] px-6 sm:px-12 lg:px-24">{children}</div>
       </main>

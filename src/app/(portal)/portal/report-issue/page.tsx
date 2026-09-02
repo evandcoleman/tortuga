@@ -19,6 +19,7 @@ export default async function ReportIssuePage() {
       title={page.title}
       kind="Help"
       html={page.html}
+      serverName={ctx.config.newsletter.from.name}
       homeHref={basePath || '/'}
       reportIssueHref={null}
     />

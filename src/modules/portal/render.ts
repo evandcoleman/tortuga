@@ -19,7 +19,7 @@ export interface SplitLeadResult {
   rest: string;
 }
 
-const LEADING_P_RE = /^\s*<p>([\s\S]*?)<\/p>\s*/;
+const LEADING_P_RE = /^\s*<p(?:\s[^>]*)?>([\s\S]*?)<\/p>\s*/;
 
 /**
  * Pulls the first paragraph out of rendered HTML for use as a masthead
@@ -44,6 +44,34 @@ export interface AddHeadingIdsResult {
 
 const H2_RE = /<h2(?:\s[^>]*)?>([\s\S]*?)<\/h2>/g;
 
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+};
+
+/**
+ * Decodes the common HTML entities used in rendered TOC heading text
+ * (`&amp;`, `&lt;`, `&gt;`, `&quot;`, `&#39;`/`&apos;`, plus numeric decimal
+ * and hex references) so React doesn't double-escape them when the text is
+ * rendered as a plain string.
+ */
+function decodeHtmlEntities(text: string): string {
+  return text.replace(/&(#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);/g, (fullMatch, entity: string) => {
+    if (entity.startsWith('#x') || entity.startsWith('#X')) {
+      const code = parseInt(entity.slice(2), 16);
+      return Number.isNaN(code) ? fullMatch : String.fromCodePoint(code);
+    }
+    if (entity.startsWith('#')) {
+      const code = parseInt(entity.slice(1), 10);
+      return Number.isNaN(code) ? fullMatch : String.fromCodePoint(code);
+    }
+    return NAMED_ENTITIES[entity] ?? fullMatch;
+  });
+}
+
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -67,7 +95,7 @@ export function addHeadingIds(html: string): AddHeadingIdsResult {
     const count = seen.get(base) ?? 0;
     seen.set(base, count + 1);
     const id = count === 0 ? base : `${base}-${count}`;
-    toc.push({ id, text });
+    toc.push({ id, text: decodeHtmlEntities(text) });
     return fullMatch.replace(/^<h2/, `<h2 id="${id}"`);
   });
 

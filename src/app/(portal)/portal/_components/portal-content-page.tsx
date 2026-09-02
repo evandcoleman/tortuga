@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { splitLead, addHeadingIds } from '@/modules/portal/render';
 import { ArrowLeftIcon } from '@/modules/portal/icons';
+import { PortalHeaderRow } from './portal-header-row';
 
 export type PortalPageKind = 'Guide' | 'Rules' | 'Help' | 'Page';
 
@@ -9,6 +10,7 @@ export interface PortalContentPageProps {
   kind: PortalPageKind;
   /** Already-rendered HTML (substitution + markdown, or admin-authored HTML — both trusted). */
   html: string;
+  serverName: string;
   homeHref: string;
   /**
    * Href for the "Stuck?" card's report-issue link, or `null` to hide the
@@ -18,22 +20,25 @@ export interface PortalContentPageProps {
 }
 
 /** Shared masthead chrome for the three built-in content pages and custom pages. */
-export function PortalContentPage({ title, kind, html, homeHref, reportIssueHref }: PortalContentPageProps) {
+export function PortalContentPage({ title, kind, html, serverName, homeHref, reportIssueHref }: PortalContentPageProps) {
   const { lead, rest } = splitLead(html);
   const { html: body, toc } = addHeadingIds(rest);
 
   return (
     <article>
-      <div className="flex items-center justify-end pt-7 pb-0">
-        <Link
-          href={homeHref}
-          className="flex items-center gap-2 text-[13px]"
-          style={{ color: 'var(--portal-muted)' }}
-        >
-          <ArrowLeftIcon width={16} height={16} />
-          <span>Back to index</span>
-        </Link>
-      </div>
+      <PortalHeaderRow
+        serverName={serverName}
+        right={
+          <Link
+            href={homeHref}
+            className="flex items-center gap-2 text-[13px]"
+            style={{ color: 'var(--portal-muted)' }}
+          >
+            <ArrowLeftIcon width={16} height={16} />
+            <span>Back to index</span>
+          </Link>
+        }
+      />
 
       <div
         className="flex flex-col gap-4 pt-10 pb-10 sm:gap-5 sm:pt-16 sm:pb-12"
