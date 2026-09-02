@@ -52,9 +52,13 @@ suppression reason and cannot be self-revived. Per-recipient frequency
 was deferred; admin editing of preferences is not built. Spec:
 `docs/specs/2026-09-02-resubscribe-preferences.md`.
 
-### 4. Scheduled announcement sends
-Compose exists but is fire-now only. Let "maintenance Saturday 9pm" be
-written Wednesday and sent Saturday.
+### ✅ 4. Scheduled announcement sends — shipped 2026-09-02
+The composer can schedule a send for a wall-clock time in the configured
+newsletter timezone. A minute-cadence runner claims due rows atomically
+and sends them through the normal pipeline, re-checking active status,
+preferences, and suppression at send time. Pending sends are listed on
+the compose page with edit and cancel; missed sends fire on the next tick
+with no cutoff. Spec: `docs/specs/2026-09-02-scheduled-announcements.md`.
 
 ### 5. Transactional templates library
 Reusable templates for the recurring one-offs: "server is back up",
