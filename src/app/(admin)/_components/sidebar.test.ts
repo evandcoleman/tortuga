@@ -1,5 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { isActive } from './sidebar';
+import { createElement } from 'react';
+import { describe, expect, it, vi } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Sidebar, isActive } from './sidebar';
+
+vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
+
+function renderSidebar(): string {
+  return renderToStaticMarkup(createElement(Sidebar, { authMode: 'forward' }));
+}
 
 describe('isActive', () => {
   it('matches exact routes only on exact equality', () => {
@@ -18,5 +26,15 @@ describe('isActive', () => {
   it('does not match a sibling route with a shared prefix', () => {
     const item = { href: '/newsletter', label: 'Overview', exact: true, icon: 'mail' as const };
     expect(isActive('/newsletter/preview', item)).toBe(false);
+  });
+});
+
+describe('Sidebar navigation', () => {
+  it('renders Dashboard first without an Overview group or newsletter overview link', () => {
+    const html = renderSidebar();
+
+    expect(html).not.toContain('>Overview<');
+    expect(html).not.toMatch(/href="\/newsletter"(?!\/)/);
+    expect(html.indexOf('>Dashboard<')).toBeLessThan(html.indexOf('>Newsletter<'));
   });
 });

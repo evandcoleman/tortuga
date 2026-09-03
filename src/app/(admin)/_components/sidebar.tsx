@@ -17,13 +17,8 @@ type NavSection = {
 
 const sections: ReadonlyArray<NavSection> = [
   {
-    label: 'Overview',
-    items: [{ href: '/', label: 'Dashboard', exact: true, icon: 'dashboard' }],
-  },
-  {
     label: 'Newsletter',
     items: [
-      { href: '/newsletter', label: 'Overview', exact: true, icon: 'mail' },
       { href: '/newsletter/preview', label: 'Preview', icon: 'eye' },
       { href: '/newsletter/customize', label: 'Customize', icon: 'customize' },
       { href: '/newsletter/history', label: 'History', icon: 'history' },
@@ -54,6 +49,8 @@ const sections: ReadonlyArray<NavSection> = [
   },
 ];
 
+const dashboardItem: NavItem = { href: '/', label: 'Dashboard', exact: true, icon: 'dashboard' };
+
 export function isActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -61,12 +58,11 @@ export function isActive(pathname: string, item: NavItem): boolean {
 
 export interface SidebarProps {
   userEmail?: string | null;
-  providerName?: string;
   authMode: 'session' | 'forward';
   signOutAction?: () => void | Promise<void>;
 }
 
-export function Sidebar({ userEmail, providerName, authMode, signOutAction }: SidebarProps) {
+export function Sidebar({ userEmail, authMode, signOutAction }: SidebarProps) {
   const pathname = usePathname() ?? '/';
 
   return (
@@ -80,6 +76,9 @@ export function Sidebar({ userEmail, providerName, authMode, signOutAction }: Si
       </div>
 
       <nav className="px-3">
+        <ul className="grid gap-0.5">
+          <NavLink item={dashboardItem} active={isActive(pathname, dashboardItem)} />
+        </ul>
         {sections.map((section, index) => (
           <div key={section.label}>
             <SectionLabel>{section.label}</SectionLabel>
@@ -93,17 +92,6 @@ export function Sidebar({ userEmail, providerName, authMode, signOutAction }: Si
       </nav>
 
       <div className="mt-auto border-t border-line px-3 py-3">
-        <div className="mb-2 rounded-md bg-surface px-3 py-2.5">
-          <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-faint">
-            <Dot className="text-success" />
-            Online
-          </div>
-          <div className="text-[11px] text-muted">
-            Provider <span className="text-fg">{providerName ?? '—'}</span>
-            <span className="px-1 text-faint">·</span>
-            Auth <span className="text-fg">{authMode}</span>
-          </div>
-        </div>
         {authMode === 'session' && signOutAction ? (
           <form action={signOutAction} className="flex items-center justify-between gap-2 px-2 py-1">
             <div className="min-w-0 flex-1 truncate text-[12px] text-muted" title={userEmail ?? ''}>
@@ -179,10 +167,6 @@ function Logo() {
       </svg>
     </span>
   );
-}
-
-function Dot({ className = '' }: { className?: string }) {
-  return <span className={`inline-block h-1.5 w-1.5 rounded-full bg-current ${className}`} />;
 }
 
 function Icon({ name, className = '' }: { name: NavItem['icon']; className?: string }) {

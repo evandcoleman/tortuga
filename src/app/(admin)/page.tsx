@@ -39,10 +39,7 @@ export default function Dashboard() {
   // Digest-only stats: exclude one-off announcement sends (digestId null).
   const allSends = ctx.db.select().from(sends).where(isNotNull(sends.digestId)).all();
   const recipients = ctx.db.select().from(recipientsCache).all();
-  const totalDigests = ctx.db.select().from(digests).all().length;
-
   const activeRecipients = recipients.filter(r => r.active).length;
-  const totalSends = allSends.length;
   const since30 = Date.now() - 30 * DAY;
   const sends30 = allSends.filter(s => (s.sentAt?.getTime() ?? 0) >= since30).length;
   const failures30 = allSends.filter(
@@ -54,17 +51,11 @@ export default function Dashboard() {
     <div>
       <PageHeader
         eyebrow="Overview"
-        title="Welcome aboard."
-        description="Send-side snapshot for your Plex digest. The pipeline pulls from Tautulli, enriches via TMDB, and ships through your configured email provider."
+        title="Dashboard"
         actions={
-          <>
-            <Link href="/newsletter/preview">
-              <Button variant="primary">Open preview</Button>
-            </Link>
-            <Link href="/newsletter/history">
-              <Button variant="secondary">View history</Button>
-            </Link>
-          </>
+          <Link href="/newsletter/preview">
+            <Button variant="primary">Open preview</Button>
+          </Link>
         }
       />
 
@@ -127,11 +118,10 @@ export default function Dashboard() {
         />
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <section className="mt-8">
+        <Card>
           <CardHeader
             title="Recent digests"
-            description="The last five runs, newest first."
             action={
               <Link href="/newsletter/history" className="text-[12.5px] text-muted hover:text-fg">
                 See all →
@@ -175,53 +165,7 @@ export default function Dashboard() {
             </ul>
           )}
         </Card>
-
-        <Card>
-          <CardHeader title="Pipeline" description="What runs under the hood." />
-          <ol className="space-y-3">
-            <Step n={1} title="Tautulli" subtitle="Pulls new library additions." />
-            <Step n={2} title="TMDB" subtitle="Enriches with posters, synopsis, ratings." />
-            <Step n={3} title="Filter" subtitle="Applies allow/blocklists from config." />
-            <Step n={4} title="Render" subtitle="Builds the HTML email." />
-            <Step n={5} title="Send" subtitle={ctx.email ? `via ${ctx.email.name}.` : "No provider configured."} />
-          </ol>
-        </Card>
       </section>
-
-      <section className="mt-8">
-        <Card>
-          <CardHeader title="Lifetime" description="All-time totals across the install." />
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-            <Mini label="Digests" value={totalDigests} />
-            <Mini label="Sends" value={totalSends} />
-            <Mini label="Recipients" value={recipients.length} />
-            <Mini label="Provider" value={ctx.email?.name ?? "Not set"} />
-          </div>
-        </Card>
-      </section>
-    </div>
-  );
-}
-
-function Step({ n, title, subtitle }: { n: number; title: string; subtitle: string }) {
-  return (
-    <li className="flex items-start gap-3">
-      <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-elevated text-[10px] font-medium text-muted ring-1 ring-line">
-        {n}
-      </span>
-      <div className="min-w-0">
-        <div className="text-[13px] font-medium text-fg">{title}</div>
-        <div className="text-[12px] text-muted">{subtitle}</div>
-      </div>
-    </li>
-  );
-}
-
-function Mini({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-[11px] uppercase tracking-[0.14em] text-faint">{label}</div>
-      <div className="mt-1 font-display text-[20px] font-semibold tracking-[-0.01em] text-fg">{value}</div>
     </div>
   );
 }
