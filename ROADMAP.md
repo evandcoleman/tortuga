@@ -72,8 +72,6 @@ transactional (preference-bypassing) send is not built. Spec:
 
 ## Later
 
-- **Request-fulfilled notifications** — "the movie you asked for is now
-  available" via Overseerr/Jellyseerr webhook.
 - **Lifecycle nudges** — inactivity check-ins, removal notices.
 - **Admin failure alerts** — surface scheduler failures, provider
   rejections, and bounce/complaint spikes somewhere other than logs.
@@ -84,6 +82,8 @@ transactional (preference-bypassing) send is not built. Spec:
 
 ## Not planned
 
+- **Request-fulfilled notifications** — Overseerr/Jellyseerr already
+  notify the requester when a request is available.
 - **Discord/Slack/RSS channels** — email is the opinionated choice;
   multi-channel doubles every feature's surface. Revisit only on repeated
   demand.
