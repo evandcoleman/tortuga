@@ -87,7 +87,7 @@ export function ScheduleSection({ subject, body, recipientEmails, timezone, edit
         <CardHeader title="Schedule" />
         <div className="rounded-md bg-elevated px-3 py-2.5 text-[12.5px] text-fg ring-1 ring-inset ring-line">
           <div>{scheduledAt ? `Scheduled for ${scheduledAt.toLocaleString()}` : 'Schedule updated'}</div>
-          <Link href="/messages" className="mt-1 inline-block font-medium text-gold hover:opacity-90">
+          <Link href="/messages" className="mt-1 inline-block font-medium text-accent hover:opacity-90">
             View scheduled messages →
           </Link>
         </div>
@@ -110,7 +110,7 @@ export function ScheduleSection({ subject, body, recipientEmails, timezone, edit
           type="datetime-local"
           value={wallClock}
           onChange={e => setWallClock(e.target.value)}
-          className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[13.5px] text-fg focus:border-gold focus:outline-none"
+          className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[13.5px] text-fg focus:border-accent focus:outline-none"
         />
         <div className="flex items-center gap-2">
           <button

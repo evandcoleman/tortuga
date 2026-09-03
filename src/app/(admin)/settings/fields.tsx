@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 const inputCls =
-  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
+  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30';
 
 function Wrap({ label, hint, error, children }: { label: string; hint?: string; error?: string; children: React.ReactNode }) {
   return (
@@ -142,7 +142,7 @@ export function CheckboxField({ name, label, defaultChecked, hint }: {
 }) {
   return (
     <label className="flex items-start gap-2.5 py-1">
-      <input className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold" name={name} type="checkbox" defaultChecked={defaultChecked} />
+      <input className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent" name={name} type="checkbox" defaultChecked={defaultChecked} />
       <span>
         <span className="block text-[13.5px] text-fg">{label}</span>
         {hint ? <span className="mt-0.5 block text-[11.5px] text-muted">{hint}</span> : null}

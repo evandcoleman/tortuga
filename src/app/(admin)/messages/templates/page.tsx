@@ -37,11 +37,11 @@ export default function TemplatesPage() {
               {rows.map(t => (
                 <TR key={t.id}>
                   <TD>
-                    <Link href={`/messages/templates/${t.slug}`} className="font-medium text-fg hover:text-gold">
+                    <Link href={`/messages/templates/${t.slug}`} className="font-medium text-fg hover:text-accent">
                       {t.name}
                     </Link>
                     {t.slug === WELCOME_TEMPLATE_SLUG ? (
-                      <Badge tone="gold" className="ml-2">
+                      <Badge tone="accent" className="ml-2">
                         System
                       </Badge>
                     ) : null}

@@ -95,7 +95,7 @@ export default function AlertsHistory() {
                 <TD className="text-right">
                   <div className="flex items-center justify-end gap-3">
                     {a.href ? (
-                      <Link href={a.href} className="text-[12.5px] font-medium text-gold hover:opacity-90">
+                      <Link href={a.href} className="text-[12.5px] font-medium text-accent hover:opacity-90">
                         Open
                       </Link>
                     ) : null}

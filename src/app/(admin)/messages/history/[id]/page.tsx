@@ -51,7 +51,7 @@ export default async function MessageDetail({ params }: { params: Promise<{ id: 
         actions={
           <Link
             href={`/messages?from=${announcement.id}`}
-            className="text-[12.5px] font-medium text-gold hover:opacity-90"
+            className="text-[12.5px] font-medium text-accent hover:opacity-90"
           >
             Use as starting point →
           </Link>

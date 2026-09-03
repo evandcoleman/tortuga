@@ -6,7 +6,7 @@ import { DEFAULT_BUILTIN_LINK_COPY, DEFAULT_BUILTIN_PAGE_COPY } from '@/modules/
 import { PageBodyEditor } from './PageBodyEditor';
 
 const inputCls =
-  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[13.5px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
+  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[13.5px] text-fg focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30';
 
 const MAX_DESCRIPTION_LENGTH = 140;
 
@@ -52,13 +52,13 @@ export function IndexEntryRow({ entry, index, total, error, onChange, onRemove, 
     <div className="rounded-lg border border-line p-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-faint">
-          <span className="rounded-full border border-line px-2 py-0.5 text-gold">{BADGE[entry.type]}</span>
+          <span className="rounded-full border border-line px-2 py-0.5 text-accent">{BADGE[entry.type]}</span>
           {isBuiltin ? builtinName(entry) : null}
         </span>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-1.5 text-[11px] normal-case tracking-normal text-muted">
             <input
-              className="h-3.5 w-3.5 rounded border-line bg-canvas accent-gold"
+              className="h-3.5 w-3.5 rounded border-line bg-canvas accent"
               type="checkbox"
               checked={isVisible}
               onChange={e => onChange({ hidden: !e.target.checked })}

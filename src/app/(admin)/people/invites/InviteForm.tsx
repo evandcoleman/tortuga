@@ -16,7 +16,7 @@ export interface InviteFormProps {
 }
 
 const inputCls =
-  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
+  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30';
 
 export function InviteForm({ sections, sectionsUnavailable }: InviteFormProps) {
   const router = useRouter();
@@ -98,7 +98,7 @@ export function InviteForm({ sections, sectionsUnavailable }: InviteFormProps) {
               <button
                 type="button"
                 onClick={toggleAll}
-                className="text-[11.5px] font-medium text-gold transition hover:text-gold-hi"
+                className="text-[11.5px] font-medium text-accent transition hover:text-accent-hi"
               >
                 {allSelected ? 'Deselect all' : 'Select all'}
               </button>
@@ -116,7 +116,7 @@ export function InviteForm({ sections, sectionsUnavailable }: InviteFormProps) {
                     type="checkbox"
                     checked={selected.has(s.id)}
                     onChange={() => toggleSection(s.id)}
-                    className="h-4 w-4 rounded border-line accent-gold"
+                    className="h-4 w-4 rounded border-line accent"
                   />
                   {s.title}
                 </label>
@@ -129,7 +129,7 @@ export function InviteForm({ sections, sectionsUnavailable }: InviteFormProps) {
           type="submit"
           disabled={!canSend}
           aria-busy={isSending}
-          className="self-start rounded-md bg-gold px-3.5 py-2 text-[13px] font-medium text-gold-ink transition hover:bg-gold-hi disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-start rounded-md bg-accent px-3.5 py-2 text-[13px] font-medium text-accent-ink transition hover:bg-accent-hi disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSending ? 'Sending…' : 'Send invite'}
         </button>
@@ -141,7 +141,7 @@ export function InviteForm({ sections, sectionsUnavailable }: InviteFormProps) {
               message.tone === 'success'
                 ? 'text-[12.5px] text-success'
                 : message.tone === 'warning'
-                  ? 'text-[12.5px] text-gold'
+                  ? 'text-[12.5px] text-accent'
                   : 'text-[12.5px] text-danger'
             }
           >

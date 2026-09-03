@@ -123,7 +123,7 @@ export function ContentForm({
                       <li key={c.id}>
                         <label className="flex items-start gap-2.5 py-1">
                           <input
-                            className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+                            className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent"
                             type="checkbox"
                             name="leaving.excluded_collection_ids"
                             value={c.id}

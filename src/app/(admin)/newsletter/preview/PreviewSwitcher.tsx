@@ -49,7 +49,7 @@ function AxisRow({
             className={[
               'rounded-full px-3 py-1 text-[12px] font-medium transition-colors',
               isActive
-                ? 'bg-gold text-gold-ink'
+                ? 'bg-accent text-accent-ink'
                 : 'bg-transparent text-muted hover:bg-surface hover:text-fg',
             ].join(' ')}
           >
@@ -125,7 +125,7 @@ export function PreviewSwitcher({
           aria-busy={isSaving}
           className={[
             'rounded-full px-3 py-1 text-[12px] font-medium transition-colors',
-            'bg-gold text-gold-ink hover:opacity-90 disabled:opacity-60',
+            'bg-accent text-accent-ink hover:opacity-90 disabled:opacity-60',
           ].join(' ')}
         >
           {isSaving ? 'Saving…' : 'Save as default'}

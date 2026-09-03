@@ -68,7 +68,7 @@ export function SendNowButton({ themeId, layoutId, recipientCount }: SendNowButt
         title="Email this theme + layout to all active recipients now"
         className={[
           'rounded-full px-3 py-1 text-[12px] font-medium transition-colors',
-          'bg-gold text-gold-ink hover:opacity-90 disabled:opacity-60',
+          'bg-accent text-accent-ink hover:opacity-90 disabled:opacity-60',
         ].join(' ')}
       >
         {isSending ? 'Sending…' : 'Send now'}
@@ -102,7 +102,7 @@ export function SendNowButton({ themeId, layoutId, recipientCount }: SendNowButt
             <button
               type="button"
               onClick={confirmSend}
-              className="rounded-full bg-gold px-3 py-1.5 text-[12px] font-medium text-gold-ink transition-colors hover:opacity-90"
+              className="rounded-full bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-ink transition-colors hover:opacity-90"
             >
               Yes, send now
             </button>

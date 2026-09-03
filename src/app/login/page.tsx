@@ -20,16 +20,16 @@ export default async function LoginPage({
     <main className="relative grid min-h-screen w-full place-items-center overflow-hidden bg-canvas px-6 py-12">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 [background:radial-gradient(60%_60%_at_50%_0%,oklch(80%_0.14_78/_0.10),transparent_70%)]"
+        className="pointer-events-none absolute inset-0 [background:radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklch,var(--color-accent)_10%,transparent),transparent_70%)]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,oklch(80%_0.14_78/_0.4),transparent)]"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_oklch,var(--color-accent)_40%,transparent),transparent)]"
       />
 
       <div className="relative w-full max-w-[380px]">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-gold to-gold-lo text-gold-ink shadow-lift">
+          <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-accent to-accent-lo text-accent-ink shadow-lift">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
               <path
                 d="M12 3l6 4v6c0 4-2.7 6.7-6 8-3.3-1.3-6-4-6-8V7l6-4z"
@@ -74,7 +74,7 @@ export default async function LoginPage({
 
           <button
             type="submit"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-[13.5px] font-semibold tracking-[-0.005em] text-gold-ink shadow-soft transition hover:bg-gold-hi focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-[13.5px] font-semibold tracking-[-0.005em] text-accent-ink shadow-soft transition hover:bg-accent-hi focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
           >
             Sign in
             <svg
@@ -124,7 +124,7 @@ function Field({
         type={type}
         required={required}
         autoComplete={autoComplete}
-        className="block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg placeholder:text-faint focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30"
+        className="block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg placeholder:text-faint focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30"
       />
     </label>
   );

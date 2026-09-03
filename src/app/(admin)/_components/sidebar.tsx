@@ -128,9 +128,9 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
   const content = (
     <>
       {active ? (
-        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-gold" />
+        <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r-full bg-accent" />
       ) : null}
-      <Icon name={item.icon} className={active ? 'text-gold' : 'text-subtle group-hover:text-fg'} />
+      <Icon name={item.icon} className={active ? 'text-accent' : 'text-subtle group-hover:text-fg'} />
       <span className="tracking-[-0.01em]">{item.label}</span>
     </>
   );
@@ -148,7 +148,7 @@ function Logo() {
   return (
     <span
       aria-hidden
-      className="grid h-9 w-9 place-items-center rounded-md bg-gradient-to-br from-gold to-gold-lo text-gold-ink shadow-soft"
+      className="grid h-9 w-9 place-items-center rounded-md bg-gradient-to-br from-accent to-accent-lo text-accent-ink shadow-soft"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
         <path

@@ -53,7 +53,7 @@ export function TestDigestForm({ themeId, layoutId, defaultEmail }: TestDigestFo
         }}
         placeholder="you@example.com"
         aria-label="Test recipient email address"
-        className="min-w-0 flex-1 rounded-full border border-line bg-canvas px-3 py-1 text-[12px] text-fg placeholder:text-faint focus:border-gold focus:outline-none"
+        className="min-w-0 flex-1 rounded-full border border-line bg-canvas px-3 py-1 text-[12px] text-fg placeholder:text-faint focus:border-accent focus:outline-none"
       />
       <button
         type="button"
@@ -63,7 +63,7 @@ export function TestDigestForm({ themeId, layoutId, defaultEmail }: TestDigestFo
         title={canSend ? 'Send this theme + layout to one address' : 'Enter an email address'}
         className={[
           'rounded-full px-3 py-1 text-[12px] font-medium transition-colors',
-          'bg-gold text-gold-ink hover:opacity-90 disabled:opacity-60',
+          'bg-accent text-accent-ink hover:opacity-90 disabled:opacity-60',
         ].join(' ')}
       >
         {isSending ? 'Sending…' : 'Send test to me'}

@@ -58,7 +58,7 @@ export function LibraryEditor({ rules, knownLibraries, onChange }: LibraryEditor
                 type="checkbox"
                 checked={rule.enabled !== false}
                 onChange={e => updateRule(i, { enabled: e.target.checked })}
-                className="accent-gold"
+                className="accent"
               />
               Visible
             </label>
@@ -101,7 +101,7 @@ export function LibraryEditor({ rules, knownLibraries, onChange }: LibraryEditor
                 value={rule.title ?? ''}
                 onChange={e => updateRule(i, { title: e.target.value || undefined })}
                 maxLength={120}
-                className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold"
+                className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
 
@@ -119,7 +119,7 @@ export function LibraryEditor({ rules, knownLibraries, onChange }: LibraryEditor
                   const v = e.target.value ? parseInt(e.target.value, 10) : undefined;
                   updateRule(i, { max_items: v && v > 0 ? v : undefined });
                 }}
-                className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold"
+                className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-accent"
               />
             </div>
           </div>
@@ -131,7 +131,7 @@ export function LibraryEditor({ rules, knownLibraries, onChange }: LibraryEditor
             <select
               value={rule.layout ?? ''}
               onChange={e => updateRule(i, { layout: e.target.value || undefined })}
-              className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg focus:outline-none focus:ring-1 focus:ring-gold"
+              className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg focus:outline-none focus:ring-1 focus:ring-accent"
             >
               <option value="">Default</option>
               {LAYOUT_OPTIONS.map(opt => (
@@ -184,11 +184,11 @@ function AddLibraryInput({ onAdd }: { onAdd: (name: string) => void }) {
         name="newLib"
         placeholder="Add library by name…"
         maxLength={120}
-        className="flex-1 rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold"
+        className="flex-1 rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-accent"
       />
       <button
         type="submit"
-        className="rounded-full bg-gold px-3 py-1 text-[12px] font-medium text-gold-ink hover:opacity-90"
+        className="rounded-full bg-accent px-3 py-1 text-[12px] font-medium text-accent-ink hover:opacity-90"
       >
         Add
       </button>

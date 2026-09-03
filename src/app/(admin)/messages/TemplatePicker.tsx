@@ -104,7 +104,7 @@ export function TemplatePicker({ templates, subject, body, onApply }: TemplatePi
           id="template-picker"
           value={selectedSlug}
           onChange={e => onSelect(e.target.value)}
-          className="rounded-md border border-line bg-canvas px-3 py-1.5 text-[13px] text-fg focus:border-gold focus:outline-none"
+          className="rounded-md border border-line bg-canvas px-3 py-1.5 text-[13px] text-fg focus:border-accent focus:outline-none"
         >
           <option value={PLACEHOLDER_VALUE}>Choose a template…</option>
           {templates.map(t => (
@@ -114,7 +114,7 @@ export function TemplatePicker({ templates, subject, body, onApply }: TemplatePi
           ))}
         </select>
       </div>
-      <Link href="/messages/templates" className="text-[12px] font-medium text-gold hover:opacity-90">
+      <Link href="/messages/templates" className="text-[12px] font-medium text-accent hover:opacity-90">
         Manage templates →
       </Link>
     </div>

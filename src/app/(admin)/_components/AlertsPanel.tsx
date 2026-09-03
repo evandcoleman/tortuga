@@ -49,7 +49,7 @@ export function AlertsPanel() {
                 {a.href ? (
                   <>
                     {' · '}
-                    <Link href={a.href} className="text-gold hover:opacity-90">
+                    <Link href={a.href} className="text-accent hover:opacity-90">
                       Open
                     </Link>
                   </>

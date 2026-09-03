@@ -10,7 +10,7 @@ interface PortalAppearanceEditorProps {
 }
 
 const selectClass =
-  'w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[13.5px] text-fg outline-none transition focus:border-gold/60 focus:ring-2 focus:ring-gold/30';
+  'w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[13.5px] text-fg outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/30';
 
 /**
  * `portal.appearance` is optional: unset means "inherit the newsletter's
@@ -26,7 +26,7 @@ export function PortalAppearanceEditor({ value, onChange }: PortalAppearanceEdit
     <div className="grid gap-3">
       <label className="flex items-start gap-2.5 py-1">
         <input
-          className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+          className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent"
           type="checkbox"
           checked={inherits}
           onChange={e => onChange(e.target.checked ? undefined : { theme: DEFAULT_THEME_ID, theme_overrides: {} })}

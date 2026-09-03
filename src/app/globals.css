@@ -1,30 +1,30 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: oklch(14% 0.012 250);
-  --color-panel: oklch(17% 0.014 250);
-  --color-surface: oklch(20% 0.014 250);
-  --color-elevated: oklch(24% 0.016 250);
-  --color-line: oklch(28% 0.014 250);
-  --color-line-strong: oklch(36% 0.016 250);
+  --color-canvas: oklch(14% 0.018 250);
+  --color-panel: oklch(17% 0.020 250);
+  --color-surface: oklch(20% 0.022 250);
+  --color-elevated: oklch(24% 0.024 250);
+  --color-line: oklch(29% 0.024 250);
+  --color-line-strong: oklch(37% 0.026 250);
 
-  --color-fg: oklch(96% 0.005 250);
-  --color-muted: oklch(74% 0.012 250);
-  --color-subtle: oklch(56% 0.014 250);
-  --color-faint: oklch(42% 0.014 250);
+  --color-fg: oklch(96% 0.006 220);
+  --color-muted: oklch(75% 0.012 230);
+  --color-subtle: oklch(57% 0.016 235);
+  --color-faint: oklch(43% 0.018 240);
 
-  --color-gold: oklch(80% 0.14 78);
-  --color-gold-hi: oklch(86% 0.13 82);
-  --color-gold-lo: oklch(64% 0.16 64);
-  --color-gold-ink: oklch(20% 0.06 70);
+  --color-accent: oklch(80% 0.11 185);
+  --color-accent-hi: oklch(86% 0.10 185);
+  --color-accent-lo: oklch(65% 0.11 190);
+  --color-accent-ink: oklch(20% 0.05 195);
 
-  --color-success: oklch(74% 0.15 155);
+  --color-success: oklch(78% 0.15 155);
   --color-success-fg: oklch(20% 0.08 155);
-  --color-warning: oklch(80% 0.14 78);
-  --color-warning-fg: oklch(22% 0.08 70);
-  --color-danger: oklch(70% 0.2 25);
-  --color-danger-fg: oklch(20% 0.1 25);
-  --color-info: oklch(74% 0.12 230);
+  --color-warning: oklch(82% 0.14 80);
+  --color-warning-fg: oklch(22% 0.08 80);
+  --color-danger: oklch(72% 0.17 22);
+  --color-danger-fg: oklch(20% 0.1 22);
+  --color-info: oklch(78% 0.12 230);
   --color-info-fg: oklch(20% 0.08 230);
 
   --font-display: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -63,7 +63,7 @@
   }
 
   ::selection {
-    background-color: oklch(80% 0.14 78 / 0.35);
+    background-color: oklch(80% 0.11 185 / 0.35);
     color: var(--color-fg);
   }
 

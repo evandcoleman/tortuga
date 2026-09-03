@@ -5,7 +5,7 @@ import { Button, Card, CardHeader } from '../../_components/ui';
 import { importRecipientsCsv, type ActionResult } from './actions';
 
 const inputCls =
-  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 font-mono text-[13px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
+  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 font-mono text-[13px] text-fg focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30';
 
 const initial: ActionResult = { status: 'idle' };
 

@@ -82,7 +82,7 @@ export default function MessagesHistory() {
                   <TD>
                     <Link
                       href={`/messages/history/${a.id}`}
-                      className="font-medium text-fg hover:text-gold"
+                      className="font-medium text-fg hover:text-accent"
                     >
                       {a.subject}
                     </Link>

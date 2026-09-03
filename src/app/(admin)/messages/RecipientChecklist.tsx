@@ -31,7 +31,7 @@ export function RecipientChecklist({ recipients, selected, onChange }: Recipient
           </span>
         </div>
         <div className="flex items-center gap-3 text-[12px] font-medium">
-          <button type="button" onClick={selectAll} className="text-gold hover:opacity-90">
+          <button type="button" onClick={selectAll} className="text-accent hover:opacity-90">
             Select all
           </button>
           <button type="button" onClick={selectNone} className="text-muted hover:text-fg">
@@ -50,7 +50,7 @@ export function RecipientChecklist({ recipients, selected, onChange }: Recipient
                   type="checkbox"
                   checked={selected.has(r.email)}
                   onChange={() => toggle(r.email)}
-                  className="h-3.5 w-3.5 rounded-sm border-line accent-gold"
+                  className="h-3.5 w-3.5 rounded-sm border-line accent"
                 />
                 <span className="text-fg">{r.name}</span>
                 <span className="text-faint">·</span>

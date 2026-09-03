@@ -63,7 +63,7 @@ function ScheduledRowItem({ row, timezone }: { row: ScheduledRow; timezone: stri
         {error ? <div className="mt-1 text-[12px] text-danger">{error}</div> : null}
       </div>
       <div className="flex shrink-0 items-center gap-3 text-[12px] font-medium">
-        <Link href={`/messages/scheduled/${row.id}`} className="text-gold hover:opacity-90">
+        <Link href={`/messages/scheduled/${row.id}`} className="text-accent hover:opacity-90">
           Edit
         </Link>
         <button

@@ -29,7 +29,7 @@ export function SendMessageButton({ recipientCount, disabled, isSending, onConfi
         onClick={openConfirm}
         disabled={disabled || isSending}
         aria-busy={isSending}
-        className="inline-flex items-center justify-center rounded-md bg-gold px-3.5 py-2 text-[13px] font-medium text-gold-ink transition hover:bg-gold-hi disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center justify-center rounded-md bg-accent px-3.5 py-2 text-[13px] font-medium text-accent-ink transition hover:bg-accent-hi disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSending ? 'Sending…' : `Send to ${recipientCount} recipient${recipientCount === 1 ? '' : 's'}`}
       </button>
@@ -60,7 +60,7 @@ export function SendMessageButton({ recipientCount, disabled, isSending, onConfi
             <button
               type="button"
               onClick={confirm}
-              className="rounded-full bg-gold px-3 py-1.5 text-[12px] font-medium text-gold-ink transition-colors hover:opacity-90"
+              className="rounded-full bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-ink transition-colors hover:opacity-90"
             >
               Yes, send now
             </button>

@@ -34,7 +34,7 @@ export default async function EditScheduledMessage({ params }: { params: Promise
             title="This message is no longer scheduled"
             description="It may have already sent, been cancelled, or never existed."
             action={
-              <Link href="/messages/history" className="text-[12.5px] font-medium text-gold hover:opacity-90">
+              <Link href="/messages/history" className="text-[12.5px] font-medium text-accent hover:opacity-90">
                 View history →
               </Link>
             }

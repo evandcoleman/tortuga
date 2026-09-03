@@ -117,7 +117,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
                 value={subject}
                 maxLength={200}
                 onChange={e => setSubject(e.target.value)}
-                className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[13.5px] text-fg placeholder:text-faint focus:border-gold focus:outline-none"
+                className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:outline-none"
               />
             </div>
             <div>
@@ -130,7 +130,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
                 maxLength={20000}
                 onChange={e => setBody(e.target.value)}
                 rows={18}
-                className="w-full resize-y rounded-md border border-line bg-canvas px-3 py-2 font-mono text-[12.5px] leading-relaxed text-fg placeholder:text-faint focus:border-gold focus:outline-none"
+                className="w-full resize-y rounded-md border border-line bg-canvas px-3 py-2 font-mono text-[12.5px] leading-relaxed text-fg placeholder:text-faint focus:border-accent focus:outline-none"
               />
             </div>
           </div>
@@ -146,7 +146,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
                 disabled={isPreviewing}
                 aria-busy={isPreviewing}
                 title="Renders the current (unsaved) subject and body with placeholder values"
-                className="rounded-full bg-gold px-3 py-1 text-[12px] font-medium text-gold-ink transition-colors hover:opacity-90 disabled:opacity-60"
+                className="rounded-full bg-accent px-3 py-1 text-[12px] font-medium text-accent-ink transition-colors hover:opacity-90 disabled:opacity-60"
               >
                 {isPreviewing ? 'Rendering…' : 'Preview'}
               </button>
@@ -188,7 +188,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
               onClick={onSave}
               disabled={!canSave}
               aria-busy={isSaving}
-              className="rounded-md bg-gold px-3.5 py-2 text-[13px] font-medium text-gold-ink transition hover:bg-gold-hi disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md bg-accent px-3.5 py-2 text-[13px] font-medium text-accent-ink transition hover:bg-accent-hi disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? 'Saving…' : 'Save changes'}
             </button>

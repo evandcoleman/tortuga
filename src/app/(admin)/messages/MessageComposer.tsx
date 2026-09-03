@@ -163,7 +163,7 @@ export function MessageComposer({
                 maxLength={200}
                 onChange={e => setSubject(e.target.value)}
                 placeholder="What's new this week"
-                className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[13.5px] text-fg placeholder:text-faint focus:border-gold focus:outline-none"
+                className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:outline-none"
               />
             </div>
             <div>
@@ -177,7 +177,7 @@ export function MessageComposer({
                 onChange={e => setBody(e.target.value)}
                 rows={14}
                 placeholder="Write your message in Markdown…"
-                className="w-full resize-y rounded-md border border-line bg-canvas px-3 py-2 font-mono text-[12.5px] leading-relaxed text-fg placeholder:text-faint focus:border-gold focus:outline-none"
+                className="w-full resize-y rounded-md border border-line bg-canvas px-3 py-2 font-mono text-[12.5px] leading-relaxed text-fg placeholder:text-faint focus:border-accent focus:outline-none"
               />
               <p className="mt-1 text-[11.5px] text-faint">
                 Variables: {'{{name}}'}, {'{{email}}'}, {'{{server_name}}'} are filled in per recipient.
@@ -196,7 +196,7 @@ export function MessageComposer({
                 disabled={!canPreview}
                 aria-busy={isPreviewing}
                 title={canPreview ? 'Render this message as a dry-run' : 'Enter a subject and body first'}
-                className="rounded-full bg-gold px-3 py-1 text-[12px] font-medium text-gold-ink transition-colors hover:opacity-90 disabled:opacity-60"
+                className="rounded-full bg-accent px-3 py-1 text-[12px] font-medium text-accent-ink transition-colors hover:opacity-90 disabled:opacity-60"
               >
                 {isPreviewing ? 'Rendering…' : 'Preview'}
               </button>
@@ -270,7 +270,7 @@ export function MessageComposer({
                   </div>
                   <Link
                     href={`/messages/history/${sendOutcome.announcementId}`}
-                    className="mt-1 inline-block font-medium text-gold hover:opacity-90"
+                    className="mt-1 inline-block font-medium text-accent hover:opacity-90"
                   >
                     View delivery details →
                   </Link>

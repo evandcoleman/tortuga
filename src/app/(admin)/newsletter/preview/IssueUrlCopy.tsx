@@ -26,7 +26,7 @@ export function IssueUrlCopy({ url }: { url: string }) {
       <button
         type="button"
         onClick={copy}
-        className="truncate rounded-md border border-line bg-canvas/60 px-2.5 py-1 text-[12px] text-muted transition-colors hover:border-gold/60 hover:text-fg"
+        className="truncate rounded-md border border-line bg-canvas/60 px-2.5 py-1 text-[12px] text-muted transition-colors hover:border-accent/60 hover:text-fg"
         title="Click to copy"
       >
         {url}

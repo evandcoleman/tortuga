@@ -28,7 +28,7 @@ export function SettingsNav() {
           >
             {tab.label}
             {active ? (
-              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-gold" />
+              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent" />
             ) : null}
           </Link>
         );

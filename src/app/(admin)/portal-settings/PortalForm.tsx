@@ -23,7 +23,7 @@ type PortalPageConfig = z.infer<typeof PortalPageConfigSchema>;
 type PortalFormState = Omit<PortalConfig, 'entries'> & { entries: IndexEntryRowState[] };
 
 const inputCls =
-  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
+  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[14px] text-fg focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30';
 
 const initial: SaveState = { status: 'idle' };
 
@@ -113,7 +113,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
         <div className="mt-3">
           <label className="flex items-start gap-2.5 py-1">
             <input
-              className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+              className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent"
               type="checkbox"
               checked={working.enabled}
               onChange={e => patch({ enabled: e.target.checked })}
@@ -218,7 +218,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
             <div key={key} className="rounded-lg border border-line p-3">
               <label className="flex items-start gap-2.5 py-1">
                 <input
-                  className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+                  className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent"
                   type="checkbox"
                   checked={working.pages[key].enabled}
                   onChange={e => patchPage(key, { enabled: e.target.checked })}
@@ -317,7 +317,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
           <div className="rounded-lg border border-line p-3">
             <label className="flex items-start gap-2.5 py-1">
               <input
-                className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+                className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent"
                 type="checkbox"
                 checked={working.copy.show_stuck_card}
                 onChange={e => patchCopy({ show_stuck_card: e.target.checked })}
@@ -366,7 +366,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
           <div className="rounded-lg border border-line p-3">
             <label className="flex items-start gap-2.5 py-1">
               <input
-                className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent-gold"
+                className="mt-0.5 h-4 w-4 rounded border-line bg-canvas accent"
                 type="checkbox"
                 checked={working.copy.show_footer}
                 onChange={e => patchCopy({ show_footer: e.target.checked })}

@@ -57,7 +57,7 @@ export function NewTemplateForm() {
             maxLength={200}
             onChange={e => setName(e.target.value)}
             placeholder="e.g. Season finale"
-            className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[13.5px] text-fg placeholder:text-faint focus:border-gold focus:outline-none"
+            className="w-full rounded-md border border-line bg-canvas px-3 py-2 text-[13.5px] text-fg placeholder:text-faint focus:border-accent focus:outline-none"
           />
           {slug ? <p className="mt-1 font-mono text-[11px] text-faint">Slug: {slug}</p> : null}
         </div>
@@ -66,7 +66,7 @@ export function NewTemplateForm() {
           onClick={onCreate}
           disabled={!canCreate}
           aria-busy={isCreating}
-          className="rounded-md bg-gold px-3.5 py-2 text-[13px] font-medium text-gold-ink transition hover:bg-gold-hi disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md bg-accent px-3.5 py-2 text-[13px] font-medium text-accent-ink transition hover:bg-accent-hi disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isCreating ? 'Creating…' : 'Create template'}
         </button>

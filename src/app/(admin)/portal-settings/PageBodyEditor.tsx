@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { PortalEntry } from '@/kernel/config/schema';
 
 const inputCls =
-  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[13.5px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
+  'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 text-[13.5px] text-fg focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30';
 
 type PageEntry = Extract<PortalEntry, { type: 'page' }>;
 
@@ -51,7 +51,7 @@ export function PageBodyEditor({
           <button
             type="button"
             onClick={() => switchTo('markdown')}
-            className={bodyMode === 'markdown' ? 'font-semibold text-gold' : 'text-muted hover:text-fg'}
+            className={bodyMode === 'markdown' ? 'font-semibold text-accent' : 'text-muted hover:text-fg'}
           >
             Markdown
           </button>
@@ -59,7 +59,7 @@ export function PageBodyEditor({
           <button
             type="button"
             onClick={() => switchTo('html')}
-            className={bodyMode === 'html' ? 'font-semibold text-gold' : 'text-muted hover:text-fg'}
+            className={bodyMode === 'html' ? 'font-semibold text-accent' : 'text-muted hover:text-fg'}
           >
             HTML
           </button>

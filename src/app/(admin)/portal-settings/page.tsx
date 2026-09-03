@@ -16,7 +16,7 @@ export default function PortalSettingsPage() {
             href="/portal"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[12.5px] font-medium text-gold hover:opacity-90"
+            className="text-[12.5px] font-medium text-accent hover:opacity-90"
           >
             Preview portal ↗
           </a>

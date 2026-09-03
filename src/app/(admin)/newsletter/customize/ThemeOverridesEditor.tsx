@@ -175,7 +175,7 @@ export function ThemeOverridesEditor({ value, onChange }: ThemeOverridesEditorPr
                 type="checkbox"
                 checked={value.layout?.introItalic ?? false}
                 onChange={e => setLayout('introItalic', e.target.checked || undefined)}
-                className="accent-gold"
+                className="accent"
               />
               Italic intro text
             </label>
@@ -193,7 +193,7 @@ export function ThemeOverridesEditor({ value, onChange }: ThemeOverridesEditorPr
 function fieldClass(invalid: boolean) {
   return [
     'w-full rounded border bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1',
-    invalid ? 'border-danger focus:ring-danger' : 'border-line focus:ring-gold',
+    invalid ? 'border-danger focus:ring-danger' : 'border-line focus:ring-accent',
   ].join(' ');
 }
 
@@ -306,7 +306,7 @@ function NumberField({
             if (!isNaN(n)) onChange(n);
           }
         }}
-        className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-gold"
+        className="w-full rounded border border-line bg-surface px-2 py-1 text-[12.5px] text-fg placeholder:text-faint focus:outline-none focus:ring-1 focus:ring-accent"
       />
     </div>
   );

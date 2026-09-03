@@ -1,10 +1,10 @@
 import * as React from 'react';
 
-type Tone = 'neutral' | 'gold' | 'success' | 'warning' | 'danger' | 'info';
+type Tone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
 
 const toneStyles: Record<Tone, string> = {
   neutral: 'bg-elevated text-muted ring-1 ring-inset ring-line',
-  gold: 'bg-gold/12 text-gold ring-1 ring-inset ring-gold/30',
+  accent: 'bg-accent/12 text-accent ring-1 ring-inset ring-accent/30',
   success: 'bg-success/12 text-success ring-1 ring-inset ring-success/30',
   warning: 'bg-warning/12 text-warning ring-1 ring-inset ring-warning/30',
   danger: 'bg-danger/12 text-danger ring-1 ring-inset ring-danger/30',
@@ -116,7 +116,7 @@ export function Stat({
 }) {
   const accent: Record<Tone, string> = {
     neutral: 'text-fg',
-    gold: 'text-gold',
+    accent: 'text-accent',
     success: 'text-success',
     warning: 'text-warning',
     danger: 'text-danger',
@@ -135,7 +135,7 @@ export function Stat({
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 const buttonVariants: Record<ButtonVariant, string> = {
-  primary: 'bg-gold text-gold-ink hover:bg-gold-hi focus-visible:ring-gold/50 shadow-soft',
+  primary: 'bg-accent text-accent-ink hover:bg-accent-hi focus-visible:ring-accent/50 shadow-soft',
   secondary:
     'bg-elevated text-fg ring-1 ring-inset ring-line hover:bg-surface hover:ring-line-strong focus-visible:ring-line-strong',
   ghost: 'bg-transparent text-muted hover:bg-elevated hover:text-fg focus-visible:ring-line',

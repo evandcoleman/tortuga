@@ -117,7 +117,7 @@ function SortableRow({ block, onToggle }: SortableRowProps) {
           checked={block.enabled}
           onChange={onToggle}
           aria-label={`${block.enabled ? 'Hide' : 'Show'} ${LABELS[block.id]}`}
-          className="accent-gold"
+          className="accent"
         />
         Visible
       </label>
