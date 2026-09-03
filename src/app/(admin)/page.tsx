@@ -14,6 +14,7 @@ import {
   formatDateTime,
   formatRelative,
 } from './_components/ui';
+import { AlertsPanel } from './_components/AlertsPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,8 @@ export default function Dashboard() {
           </>
         }
       />
+
+      <AlertsPanel />
 
       {missingServices.length > 0 ? (
         <div className="mb-8 rounded-lg border border-warning/30 bg-warning/8 px-5 py-4">

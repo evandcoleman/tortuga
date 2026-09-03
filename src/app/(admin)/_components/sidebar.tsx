@@ -7,7 +7,7 @@ type NavItem = {
   href: string;
   label: string;
   exact?: boolean;
-  icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings' | 'send' | 'invite';
+  icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings' | 'send' | 'invite' | 'alert';
   /** Opens in a new tab via a plain `<a>` instead of client-side `Link` routing; never gets active styling. */
   newTab?: boolean;
 };
@@ -33,6 +33,8 @@ const messagesItems: ReadonlyArray<NavItem> = [
   { href: '/messages/history', label: 'History', icon: 'history' },
   { href: '/messages/templates', label: 'Templates', icon: 'mail' },
 ];
+
+const alertsItem: NavItem = { href: '/alerts', label: 'Alerts', exact: true, icon: 'alert' };
 
 const portalItems: ReadonlyArray<NavItem> = [
   { href: '/portal-settings', label: 'Settings', exact: true, icon: 'settings' },
@@ -90,6 +92,10 @@ export function Sidebar({ userEmail, providerName, authMode, signOutAction }: Si
           {messagesItems.map(it => (
             <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
           ))}
+        </ul>
+        <SectionLabel>Alerts</SectionLabel>
+        <ul className="mb-2 grid gap-0.5">
+          <NavLink item={alertsItem} active={isActive(pathname, alertsItem)} />
         </ul>
         <SectionLabel>Portal</SectionLabel>
         <ul className="grid gap-0.5">
@@ -293,6 +299,14 @@ function Icon({ name, className = '' }: { name: NavItem['icon'] | 'external'; cl
         <svg {...common}>
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      );
+    case 'alert':
+      return (
+        <svg {...common}>
+          <path d="M10.3 3.6L2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z" />
+          <line x1="12" y1="9.5" x2="12" y2="13.5" />
+          <circle cx="12" cy="16.5" r="0.1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       );
     case 'external':
