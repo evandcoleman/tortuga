@@ -177,3 +177,7 @@ The container mounts `/config`, which holds:
 ## Architecture
 
 See [docs/superpowers/specs/2026-05-12-tortuga-design.md](docs/superpowers/specs/2026-05-12-tortuga-design.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
