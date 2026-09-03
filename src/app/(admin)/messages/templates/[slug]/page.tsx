@@ -20,9 +20,8 @@ export default async function TemplateEditPage({ params }: PageProps) {
   return (
     <div>
       <PageHeader
-        eyebrow="Messages · Templates"
+        eyebrow="Messages"
         title={template.name}
-        description="Subject and markdown body. Use {{name}}, {{email}}, and {{server_name}} — unknown variables render as-is."
       />
       <TemplateEditor
         template={{ slug: template.slug, name: template.name, subject: template.subject, body: template.body }}

@@ -42,7 +42,6 @@ export default function CustomizePage() {
       <PageHeader
         eyebrow="Newsletter"
         title="Customize appearance"
-        description="Tune blocks, libraries, and theming with a live preview, then save it as the default digest appearance."
       />
       <Card>
         <CustomizeEditor

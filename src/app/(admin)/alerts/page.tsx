@@ -35,9 +35,8 @@ export default function AlertsHistory() {
   return (
     <div>
       <PageHeader
-        eyebrow="Workspace"
+        eyebrow="System"
         title="Alerts"
-        description="The 100 most recent alerts, newest first."
         actions={hasOpen ? <AcknowledgeButton id="all" /> : undefined}
       />
 

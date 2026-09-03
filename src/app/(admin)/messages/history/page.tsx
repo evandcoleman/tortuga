@@ -50,17 +50,8 @@ export default function MessagesHistory() {
   return (
     <div>
       <PageHeader
-        eyebrow="Newsletter"
+        eyebrow="Messages"
         title="Message history"
-        description="The 50 most recent one-off messages and their per-recipient outcomes."
-        actions={
-          <Link
-            href="/messages"
-            className="text-[12.5px] font-medium text-gold hover:opacity-90"
-          >
-            ← Compose
-          </Link>
-        }
       />
 
       {rows.length === 0 ? (

@@ -41,7 +41,6 @@ export default function History() {
       <PageHeader
         eyebrow="Newsletter"
         title="History"
-        description="The 50 most recent digest runs and their per-recipient outcomes."
       />
 
       {rows.length === 0 ? (

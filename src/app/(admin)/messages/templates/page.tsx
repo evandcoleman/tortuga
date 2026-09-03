@@ -16,12 +16,6 @@ export default function TemplatesPage() {
       <PageHeader
         eyebrow="Messages"
         title="Templates"
-        description="Reusable, editable email templates. The welcome template can't be deleted, only edited."
-        actions={
-          <Link href="/messages" className="text-[12.5px] font-medium text-gold hover:opacity-90">
-            ← Compose
-          </Link>
-        }
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">

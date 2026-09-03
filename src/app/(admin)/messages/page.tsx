@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { auth } from '@/kernel/auth/auth';
 import { getAppContext } from '@/kernel/context';
 import { recipientsCache } from '@/modules/newsletter/schema';
@@ -57,17 +56,8 @@ export default async function Messages({
   return (
     <div>
       <PageHeader
-        eyebrow="Newsletter"
+        eyebrow="Messages"
         title="Compose a message"
-        description="Send a one-off email to all or a chosen subset of active recipients, using the same themed shell as the weekly digest."
-        actions={
-          <Link
-            href="/messages/history"
-            className="text-[12.5px] font-medium text-gold hover:opacity-90"
-          >
-            View history →
-          </Link>
-        }
       />
       <ScheduledList rows={scheduledRows} timezone={timezone} />
       <MessageComposer

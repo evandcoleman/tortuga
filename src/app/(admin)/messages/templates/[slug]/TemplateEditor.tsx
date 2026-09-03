@@ -105,7 +105,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex flex-col gap-4">
         <Card>
-          <CardHeader title="Content" description="Subject and markdown body, rendered with the digest's theme." />
+          <CardHeader title="Content" />
           <div className="flex flex-col gap-3">
             <div>
               <label htmlFor="subject" className="mb-1 block text-[11px] font-medium uppercase tracking-[0.14em] text-faint">
@@ -169,7 +169,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
 
       <div className="flex flex-col gap-4">
         <Card>
-          <CardHeader title="Variables" description="Substituted before markdown rendering. Unknown variables render as-is." />
+          <CardHeader title="Variables" />
           <ul className="flex flex-col gap-1.5 text-[12.5px] text-muted">
             {VARIABLES.map(v => (
               <li key={v.token}>
@@ -181,7 +181,7 @@ export function TemplateEditor({ template, deletable }: TemplateEditorProps) {
         </Card>
 
         <Card>
-          <CardHeader title="Save" description="Changes take effect immediately for future sends." />
+          <CardHeader title="Save" />
           <div className="flex flex-col gap-2">
             <button
               type="button"

@@ -25,7 +25,7 @@ export function ScheduledList({ rows, timezone }: ScheduledListProps) {
 
   return (
     <Card className="mb-6">
-      <CardHeader title="Scheduled" description="Messages waiting to send." />
+      <CardHeader title="Scheduled" />
       <ul className="flex flex-col divide-y divide-line">
         {rows.map(row => (
           <ScheduledRowItem key={row.id} row={row} timezone={timezone} />

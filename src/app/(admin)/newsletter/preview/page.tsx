@@ -56,7 +56,6 @@ export default function Preview() {
       <PageHeader
         eyebrow="Newsletter"
         title="Preview"
-        description="Render the digest as a dry-run, inspect it, then send when it’s ready. Sending is irreversible."
         actions={<GenerateButton />}
       />
 
@@ -113,13 +112,13 @@ export default function Preview() {
                   preview
                 </Badge>
               )}
-              <span className="text-[12px] text-muted">
-                {row?.status === 'sent'
-                  ? `Sent to ${sentCount} recipient${sentCount === 1 ? '' : 's'}.`
-                  : row?.status === 'failed'
-                    ? 'The last send failed. Check history for details.'
-                    : 'Renders the same HTML recipients will see.'}
-              </span>
+              {row?.status === 'sent' ? (
+                <span className="text-[12px] text-muted">
+                  Sent to {sentCount} recipient{sentCount === 1 ? '' : 's'}.
+                </span>
+              ) : row?.status === 'failed' ? (
+                <span className="text-[12px] text-muted">The last send failed. Check history for details.</span>
+              ) : null}
             </div>
             <div className="text-[11px] text-faint">
               {row?.status === 'rendered' ? 'dry-run' : row ? formatRelative(row.scheduledAt) : null}
@@ -145,7 +144,7 @@ export default function Preview() {
         <EmptyState
           icon={<MailIcon />}
           title="No preview rendered yet"
-          description="Click “Generate fresh preview” to compile the next digest as a dry-run. Nothing is sent to recipients."
+          description="Generate a preview to render the next issue as a dry run."
         />
       )}
     </div>

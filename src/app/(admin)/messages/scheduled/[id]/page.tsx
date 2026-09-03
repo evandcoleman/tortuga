@@ -28,7 +28,7 @@ export default async function EditScheduledMessage({ params }: { params: Promise
   if (!row || row.status !== 'scheduled') {
     return (
       <div>
-        <PageHeader eyebrow="Newsletter" title="Edit scheduled message" />
+        <PageHeader eyebrow="Messages" title="Edit scheduled message" />
         <Card>
           <EmptyState
             title="This message is no longer scheduled"
@@ -63,14 +63,8 @@ export default async function EditScheduledMessage({ params }: { params: Promise
   return (
     <div>
       <PageHeader
-        eyebrow="Newsletter"
+        eyebrow="Messages"
         title="Edit scheduled message"
-        description="Update the subject, body, recipients, or send time. Cancel below to stop the send entirely."
-        actions={
-          <Link href="/messages" className="text-[12.5px] font-medium text-gold hover:opacity-90">
-            ← Back to messages
-          </Link>
-        }
       />
       <MessageComposer
         recipients={recipients}
