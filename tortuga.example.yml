@@ -51,7 +51,7 @@ newsletter:
       Reminder: please don't delete other people's watch history.
 
 # Optional. Public user portal (roadmap #2): a small set of templated pages replacing
-# hand-rolled portal sites like plex.example.com. Disabled by default; enable and set a
+# hand-rolled portal sites. Disabled by default; enable and set a
 # domain to serve it. See docs/specs/2026-08-31-user-portal.md.
 # portal:
 #   enabled: true

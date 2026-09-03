@@ -39,7 +39,7 @@ served on your own domain via host-based routing in middleware (Authelia
 bypassed for that domain only). Driven by existing YAML config/DB overrides
 and appearance theming, with a markdown-or-HTML body per page for custom
 prose. Not a CMS. Pairs with invites/welcome (#1), which is what drives
-traffic to it; replaces hand-rolled portal sites like plex.example.com. Spec:
+traffic to it; replaces hand-rolled portal sites. Spec:
 `docs/specs/2026-08-31-user-portal.md`. Ops setup: see the "Portal" section
 in `docs/CONFIG.md`.
 
