@@ -102,4 +102,16 @@ describe('parseRecipientsCsv', () => {
     // Assert
     expect(entries.map(e => e.email)).toEqual(['a@x.io', 'b@x.io', 'c@x.io']);
   });
+
+  it('parses mixed comma-separated entries with a name', () => {
+    // Arrange / Act
+    const { entries } = parseRecipientsCsv('a@x.com, b@x.com, Bob\nc@x.com, Carol');
+
+    // Assert
+    expect(entries).toEqual([
+      { email: 'a@x.com', name: 'a' },
+      { email: 'b@x.com', name: 'Bob' },
+      { email: 'c@x.com', name: 'Carol' },
+    ]);
+  });
 });

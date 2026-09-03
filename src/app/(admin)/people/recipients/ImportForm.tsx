@@ -1,9 +1,8 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useState } from 'react';
 import { Button, Card, CardHeader } from '../../_components/ui';
 import { importRecipientsCsv, type ActionResult } from './actions';
-import { parseRecipientsCsv } from './schema';
 
 const inputCls =
   'block w-full rounded-md border border-line bg-canvas/60 px-3 py-2 font-mono text-[13px] text-fg focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/30';
@@ -24,17 +23,9 @@ export function ImportForm() {
     initial,
   );
 
-  // Live preview of what will be imported, parsed client-side with the same
-  // logic the server uses so the preview matches the result.
-  const preview = useMemo(() => parseRecipientsCsv(text), [text]);
-  const hasInput = text.trim().length > 0;
-
   return (
     <Card>
-      <CardHeader
-        title="Import recipients"
-        description="Paste emails separated by new lines or commas. Optionally use email,Name per line."
-      />
+      <CardHeader title="Add recipients" />
       <form action={action} className="grid gap-3">
         <textarea
           className={inputCls}
@@ -44,21 +35,10 @@ export function ImportForm() {
           onChange={e => setText(e.target.value)}
           placeholder={'a@example.com\nb@example.com, Bob\nc@example.com'}
         />
-        {hasInput ? (
-          <p className="text-[11.5px] text-muted" aria-live="polite">
-            {preview.entries.length} valid
-            {preview.duplicates.length > 0 ? `, ${preview.duplicates.length} duplicate` : ''}
-            {preview.invalid.length > 0 ? `, ${preview.invalid.length} invalid` : ''}
-          </p>
-        ) : null}
+        <p className="text-[11.5px] text-muted">One per line: email, or email, Name</p>
         <div className="flex items-center gap-3">
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={pending || preview.entries.length === 0}
-            aria-busy={pending}
-          >
-            {pending ? 'Importing…' : `Import ${preview.entries.length || ''}`.trim()}
+          <Button type="submit" variant="primary" disabled={pending} aria-busy={pending}>
+            {pending ? 'Adding…' : 'Add'}
           </Button>
           {state.status === 'error' ? (
             <span className="text-[12px] text-danger" role="alert">

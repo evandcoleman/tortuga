@@ -1,6 +1,6 @@
 import { getAppContext } from '@/kernel/context';
 import { listInvites, parseSectionIds } from '@/modules/invites/service';
-import { Card, CardHeader, PageHeader, EmptyState } from '../../_components/ui';
+import { Card, PageHeader, EmptyState } from '../../_components/ui';
 import { InviteForm } from './InviteForm';
 import { PendingInvitesTable, type PendingInviteRow } from './PendingInvitesTable';
 
@@ -12,11 +12,7 @@ export default async function InvitesPage() {
   if (!ctx.plex) {
     return (
       <div>
-        <PageHeader
-          eyebrow="People"
-          title="Invites"
-          description="Send Plex invites and the welcome email in one step."
-        />
+        <PageHeader eyebrow="People" title="Invites" />
         <Card>
           <EmptyState
             title="Plex isn't configured"
@@ -50,20 +46,10 @@ export default async function InvitesPage() {
 
   return (
     <div>
-      <PageHeader
-        eyebrow="People"
-        title="Invites"
-        description="Send Plex invites and the welcome email in one step."
-      />
+      <PageHeader eyebrow="People" title="Invites" />
 
-      <div className="mb-6 grid gap-4 lg:grid-cols-2">
+      <div className="mb-6">
         <InviteForm sections={sections} sectionsUnavailable={!sectionsResult.ok} />
-        <Card>
-          <CardHeader
-            title="How it works"
-            description="Tortuga sends the Plex invite, then immediately emails the welcome guide to the same address. Users invited outside Tortuga show up as “not welcomed” on the Recipients page instead — send their welcome from there."
-          />
-        </Card>
       </div>
 
       {rows.length === 0 ? (

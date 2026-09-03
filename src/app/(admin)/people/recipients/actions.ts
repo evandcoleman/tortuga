@@ -5,15 +5,12 @@ import { getAppContext, invalidateAppContext } from '@/kernel/context';
 import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { createLogger } from '@/kernel/logging/logger';
 import {
-  addManualRecipient,
   removeRecipient as removeRecipientFromDb,
   importManualRecipients,
 } from '@/modules/newsletter/pipeline/recipients';
 import {
-  recipientSchema,
   removeSchema,
   parseRecipientsCsv,
-  deriveNameFromEmail,
 } from './schema';
 
 const log = createLogger('recipients.actions');
@@ -28,43 +25,6 @@ const RECIPIENTS_PATH = '/people/recipients';
 function revalidateRecipients(): void {
   revalidatePath(RECIPIENTS_PATH);
   revalidatePath('/');
-}
-
-/** Add (or reactivate) a single manual recipient from a form submission. */
-export async function addRecipient(
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
-  await requireAdminSession();
-
-  const parsed = recipientSchema.safeParse({
-    email: formData.get('email'),
-    name: formData.get('name'),
-  });
-  if (!parsed.success) {
-    return { status: 'error', error: parsed.error.issues[0]?.message ?? 'Invalid input' };
-  }
-
-  const { email, name } = parsed.data;
-  try {
-    const ctx = getAppContext();
-    const { created, reactivated } = addManualRecipient(
-      ctx.db,
-      email,
-      name ?? deriveNameFromEmail(email),
-    );
-    await invalidateAppContext();
-    revalidateRecipients();
-    const message = created
-      ? `Added ${email}`
-      : reactivated
-        ? `Re-activated ${email}`
-        : `Updated ${email}`;
-    return { status: 'success', message };
-  } catch (err: unknown) {
-    log.error({ err }, 'failed to add recipient');
-    return { status: 'error', error: 'Could not add recipient. Please try again.' };
-  }
 }
 
 /** Soft-delete a recipient (active=false). Invoked from the per-row remove button. */

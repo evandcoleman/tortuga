@@ -39,8 +39,8 @@ const singleLineSchema = recipientSchema;
  * comma-separated lists. Each token may be a bare email (`a@x.io`) or an
  * `email,Name` pair on its own line. To disambiguate the comma used as a
  * field separator from the comma used as a record separator, splitting happens
- * line-first: each line is split on commas, the first comma-token that looks
- * like an email becomes the email and the remainder (if any) becomes the name.
+ * line-first: each email token starts a record and any following non-email
+ * tokens on that line become its name.
  * Lines with no email token are collected as invalid. Duplicate emails (after
  * lower-casing) are reported and only the first occurrence is kept.
  */
@@ -74,16 +74,26 @@ export function parseRecipientsCsv(input: string): CsvParseResult {
 }
 
 /**
- * Split a single line into logical records. A line containing only
- * comma-separated emails (no name parts) is treated as multiple records, while
- * a line that resolves to one `email,Name` pair stays a single record. We
- * detect this by checking whether every comma-token is itself a valid email.
+ * Split a single line into logical records. Every token that is a valid email
+ * starts a new record, so `a@x.com, b@x.com, Bob` becomes a bare `a@x.com`
+ * entry followed by the named `b@x.com, Bob` entry.
  */
 function splitLineIntoRecords(line: string): string[] {
   const tokens = line.split(',').map(t => t.trim()).filter(t => t.length > 0);
   if (tokens.length <= 1) return [line];
-  const allEmails = tokens.every(t => singleLineSchema.shape.email.safeParse(t).success);
-  return allEmails ? tokens : [line];
+
+  const records: string[] = [];
+  let current: string[] = [];
+  for (const token of tokens) {
+    if (singleLineSchema.shape.email.safeParse(token).success) {
+      if (current.length > 0) records.push(current.join(', '));
+      current = [token];
+    } else {
+      current.push(token);
+    }
+  }
+  if (current.length > 0) records.push(current.join(', '));
+  return records;
 }
 
 function parseRecord(record: string): ParsedCsvEntry | null {
