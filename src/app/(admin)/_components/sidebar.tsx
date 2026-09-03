@@ -8,42 +8,53 @@ type NavItem = {
   label: string;
   exact?: boolean;
   icon: 'dashboard' | 'mail' | 'eye' | 'customize' | 'history' | 'users' | 'settings' | 'send' | 'invite' | 'alert';
-  /** Opens in a new tab via a plain `<a>` instead of client-side `Link` routing; never gets active styling. */
-  newTab?: boolean;
 };
 
-const workspaceItems: ReadonlyArray<NavItem> = [
-  { href: '/', label: 'Dashboard', exact: true, icon: 'dashboard' },
+type NavSection = {
+  label: string;
+  items: ReadonlyArray<NavItem>;
+};
+
+const sections: ReadonlyArray<NavSection> = [
+  {
+    label: 'Overview',
+    items: [{ href: '/', label: 'Dashboard', exact: true, icon: 'dashboard' }],
+  },
+  {
+    label: 'Newsletter',
+    items: [
+      { href: '/newsletter', label: 'Overview', exact: true, icon: 'mail' },
+      { href: '/newsletter/preview', label: 'Preview', icon: 'eye' },
+      { href: '/newsletter/customize', label: 'Customize', icon: 'customize' },
+      { href: '/newsletter/history', label: 'History', icon: 'history' },
+    ],
+  },
+  {
+    label: 'Messages',
+    items: [
+      { href: '/messages', label: 'Compose', exact: true, icon: 'send' },
+      { href: '/messages/history', label: 'History', icon: 'history' },
+      { href: '/messages/templates', label: 'Templates', icon: 'mail' },
+    ],
+  },
+  {
+    label: 'People',
+    items: [
+      { href: '/people/recipients', label: 'Recipients', icon: 'users' },
+      { href: '/people/invites', label: 'Invites', icon: 'invite' },
+      { href: '/portal-settings', label: 'Portal', icon: 'customize' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { href: '/alerts', label: 'Alerts', exact: true, icon: 'alert' },
+      { href: '/settings', label: 'Settings', icon: 'settings' },
+    ],
+  },
 ];
 
-const newsletterItems: ReadonlyArray<NavItem> = [
-  { href: '/newsletter', label: 'Overview', exact: true, icon: 'mail' },
-  { href: '/newsletter/preview', label: 'Preview', icon: 'eye' },
-  { href: '/newsletter/customize', label: 'Customize', icon: 'customize' },
-  { href: '/newsletter/history', label: 'History', icon: 'history' },
-];
-
-const peopleItems: ReadonlyArray<NavItem> = [
-  { href: '/people/recipients', label: 'Recipients', icon: 'users' },
-  { href: '/people/invites', label: 'Invites', icon: 'invite' },
-];
-
-const messagesItems: ReadonlyArray<NavItem> = [
-  { href: '/messages', label: 'Compose', exact: true, icon: 'send' },
-  { href: '/messages/history', label: 'History', icon: 'history' },
-  { href: '/messages/templates', label: 'Templates', icon: 'mail' },
-];
-
-const alertsItem: NavItem = { href: '/alerts', label: 'Alerts', exact: true, icon: 'alert' };
-
-const portalItems: ReadonlyArray<NavItem> = [
-  { href: '/portal-settings', label: 'Settings', exact: true, icon: 'settings' },
-  { href: '/portal', label: 'Preview', icon: 'eye', newTab: true },
-];
-
-const settingsItem: NavItem = { href: '/settings', label: 'Settings', exact: true, icon: 'settings' };
-
-function isActive(pathname: string, item: NavItem): boolean {
+export function isActive(pathname: string, item: NavItem): boolean {
   if (item.exact) return pathname === item.href;
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
@@ -69,46 +80,19 @@ export function Sidebar({ userEmail, providerName, authMode, signOutAction }: Si
       </div>
 
       <nav className="px-3">
-        <SectionLabel>Workspace</SectionLabel>
-        <ul className="mb-2 grid gap-0.5">
-          {workspaceItems.map(it => (
-            <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
-          ))}
-        </ul>
-        <SectionLabel>Newsletter</SectionLabel>
-        <ul className="mb-2 grid gap-0.5">
-          {newsletterItems.map(it => (
-            <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
-          ))}
-        </ul>
-        <SectionLabel>People</SectionLabel>
-        <ul className="mb-2 grid gap-0.5">
-          {peopleItems.map(it => (
-            <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
-          ))}
-        </ul>
-        <SectionLabel>Messages</SectionLabel>
-        <ul className="mb-2 grid gap-0.5">
-          {messagesItems.map(it => (
-            <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
-          ))}
-        </ul>
-        <SectionLabel>Alerts</SectionLabel>
-        <ul className="mb-2 grid gap-0.5">
-          <NavLink item={alertsItem} active={isActive(pathname, alertsItem)} />
-        </ul>
-        <SectionLabel>Portal</SectionLabel>
-        <ul className="grid gap-0.5">
-          {portalItems.map(it => (
-            <NavLink key={it.href} item={it} active={!it.newTab && isActive(pathname, it)} />
-          ))}
-        </ul>
+        {sections.map((section, index) => (
+          <div key={section.label}>
+            <SectionLabel>{section.label}</SectionLabel>
+            <ul className={index === sections.length - 1 ? 'grid gap-0.5' : 'mb-2 grid gap-0.5'}>
+              {section.items.map(it => (
+                <NavLink key={it.href} item={it} active={isActive(pathname, it)} />
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       <div className="mt-auto border-t border-line px-3 py-3">
-        <ul className="mb-2 grid gap-0.5">
-          <NavLink item={settingsItem} active={isActive(pathname, settingsItem)} />
-        </ul>
         <div className="mb-2 rounded-md bg-surface px-3 py-2.5">
           <div className="mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-faint">
             <Dot className="text-success" />
@@ -160,21 +144,8 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       ) : null}
       <Icon name={item.icon} className={active ? 'text-gold' : 'text-subtle group-hover:text-fg'} />
       <span className="tracking-[-0.01em]">{item.label}</span>
-      {item.newTab ? (
-        <Icon name="external" className="ml-auto text-subtle group-hover:text-fg" />
-      ) : null}
     </>
   );
-
-  if (item.newTab) {
-    return (
-      <li>
-        <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
-          {content}
-        </a>
-      </li>
-    );
-  }
 
   return (
     <li>
@@ -214,7 +185,7 @@ function Dot({ className = '' }: { className?: string }) {
   return <span className={`inline-block h-1.5 w-1.5 rounded-full bg-current ${className}`} />;
 }
 
-function Icon({ name, className = '' }: { name: NavItem['icon'] | 'external'; className?: string }) {
+function Icon({ name, className = '' }: { name: NavItem['icon']; className?: string }) {
   const common = {
     width: 16,
     height: 16,
@@ -307,13 +278,6 @@ function Icon({ name, className = '' }: { name: NavItem['icon'] | 'external'; cl
           <path d="M10.3 3.6L2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z" />
           <line x1="12" y1="9.5" x2="12" y2="13.5" />
           <circle cx="12" cy="16.5" r="0.1" fill="currentColor" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      );
-    case 'external':
-      return (
-        <svg {...common} width="12" height="12">
-          <path d="M7 17L17 7" />
-          <path d="M8 7h9v9" />
         </svg>
       );
   }

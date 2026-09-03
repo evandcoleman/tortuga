@@ -12,6 +12,16 @@ export default function PortalSettingsPage() {
         eyebrow="Portal"
         title="Portal settings"
         description="Configure the small branded public site (buttons + a few content pages) served on your own domain."
+        actions={
+          <a
+            href="/portal"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[12.5px] font-medium text-gold hover:opacity-90"
+          >
+            Preview portal ↗
+          </a>
+        }
       />
       <PortalForm config={ctx.config.portal} />
     </div>
