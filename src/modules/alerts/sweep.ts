@@ -37,7 +37,7 @@ export function upsertAlert(db: Db, candidate: AlertCandidate, now: Date): { row
   })
     .onConflictDoUpdate({
       target: alerts.key,
-      set: { detail: candidate.detail, updatedAt: now },
+      set: { title: candidate.title, detail: candidate.detail, href: candidate.href, updatedAt: now },
     })
     .run();
   const row = db.select().from(alerts).where(eq(alerts.key, candidate.key)).all()[0];

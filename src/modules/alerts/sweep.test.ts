@@ -138,6 +138,24 @@ describe('sweepAlerts', () => {
     expect(created[0]).toMatchObject({ kind: 'complaint', title: 'Spam complaint received' });
   });
 
+  it('refreshes the title (and href) when a partial announcement moves to failed', () => {
+    const db = makeDb();
+    const id = insertAnnouncement(db, { status: 'partial' });
+    const first = sweepAlerts(db, { timezone: TIMEZONE });
+    expect(first.created).toHaveLength(1);
+    expect(first.created[0].title).toBe('Announcement partially sent');
+    const firstAlertId = first.created[0].id;
+
+    db.update(announcements).set({ status: 'failed' }).where(eq(announcements.id, id)).run();
+    const second = sweepAlerts(db, { timezone: TIMEZONE });
+    expect(second.created).toHaveLength(0);
+
+    const rows = db.select().from(alerts).all();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].id).toBe(firstAlertId);
+    expect(rows[0].title).toBe('Announcement failed');
+  });
+
   it('re-running creates no new alerts and refreshes detail', () => {
     const db = makeDb();
     const id = insertDigest(db, { error: 'first error' });

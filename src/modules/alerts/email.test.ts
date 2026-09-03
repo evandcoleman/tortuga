@@ -6,7 +6,7 @@ import { applyMigrations } from '@/kernel/db/migrate';
 import type { EmailProvider } from '@/kernel/email/types';
 
 import { alerts } from './schema';
-import { emailPendingAlerts, type AlertEmailConfig } from './email';
+import { emailPendingAlerts, absoluteHref, type AlertEmailConfig } from './email';
 
 function makeDb() {
   const db = createDb(':memory:');
@@ -46,6 +46,20 @@ function insertAlert(db: ReturnType<typeof createDb>, overrides: Partial<typeof 
   }).run();
   return id;
 }
+
+describe('absoluteHref', () => {
+  it('collapses a double slash when appUrl has a trailing slash', () => {
+    expect(absoluteHref('http://x/', '/newsletter/history')).toBe('http://x/newsletter/history');
+  });
+
+  it('inserts a slash when href has no leading slash', () => {
+    expect(absoluteHref('http://x', 'newsletter/history')).toBe('http://x/newsletter/history');
+  });
+
+  it('returns null when href is null', () => {
+    expect(absoluteHref('http://x', null)).toBeNull();
+  });
+});
 
 describe('emailPendingAlerts', () => {
   it('batches all pending alerts into one send and sets emailed_at', async () => {

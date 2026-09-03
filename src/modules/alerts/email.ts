@@ -31,9 +31,11 @@ export interface EmailPendingAlertsResult {
 // doesn't spam the log every sweep tick.
 let warnedUnconfigured = false;
 
-function absoluteHref(appUrl: string, href: string | null): string | null {
+export function absoluteHref(appUrl: string, href: string | null): string | null {
   if (!href) return null;
-  return `${appUrl}${href}`;
+  const base = appUrl.endsWith('/') ? appUrl.slice(0, -1) : appUrl;
+  const path = href.startsWith('/') ? href : `/${href}`;
+  return `${base}${path}`;
 }
 
 function alertLine(appUrl: string, alert: Alert): string {
