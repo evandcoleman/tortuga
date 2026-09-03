@@ -106,12 +106,26 @@ error listener.
 content when any unacknowledged alerts exist. Danger-toned card titled
 "Needs attention", listing up to 20 newest unacknowledged alerts: title,
 detail (one line, truncated), relative time, optional "Open" link, and an
-Acknowledge button. Header has "Acknowledge all". Hidden when empty.
+Acknowledge button. Header has "Acknowledge all" and a "View all" link to
+`/alerts`. Hidden when empty.
+
+## Alerts history page
+
+`src/app/(admin)/alerts/page.tsx` at `/alerts`, with an "Alerts" entry in
+the admin nav (follow the existing nav definition; place it after
+Messages). Lists the 100 newest alerts regardless of state, newest first,
+in the admin table style: status badge (`Open` danger, `Acknowledged`
+neutral), kind, title with detail beneath (one line, truncated), created
+relative time with full timestamp on hover, acknowledged time or blank,
+optional "Open" link, and an Acknowledge button on open rows only. Page
+header has "Acknowledge all" when any open rows exist. Empty state when
+there are no alerts at all.
 
 Server actions in `src/app/(admin)/alerts/actions.ts`:
 `acknowledgeAlert(id)` and `acknowledgeAllAlerts()`, both behind
 `requireAdminSession()`, setting `acknowledged_at = now` where null, then
-`revalidatePath('/')`.
+`revalidatePath('/')` and `revalidatePath('/alerts')`. The dashboard panel
+and the history page share one client `AcknowledgeButton` component.
 
 ## Error handling
 
@@ -137,6 +151,6 @@ Server actions in `src/app/(admin)/alerts/actions.ts`:
 
 ## Out of scope
 
-Outbound webhooks, configurable thresholds, an alert history page,
-per-kind muting, alerts for Tautulli or TMDB outages (the dashboard already
+Outbound webhooks, configurable thresholds, pagination or filtering on
+the history page, per-kind muting, alerts for Tautulli or TMDB outages (the dashboard already
 shows missing services).
