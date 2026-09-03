@@ -1,7 +1,7 @@
 # Admin UI declutter
 
 Date: 2026-09-03
-Status: draft, awaiting approval
+Status: approved 2026-09-03, implemented in edfe5df..7acd7e8
 
 ## Goal
 
