@@ -115,7 +115,16 @@ describe('PortalLayout host-aware auth/enabled gating', () => {
     headersGet.mockReturnValue('1');
     const element = await PortalLayout({ children: <div>child</div> });
     const html = renderToStaticMarkup(element);
-    expect(html).toContain('Powered by Tortuga');
+    expect(html).toContain('Powered by');
+  });
+
+  it('links "Tortuga" in the footer to the project repo', async () => {
+    getAppContext.mockReturnValue(baseCtx);
+    headersGet.mockReturnValue('1');
+    const element = await PortalLayout({ children: <div>child</div> });
+    const html = renderToStaticMarkup(element);
+    expect(html).toContain('href="https://github.com/evandcoleman/tortuga"');
+    expect(html).toContain('>Tortuga</a>');
   });
 
   it('omits the footer entirely when show_footer is false', async () => {

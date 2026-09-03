@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getAppContext } from '@/kernel/context';
 import { requireAdminSession } from '@/kernel/auth/require-admin-session';
 import { PORTAL_HOST_HEADER } from '@/modules/portal/constants';
+import { renderFooterText } from '@/modules/portal/footer-text';
 import { resolvePortalTheme, portalThemeCssVars } from '@/modules/portal/theme';
 
 export const dynamic = 'force-dynamic';
@@ -85,8 +86,8 @@ export default async function PortalLayout({ children }: { children: React.React
             style={{ color: 'var(--portal-muted)' }}
           >
             <span className="hidden sm:inline">{serverName}</span>
-            <span className="hidden sm:inline">{footer}</span>
-            <span className="mx-auto sm:hidden">{serverName} · {footer}</span>
+            <span className="hidden sm:inline">{renderFooterText(footer)}</span>
+            <span className="mx-auto sm:hidden">{serverName} · {renderFooterText(footer)}</span>
           </div>
         </footer>
       ) : null}
