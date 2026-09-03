@@ -1,7 +1,6 @@
 'use client';
 
 import { useActionState } from 'react';
-import Link from 'next/link';
 import type { NewsletterConfig } from '@/kernel/config/schema';
 import { Button, Card, CardHeader } from '../../_components/ui';
 import { TextField, NumberField, CheckboxField } from '../fields';
@@ -14,20 +13,9 @@ export function GeneralForm({ config }: { config: NewsletterConfig }) {
   const err = state.status === 'error' ? state.errors : {};
 
   return (
-    <div className="grid gap-5">
+    <form action={action} className="grid gap-5">
       <Card>
-        <CardHeader title="Appearance" description="Theme, layout, and block-level customization for the newsletter email." />
-        <Link
-          href="/newsletter/customize"
-          className="text-[13px] font-medium text-gold transition hover:text-gold-hi"
-        >
-          Open the customize editor →
-        </Link>
-      </Card>
-
-      <form action={action} className="grid gap-5">
-      <Card>
-        <CardHeader title="Schedule" description="When the digest is generated and sent." />
+        <CardHeader title="Schedule" />
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField name="schedule" label="Cron" defaultValue={config.schedule} error={err['schedule']} hint="e.g. 0 9 * * SUN" />
           <TextField name="timezone" label="Timezone" defaultValue={config.timezone} error={err['timezone']} />
@@ -39,7 +27,7 @@ export function GeneralForm({ config }: { config: NewsletterConfig }) {
       </Card>
 
       <Card>
-        <CardHeader title="Plex" description="Connects the newsletter to your Plex server for deep-links to titles." />
+        <CardHeader title="Plex" />
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
             name="plex.server_id"
@@ -47,7 +35,7 @@ export function GeneralForm({ config }: { config: NewsletterConfig }) {
             defaultValue={config.plex?.server_id ?? ''}
             error={err['plex.server_id']}
             placeholder="e.g. a1b2c3d4e5f6…"
-            hint="Powers “Open in Plex” deep-links in the email. Find it in your Plex server under Settings → Manage → Remote Access (the ~40-character Server ID). Leave blank to skip deep-links."
+            hint="Powers 'Open in Plex' links. Find it under Plex Settings → General."
           />
         </div>
       </Card>
@@ -57,7 +45,6 @@ export function GeneralForm({ config }: { config: NewsletterConfig }) {
         {state.status === 'success' ? <span className="text-[13px] text-success">Saved and reloaded.</span> : null}
         {state.status === 'error' ? <span className="text-[13px] text-danger">Fix the highlighted fields.</span> : null}
       </div>
-      </form>
-    </div>
+    </form>
   );
 }

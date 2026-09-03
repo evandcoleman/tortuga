@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
-import Link from 'next/link';
 import type { PortalConfig, PortalCopy, PortalPageConfigSchema } from '@/kernel/config/schema';
 import { z } from 'zod';
 import { DEFAULT_PAGE_COPY, DEFAULT_PORTAL_COPY } from '@/modules/portal/copy';
@@ -110,11 +109,6 @@ export function PortalForm({ config }: { config: PortalConfig }) {
               Requires the tunnel/router and Authelia bypass to be configured for this domain (see docs/CONFIG.md).
             </span>
           </label>
-          <div className="flex items-end">
-            <Link href="/portal" target="_blank" className="text-[13px] font-medium text-gold transition hover:text-gold-hi">
-              Preview portal →
-            </Link>
-          </div>
         </div>
         <div className="mt-3">
           <label className="flex items-start gap-2.5 py-1">
@@ -136,7 +130,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
       </Card>
 
       <Card>
-        <CardHeader title="Links" description="Big buttons on the portal home page." />
+        <CardHeader title="Links" />
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Plex URL</span>
@@ -180,7 +174,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
       </Card>
 
       <Card>
-        <CardHeader title="Home" description="The home page's tagline, intro, and the ordered list of index buttons." />
+        <CardHeader title="Home" />
         <div className="grid gap-4">
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-faint">Tagline (optional)</span>
@@ -217,7 +211,8 @@ export function PortalForm({ config }: { config: PortalConfig }) {
       </Card>
 
       <Card>
-        <CardHeader title="Pages" description="Each ships with built-in copy; a markdown override replaces the body entirely." />
+        <CardHeader title="Pages" />
+        <p className="text-[12px] text-muted">Each ships with built-in copy; a markdown override replaces the body entirely.</p>
         <div className="grid gap-4">
           {BUILT_IN_PAGES.map(({ key, label, hint }) => (
             <div key={key} className="rounded-lg border border-line p-3">
@@ -273,7 +268,8 @@ export function PortalForm({ config }: { config: PortalConfig }) {
       </Card>
 
       <Card>
-        <CardHeader title="Copy" description="Chrome text shown around every page — the header, footer, and the stuck-card prompt." />
+        <CardHeader title="Copy" />
+        <p className="text-[12px] text-muted">Chrome text shown around every page — the header, footer, and the stuck-card prompt.</p>
         <div className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
@@ -394,7 +390,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
       </Card>
 
       <Card>
-        <CardHeader title="Appearance" description="Theme for the portal's chrome — inherit the newsletter's look, or pick your own." />
+        <CardHeader title="Appearance" />
         <PortalAppearanceEditor value={working.appearance} onChange={appearance => patch({ appearance })} />
       </Card>
 

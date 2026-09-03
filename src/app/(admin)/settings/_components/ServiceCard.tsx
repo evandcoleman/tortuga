@@ -15,13 +15,13 @@ const initial: ServiceSaveState = { status: 'idle' };
 /** One card in /settings/services (and the email page's provider cards): its own Save + Test. */
 export function ServiceCard({
   title,
-  description,
+  hint,
   saveAction,
   testAction,
   children,
 }: {
   title: string;
-  description: string;
+  hint?: string;
   saveAction: (prev: ServiceSaveState, fd: FormData) => Promise<ServiceSaveState>;
   testAction: () => Promise<ConnectionTestResult>;
   children: React.ReactNode;
@@ -30,7 +30,8 @@ export function ServiceCard({
 
   return (
     <Card>
-      <CardHeader title={title} description={description} action={<TestButton action={testAction} />} />
+      <CardHeader title={title} action={<TestButton action={testAction} />} />
+      {hint ? <p className="text-[12px] text-muted">{hint}</p> : null}
       <form action={formAction} className="grid gap-4 sm:grid-cols-2">
         {children}
         <div className="col-span-full flex items-center gap-3 pt-1">

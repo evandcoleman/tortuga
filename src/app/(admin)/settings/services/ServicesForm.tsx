@@ -29,7 +29,6 @@ export function ServicesForm({ values }: { values: ServicesFieldValues }) {
     <div className="grid gap-5">
       <ServiceCard
         title="Tautulli"
-        description="Source of recently-added library activity."
         saveAction={saveTautulliSettings}
         testAction={testTautulli}
       >
@@ -46,7 +45,6 @@ export function ServicesForm({ values }: { values: ServicesFieldValues }) {
 
       <ServiceCard
         title="TMDB"
-        description="Enriches titles with posters, synopsis, and ratings."
         saveAction={saveTmdbSettings}
         testAction={testTmdb}
       >
@@ -55,7 +53,6 @@ export function ServicesForm({ values }: { values: ServicesFieldValues }) {
 
       <ServiceCard
         title="Maintainerr"
-        description="Powers the “Leaving soon” section."
         saveAction={saveMaintainerrSettings}
         testAction={testMaintainerr}
       >
@@ -71,7 +68,7 @@ export function ServicesForm({ values }: { values: ServicesFieldValues }) {
 
       <ServiceCard
         title="Anthropic"
-        description="Used for AI commentary when Provider is set to Anthropic."
+        hint="Used when Commentary provider is Anthropic."
         saveAction={saveAnthropicSettings}
         testAction={testAnthropic}
       >
@@ -80,7 +77,7 @@ export function ServicesForm({ values }: { values: ServicesFieldValues }) {
 
       <ServiceCard
         title="OpenAI"
-        description="Used for AI commentary when Provider is set to OpenAI."
+        hint="Used when Commentary provider is OpenAI."
         saveAction={saveOpenaiSettings}
         testAction={testOpenai}
       >

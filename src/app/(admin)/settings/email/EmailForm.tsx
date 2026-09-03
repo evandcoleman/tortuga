@@ -32,7 +32,7 @@ export function EmailForm({
   return (
     <form action={action} className="grid gap-5">
       <Card>
-        <CardHeader title="Sender & delivery" description="Identity and delivery provider." />
+        <CardHeader title="Sender & delivery" />
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField name="from.email" label="From email" type="email" defaultValue={config.from.email} error={err['from.email']} />
           <TextField name="from.name" label="From name" defaultValue={config.from.name} error={err['from.name']} />
@@ -49,7 +49,6 @@ export function EmailForm({
       <Card>
         <CardHeader
           title="Resend credentials"
-          description="Used when Provider is set to Resend."
           action={<TestButton action={testResend} />}
         />
         <div className="grid gap-4 sm:grid-cols-2">
@@ -61,7 +60,6 @@ export function EmailForm({
       <Card>
         <CardHeader
           title="Mailgun credentials"
-          description="Used when Provider is set to Mailgun."
           action={<TestButton action={() => testMailgun(mailgunRegion)} />}
         />
         <div className="grid gap-4 sm:grid-cols-2">

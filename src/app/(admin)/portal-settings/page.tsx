@@ -11,7 +11,6 @@ export default function PortalSettingsPage() {
       <PageHeader
         eyebrow="Portal"
         title="Portal settings"
-        description="Configure the small branded public site (buttons + a few content pages) served on your own domain."
         actions={
           <a
             href="/portal"
