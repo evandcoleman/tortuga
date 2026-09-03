@@ -14,7 +14,7 @@ export interface PortalContentPageProps {
   homeHref: string;
   tocHeading: string;
   backLabel: string;
-  /** `null` hides the "Stuck?" card entirely (report_issue disabled, `show_stuck_card` false, or this *is* the report-issue page). */
+  /** `null` hides the stuck card entirely (report_issue disabled, `show_stuck_card` false, or this *is* the report-issue page). */
   stuckCard: PortalStuckCard | null;
 }
 

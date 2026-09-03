@@ -46,7 +46,7 @@ describe('PortalContentPage', () => {
 
   it('omits the stuck card entirely when null', () => {
     const html = renderToStaticMarkup(<PortalContentPage {...baseProps} stuckCard={null} />);
-    expect(html).not.toContain('Stuck?');
+    expect(html).not.toContain('Something not playing?');
     expect(html).not.toContain('Report an issue');
   });
 

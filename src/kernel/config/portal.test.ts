@@ -182,7 +182,7 @@ describe('resolvePortalConfig copy', () => {
       intro: 'Everything you need to get set up, find your way around, and get help when something breaks.',
       tabTitle: SERVER_NAME,
       tocHeading: 'On this page',
-      stuckTitle: 'Stuck?',
+      stuckTitle: 'Something not playing?',
       stuckBody: 'Report an issue and include what you were trying to watch.',
       stuckLinkLabel: 'Report an issue',
       backLabel: 'Back to index',

@@ -43,7 +43,7 @@ All optional strings, default = current hard-coded text:
 | `intro` | Everything you need to get set up, find your way around, and get help when something breaks. |
 | `tab_title` | `{{server_name}}` |
 | `toc_heading` | On this page |
-| `stuck_title` | Stuck? |
+| `stuck_title` | Something not playing? |
 | `stuck_body` | Report an issue and include what you were trying to watch. |
 | `stuck_link_label` | Report an issue |
 | `back_label` | Back to index |

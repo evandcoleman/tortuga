@@ -243,13 +243,13 @@ through the same token substitution as page bodies (`server_name`, `plex_url`,
 | `intro` | Everything you need to get set up, find your way around, and get help when something breaks. |
 | `tab_title` | `{{server_name}}` |
 | `toc_heading` | On this page |
-| `stuck_title` | Stuck? |
+| `stuck_title` | Something not playing? |
 | `stuck_body` | Report an issue and include what you were trying to watch. |
 | `stuck_link_label` | Report an issue |
 | `back_label` | Back to index |
 | `footer` | Powered by Tortuga |
 | `custom_page_eyebrow` | Page |
-| `show_stuck_card` | `true` (boolean) — hides the "stuck?" card when `false`; also auto-hidden when the `report_issue` page is disabled |
+| `show_stuck_card` | `true` (boolean) — hides the stuck card when `false`; also auto-hidden when the `report_issue` page is disabled |
 | `show_footer` | `true` (boolean) — hides the footer when `false` |
 
 ### Routing model
