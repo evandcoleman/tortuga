@@ -70,11 +70,19 @@ favour of scheduling and templates; compose stays announcement-only, so a
 transactional (preference-bypassing) send is not built. Spec:
 `docs/specs/2026-09-02-templates-library.md`.
 
+
+### ✅ 6. Admin failure alerts — shipped 2026-09-02
+A minute-cadence sweep turns failed digests, failed or partial
+announcements, provider rejection spikes, bounce spikes, and spam
+complaints into deduplicated alerts; scheduler handler exceptions feed in
+through an error listener. Open alerts show on the dashboard and on a new
+`/alerts` history page with acknowledge, and each sweep emails new alerts
+to `ADMIN_EMAIL` in one batch. Thresholds are fixed constants; no
+webhook. Spec: `docs/specs/2026-09-02-admin-failure-alerts.md`.
+
 ## Later
 
 - **Lifecycle nudges** — inactivity check-ins, removal notices.
-- **Admin failure alerts** — surface scheduler failures, provider
-  rejections, and bounce/complaint spikes somewhere other than logs.
 - **Audience segments** — target announcements by library access,
   last-seen activity, or saved groups.
 - **Message API** — let external automation (monitoring, scripts) send an
