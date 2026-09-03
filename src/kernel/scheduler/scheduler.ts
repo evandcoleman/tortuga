@@ -10,8 +10,24 @@ export interface ScheduleSpec {
   handler: () => Promise<void> | void;
 }
 
+export type SchedulerErrorListener = (name: string, err: unknown) => void;
+
 export function createScheduler() {
   const jobs = new Map<string, { spec: ScheduleSpec; cron: Cron }>();
+  const errorListeners: SchedulerErrorListener[] = [];
+
+  function notifyListeners(name: string, err: unknown) {
+    for (const listener of errorListeners) {
+      // Each listener runs in its own try/catch so a broken listener can
+      // never mask the original error or stop the remaining listeners.
+      try {
+        listener(name, err);
+      } catch (listenerErr) {
+        log.error({ schedule: name, err: listenerErr }, 'scheduler error listener threw');
+      }
+    }
+  }
+
   return {
     register(spec: ScheduleSpec) {
       if (jobs.has(spec.name)) throw new Error(`duplicate schedule: ${spec.name}`);
@@ -27,10 +43,22 @@ export function createScheduler() {
         },
         async () => {
           try { await spec.handler(); }
-          catch (err) { log.error({ schedule: spec.name, err }, 'scheduled handler threw'); }
+          catch (err) {
+            log.error({ schedule: spec.name, err }, 'scheduled handler threw');
+            notifyListeners(spec.name, err);
+          }
         },
       );
       jobs.set(spec.name, { spec, cron });
+    },
+    onError(listener: SchedulerErrorListener) {
+      errorListeners.push(listener);
+    },
+    /** Manually runs a job's underlying cron trigger now, awaiting completion. Used by tests. */
+    async trigger(name: string) {
+      const job = jobs.get(name);
+      if (!job) return;
+      await job.cron.trigger();
     },
     stop(name: string) {
       const job = jobs.get(name);
