@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Documentation site (VitePress): its own package, build output, and cache.
+    "docs/**",
   ]),
 ]);
 
