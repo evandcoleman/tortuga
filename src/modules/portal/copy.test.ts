@@ -27,9 +27,9 @@ describe('default portal copy', () => {
     expect(html.toLowerCase()).toContain('request');
   });
 
-  it('report-issue links through {{request_label}} at {{request_url}}', () => {
+  it('report-issue links to the request portal at {{request_url}}', () => {
     const html = renderPortalMarkdown(REPORT_ISSUE_MARKDOWN, vars);
-    expect(html).toContain('<a href="https://req.example">Overseerr</a>');
+    expect(html).toContain('<a href="https://req.example">Open the request portal</a>');
     expect(html).not.toContain('{{request_url}}');
   });
 
@@ -39,6 +39,6 @@ describe('default portal copy', () => {
       requestUrl: '#',
       requestLabel: 'the request service',
     });
-    expect(html).toContain('<a href="#">the request service</a>');
+    expect(html).toContain('<a href="#">Open the request portal</a>');
   });
 });

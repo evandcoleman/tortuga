@@ -129,8 +129,8 @@ export const REPORT_ISSUE_MARKDOWN = `Something not playing right, missing, or b
 
 ## Content issues
 
-Use the **Report Issue** flow in {{request_label}} — it routes straight to
-the person who can fix it: [{{request_label}}]({{request_url}}).
+Use the **Report Issue** flow in the request portal — it routes straight to
+the person who can fix it: [Open the request portal]({{request_url}}).
 
 This covers things like:
 
@@ -144,7 +144,7 @@ If it's not a content issue — the server itself seems down, or something
 outside of a specific title is broken — reach out directly instead of using
 the request flow above.
 
-There's no form here: everything routes through {{request_label}}.`;
+There's no form here: everything routes through the request portal.`;
 
 export const DEFAULT_PAGE_COPY: Record<'getting_started' | 'rules' | 'report_issue', DefaultPageCopy> = {
   getting_started: { title: GETTING_STARTED_TITLE, eyebrow: 'Guide' },
