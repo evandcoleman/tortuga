@@ -141,10 +141,7 @@ This covers things like:
 ## Something else?
 
 If it's not a content issue — the server itself seems down, or something
-outside of a specific title is broken — reach out directly instead of using
-the request flow above.
-
-There's no form here: everything routes through the request portal.`;
+outside of a specific title is broken — reach out directly.`;
 
 export const DEFAULT_PAGE_COPY: Record<'getting_started' | 'rules' | 'report_issue', DefaultPageCopy> = {
   getting_started: { title: GETTING_STARTED_TITLE, eyebrow: 'Guide' },
