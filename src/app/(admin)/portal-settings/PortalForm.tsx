@@ -106,7 +106,7 @@ export function PortalForm({ config }: { config: PortalConfig }) {
             />
             {err['domain'] ? <span className="mt-1 block text-[11.5px] text-danger">{err['domain']}</span> : null}
             <span className="mt-1 block text-[11.5px] text-muted">
-              Requires the tunnel/router and Authelia bypass to be configured for this domain (see docs/CONFIG.md).
+              Requires the tunnel/router and Authelia bypass to be configured for this domain (see https://evandcoleman.github.io/tortuga/configuration/portal).
             </span>
           </label>
         </div>

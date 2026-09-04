@@ -14,8 +14,12 @@ services:
       RESEND_WEBHOOK_SECRET: "${RESEND_WEBHOOK_SECRET}"
       APP_URL: "${APP_URL:-http://localhost:3000}"
       SESSION_SECRET: "${SESSION_SECRET}"
+      AUTH_SECRET: "${AUTH_SECRET}"
       ADMIN_EMAIL: "${ADMIN_EMAIL}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
       AUTH_MODE: "${AUTH_MODE:-session}"
       # MAINTAINERR_URL: "http://maintainerr:6246"
+      # Mailgun (alternative to Resend above; also set newsletter.email.provider: mailgun in tortuga.yml)
+      # MAILGUN_API_KEY: "${MAILGUN_API_KEY}"
+      # MAILGUN_WEBHOOK_SIGNING_KEY: "${MAILGUN_WEBHOOK_SIGNING_KEY}"
     restart: unless-stopped

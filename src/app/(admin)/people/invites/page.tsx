@@ -16,7 +16,7 @@ export default async function InvitesPage() {
         <Card>
           <EmptyState
             title="Plex isn't configured"
-            description="Set the PLEX_TOKEN environment variable and newsletter.plex.server_id in tortuga.yml to enable invites. See docs/CONFIG.md."
+            description="Set the PLEX_TOKEN environment variable and newsletter.plex.server_id in tortuga.yml to enable invites. See https://evandcoleman.github.io/tortuga/configuration/tortuga-yml."
           />
         </Card>
       </div>
