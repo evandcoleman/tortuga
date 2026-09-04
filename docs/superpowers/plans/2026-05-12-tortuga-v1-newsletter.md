@@ -381,7 +381,7 @@ newsletter:
   lookback_days: 7
   from:
     email: "tortuga@example.com"
-    name: "Olympus Plex"
+    name: "Aurora Plex"
   reply_to: "you@example.com"
   include_libraries:
     - "Movies"
@@ -3138,13 +3138,13 @@ git commit -m "docs: README with quickstart and env reference"
 
 ---
 
-## Phase 13 — Olympus deployment
+## Phase 13 — Deployment cluster
 
 ### Task 38: Vault secrets + policy + CSI volume + Nomad job + versions.json
 
-**Files (in the sibling olympus repo at `../olympus/`):**
-- Create: `../olympus/jobs/tortuga/job.nomad`, `../olympus/vault-policies/tortuga.hcl`, `../olympus/volumes/tortuga-config.hcl`
-- Modify: `../olympus/versions.json`
+**Files (in the sibling infra repo at `<your-infra-repo>/`):**
+- Create: `<your-infra-repo>/jobs/tortuga/job.nomad`, `<your-infra-repo>/vault-policies/tortuga.hcl`, `<your-infra-repo>/volumes/tortuga-config.hcl`
+- Modify: `<your-infra-repo>/versions.json`
 
 - [ ] **Step 1: Seed Vault KV**
 
@@ -3160,7 +3160,7 @@ vault kv put kv/tortuga \
 
 - [ ] **Step 2: Vault policy**
 
-`../olympus/vault-policies/tortuga.hcl`:
+`<your-infra-repo>/vault-policies/tortuga.hcl`:
 ```hcl
 path "kv/data/tortuga" {
   capabilities = ["read"]
@@ -3173,7 +3173,7 @@ path "kv/data/tautulli" {
 
 Apply:
 ```bash
-vault policy write tortuga ../olympus/vault-policies/tortuga.hcl
+vault policy write tortuga <your-infra-repo>/vault-policies/tortuga.hcl
 ```
 
 - [ ] **Step 3: CSI volume**
@@ -3183,7 +3183,7 @@ Create dir on NAS + ACL:
 ssh <nas-host> 'sudo mkdir -p /volume1/Cluster/data/tortuga && sudo /usr/syno/bin/synoacltool -add /volume1/Cluster/data/tortuga "group:administrators:allow:rwxpdDaARWc--:fd--"'
 ```
 
-`../olympus/volumes/tortuga-config.hcl`:
+`<your-infra-repo>/volumes/tortuga-config.hcl`:
 ```hcl
 id        = "tortuga-config"
 name      = "tortuga-config"
@@ -3201,7 +3201,7 @@ context {
 
 Register:
 ```bash
-nomad volume register ../olympus/volumes/tortuga-config.hcl
+nomad volume register <your-infra-repo>/volumes/tortuga-config.hcl
 ```
 
 - [ ] **Step 4: Seed `/config/tortuga.yml` on the NAS**
@@ -3213,7 +3213,7 @@ ssh <nas-host> 'sudo tee /volume1/Cluster/data/tortuga/tortuga.yml' < tortuga.ex
 
 - [ ] **Step 5: Job spec**
 
-`../olympus/jobs/tortuga/job.nomad`:
+`<your-infra-repo>/jobs/tortuga/job.nomad`:
 ```hcl
 variable "image" {
   type    = string
@@ -3221,7 +3221,7 @@ variable "image" {
 }
 
 job "tortuga" {
-  datacenters = ["olympus"]
+  datacenters = ["dc1"]
   region      = "us-east-1"
   type        = "service"
 
@@ -3317,7 +3317,7 @@ job "tortuga" {
 
 - [ ] **Step 6: Bump versions.json**
 
-Add to `../olympus/versions.json`:
+Add to `<your-infra-repo>/versions.json`:
 ```json
 "tortuga": "ghcr.io/evandcoleman/tortuga:latest"
 ```
@@ -3325,7 +3325,7 @@ Add to `../olympus/versions.json`:
 - [ ] **Step 7: Validate + deploy**
 
 ```bash
-cd ../olympus
+cd <your-infra-repo>
 just validate tortuga
 just deploy-safe tortuga
 just status tortuga
@@ -3336,10 +3336,10 @@ just logs tortuga
 
 Browser: `https://tortuga.example.com` → Authelia gate → admin UI loads → **Newsletter → Preview** → "Generate fresh preview" renders.
 
-- [ ] **Step 9: Commit olympus repo**
+- [ ] **Step 9: Commit infra repo**
 
 ```bash
-cd ../olympus
+cd <your-infra-repo>
 git add jobs/tortuga vault-policies/tortuga.hcl volumes/tortuga-config.hcl versions.json
 git commit -m "feat: deploy tortuga newsletter app"
 git push
@@ -3349,7 +3349,7 @@ git push
 
 ## Self-review summary
 
-- **Spec coverage:** every spec section maps to at least one task — kernel (Tasks 4-13, 20-25), schema (14), filters (15), template (16), pipeline (17-19), scheduler+modules (20-23), auth (24-25), API routes (26-30), admin UI (31-33), container/CI (34-35), e2e (36), docs (37), olympus deployment (38).
+- **Spec coverage:** every spec section maps to at least one task — kernel (Tasks 4-13, 20-25), schema (14), filters (15), template (16), pipeline (17-19), scheduler+modules (20-23), auth (24-25), API routes (26-30), admin UI (31-33), container/CI (34-35), e2e (36), docs (37), deployment cluster (38).
 - **Placeholder scan:** no TBDs, no "implement later", no "similar to Task N." Each step contains executable code or shell.
 - **Type consistency:** `EnrichedItem`, `TautulliItem`, `RunDigestOpts` are defined once and referenced consistently across pipeline/route/server-action call sites.
 - **Known soft spot worth tracking:** the `html.replace(/token=[^"&]+/, ...)` trick in `runDigest` for per-recipient unsubscribe tokens is fragile if templates ever place the token outside a querystring context. Acceptable for v1; revisit when templates evolve.

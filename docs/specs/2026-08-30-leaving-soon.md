@@ -20,7 +20,7 @@ Tautulli: `GET /api/v2?cmd=get_metadata&rating_key=<ratingKey>` → map to the e
 
 ## Config
 
-Env (`src/kernel/config/schema.ts` EnvSchema): `MAINTAINERR_URL` optional URL. Absent → feature disabled, no settings shown beyond an explanatory note. Nomad job gets `MAINTAINERR_URL=http://maintainerr.service.consul:6246` (olympus repo change, separate commit).
+Env (`src/kernel/config/schema.ts` EnvSchema): `MAINTAINERR_URL` optional URL. Absent → feature disabled, no settings shown beyond an explanatory note. Nomad job gets `MAINTAINERR_URL=http://maintainerr.service.consul:6246` (deployment cluster repo change, separate commit).
 
 `newsletter.leaving` (NewsletterConfigSchema, all overridable via `config_overrides`/Settings page):
 

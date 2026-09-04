@@ -6,8 +6,8 @@ import { getPortalVariables, toPortalTokens } from './variables';
 describe('getPortalVariables', () => {
   it('takes server_name from newsletter.from.name', () => {
     const portal = resolvePortalConfig(PortalConfigSchema.parse({}));
-    const vars = getPortalVariables(portal, { from: { name: 'Olympus', email: 'a@x.io' } });
-    expect(vars.serverName).toBe('Olympus');
+    const vars = getPortalVariables(portal, { from: { name: 'Aurora', email: 'a@x.io' } });
+    expect(vars.serverName).toBe('Aurora');
   });
 
   it('passes through configured links', () => {
@@ -16,7 +16,7 @@ describe('getPortalVariables', () => {
         links: { request_url: 'https://req.example', request_label: 'Overseerr', status_url: 'https://status.example' },
       }),
     );
-    const vars = getPortalVariables(portal, { from: { name: 'Olympus', email: 'a@x.io' } });
+    const vars = getPortalVariables(portal, { from: { name: 'Aurora', email: 'a@x.io' } });
     expect(vars.requestUrl).toBe('https://req.example');
     expect(vars.requestLabel).toBe('Overseerr');
     expect(vars.statusUrl).toBe('https://status.example');
@@ -25,7 +25,7 @@ describe('getPortalVariables', () => {
 
   it('falls back request_url/request_label to renderable defaults when unset', () => {
     const portal = resolvePortalConfig(PortalConfigSchema.parse({}));
-    const vars = getPortalVariables(portal, { from: { name: 'Olympus', email: 'a@x.io' } });
+    const vars = getPortalVariables(portal, { from: { name: 'Aurora', email: 'a@x.io' } });
     expect(vars.requestUrl).toBe('#');
     expect(vars.requestLabel).toBe('the request service');
   });
@@ -34,14 +34,14 @@ describe('getPortalVariables', () => {
 describe('toPortalTokens', () => {
   it('maps to the {{token}} names used in portal markdown', () => {
     const tokens = toPortalTokens({
-      serverName: 'Olympus',
+      serverName: 'Aurora',
       requestUrl: 'https://req.example',
       requestLabel: 'Overseerr',
       statusUrl: 'https://status.example',
       plexUrl: 'https://app.plex.tv',
     });
     expect(tokens).toEqual({
-      server_name: 'Olympus',
+      server_name: 'Aurora',
       request_url: 'https://req.example',
       request_label: 'Overseerr',
       status_url: 'https://status.example',

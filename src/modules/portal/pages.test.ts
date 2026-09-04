@@ -5,7 +5,7 @@ import { getBuiltinPortalPage, getCustomPortalPage } from './pages';
 import type { PortalVariables } from './variables';
 
 const vars: PortalVariables = {
-  serverName: 'Olympus',
+  serverName: 'Aurora',
   requestUrl: 'https://req.example',
   requestLabel: 'Overseerr',
   statusUrl: 'https://status.example',
@@ -18,7 +18,7 @@ describe('getBuiltinPortalPage', () => {
     const page = getBuiltinPortalPage('getting_started', portal, vars);
     expect(page).not.toBeNull();
     expect(page!.title).toBe('Getting started');
-    expect(page!.html).toContain('Olympus');
+    expect(page!.html).toContain('Aurora');
   });
 
   it('returns null (404) when the page is disabled', () => {
@@ -33,7 +33,7 @@ describe('getBuiltinPortalPage', () => {
       PortalConfigSchema.parse({ pages: { rules: { markdown: 'Custom rules for {{server_name}}.' } } }),
     );
     const page = getBuiltinPortalPage('rules', portal, vars);
-    expect(page!.html).toContain('Custom rules for Olympus.');
+    expect(page!.html).toContain('Custom rules for Aurora.');
     expect(page!.html.toLowerCase()).not.toContain('household');
   });
 });
@@ -46,7 +46,7 @@ describe('getCustomPortalPage', () => {
     const page = getCustomPortalPage(portal, 'faq', vars);
     expect(page).not.toBeNull();
     expect(page!.title).toBe('FAQ');
-    expect(page!.html).toContain('Hi from Olympus.');
+    expect(page!.html).toContain('Hi from Aurora.');
   });
 
   it('renders an html custom page verbatim, with no substitution', () => {
@@ -90,6 +90,6 @@ describe('getCustomPortalPage', () => {
       custom: [{ type: 'page', slug: 'faq', label: 'FAQ for {{server_name}}', markdown: 'hi' }],
     });
     const page = getCustomPortalPage(portal, 'faq', vars);
-    expect(page!.title).toBe('FAQ for Olympus');
+    expect(page!.title).toBe('FAQ for Aurora');
   });
 });

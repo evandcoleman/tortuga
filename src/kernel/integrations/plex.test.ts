@@ -5,7 +5,7 @@ const baseOpts = { token: 'plex-token-123', machineId: 'abc123machine' };
 
 const SECTIONS_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer size="1">
-  <Server name="Cerberus" address="1.2.3.4" port="32400" machineIdentifier="abc123machine" owned="1">
+  <Server name="Aurora" address="1.2.3.4" port="32400" machineIdentifier="abc123machine" owned="1">
     <Section id="1001" key="1" title="Movies" type="movie" shared="0"/>
     <Section id="1002" key="2" title="TV Shows" type="show" shared="0"/>
   </Server>
@@ -129,10 +129,10 @@ describe('PlexClient.invite', () => {
 const PENDING_INVITES_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer size="2">
   <Invite id="555" createdAt="1700000000" email="friend@example.com" username="friend" friend="1" home="0" server="1">
-    <Server name="Cerberus" numLibraries="2"/>
+    <Server name="Aurora" numLibraries="2"/>
   </Invite>
   <Invite id="556" createdAt="1700000100" email="other@example.com" username="other" friend="0" home="1" server="1">
-    <Server name="Cerberus" numLibraries="2"/>
+    <Server name="Aurora" numLibraries="2"/>
   </Invite>
 </MediaContainer>`;
 
@@ -155,7 +155,7 @@ describe('PlexClient.getPendingInvites', () => {
   it('handles a single Invite with no siblings without collapsing the array', async () => {
     const singleInviteXml = `<MediaContainer size="1">
       <Invite id="555" createdAt="1700000000" email="friend@example.com" username="friend" friend="1" home="0" server="1">
-        <Server name="Cerberus" numLibraries="2"/>
+        <Server name="Aurora" numLibraries="2"/>
       </Invite>
     </MediaContainer>`;
     const fetcher = vi.fn().mockResolvedValue(xmlResponse(singleInviteXml));

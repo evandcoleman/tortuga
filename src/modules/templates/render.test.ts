@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { renderTemplate } from './render';
 
 describe('renderTemplate', () => {
-  const vars = { name: 'Ada', email: 'ada@x.io', serverName: 'Olympus' };
+  const vars = { name: 'Ada', email: 'ada@x.io', serverName: 'Aurora' };
 
   it('substitutes variables in subject and body before markdown rendering', async () => {
     const result = await renderTemplate(
@@ -11,7 +11,7 @@ describe('renderTemplate', () => {
     );
     expect(result.subject).toBe('Welcome, Ada!');
     expect(result.html).toContain('Hi Ada');
-    expect(result.html).toContain('<strong>Olympus</strong>');
+    expect(result.html).toContain('<strong>Aurora</strong>');
   });
 
   it('produces a plain-text alternative alongside the html', async () => {

@@ -5,9 +5,9 @@ describe('substituteTokens', () => {
   it('replaces arbitrary named tokens', () => {
     const out = substituteTokens('Go to {{plex_url}} on {{server_name}}.', {
       plex_url: 'https://app.plex.tv',
-      server_name: 'Olympus',
+      server_name: 'Aurora',
     });
-    expect(out).toBe('Go to https://app.plex.tv on Olympus.');
+    expect(out).toBe('Go to https://app.plex.tv on Aurora.');
   });
 
   it('leaves a token untouched when its value is undefined or null', () => {
@@ -22,11 +22,11 @@ describe('substituteTokens', () => {
 });
 
 describe('substituteVariables', () => {
-  const vars: TemplateVariables = { name: 'Ada', email: 'ada@x.io', serverName: 'Olympus' };
+  const vars: TemplateVariables = { name: 'Ada', email: 'ada@x.io', serverName: 'Aurora' };
 
   it('replaces {{name}}, {{email}}, {{server_name}}', () => {
     const out = substituteVariables('Hi {{name}}, welcome to {{server_name}}. ({{email}})', vars);
-    expect(out).toBe('Hi Ada, welcome to Olympus. (ada@x.io)');
+    expect(out).toBe('Hi Ada, welcome to Aurora. (ada@x.io)');
   });
 
   it('tolerates internal whitespace inside the braces', () => {
@@ -40,17 +40,17 @@ describe('substituteVariables', () => {
   });
 
   it('falls back {{name}} to the email local part when no name is known', () => {
-    const out = substituteVariables('Hi {{name}}!', { name: null, email: 'grover@x.io', serverName: 'Olympus' });
+    const out = substituteVariables('Hi {{name}}!', { name: null, email: 'grover@x.io', serverName: 'Aurora' });
     expect(out).toBe('Hi grover!');
   });
 
   it('falls back {{name}} to the email local part when name is an empty string', () => {
-    const out = substituteVariables('Hi {{name}}!', { name: '  ', email: 'grover@x.io', serverName: 'Olympus' });
+    const out = substituteVariables('Hi {{name}}!', { name: '  ', email: 'grover@x.io', serverName: 'Aurora' });
     expect(out).toBe('Hi grover!');
   });
 
   it('renders {{name}} literally when there is no name and no email to fall back to', () => {
-    const out = substituteVariables('Hi {{name}}!', { name: null, email: '', serverName: 'Olympus' });
+    const out = substituteVariables('Hi {{name}}!', { name: null, email: '', serverName: 'Aurora' });
     expect(out).toBe('Hi {{name}}!');
   });
 

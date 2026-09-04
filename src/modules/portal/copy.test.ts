@@ -4,7 +4,7 @@ import { GETTING_STARTED_MARKDOWN, RULES_MARKDOWN, REPORT_ISSUE_MARKDOWN } from 
 import type { PortalVariables } from './variables';
 
 const vars: PortalVariables = {
-  serverName: 'Olympus',
+  serverName: 'Aurora',
   requestUrl: 'https://req.example',
   requestLabel: 'Overseerr',
   statusUrl: 'https://status.example',
@@ -14,7 +14,7 @@ const vars: PortalVariables = {
 describe('default portal copy', () => {
   it('getting-started substitutes {{server_name}} and covers the invite -> install -> pick -> stream flow', () => {
     const html = renderPortalMarkdown(GETTING_STARTED_MARKDOWN, vars);
-    expect(html).toContain('Olympus');
+    expect(html).toContain('Aurora');
     expect(html).not.toContain('{{server_name}}');
     expect(html.toLowerCase()).toContain('recommended devices');
     expect(html.toLowerCase()).toContain('plexamp');
@@ -22,7 +22,7 @@ describe('default portal copy', () => {
 
   it('rules substitutes {{server_name}} and stays generic house rules', () => {
     const html = renderPortalMarkdown(RULES_MARKDOWN, vars);
-    expect(html).toContain('Olympus');
+    expect(html).toContain('Aurora');
     expect(html.toLowerCase()).toContain('household');
     expect(html.toLowerCase()).toContain('request');
   });

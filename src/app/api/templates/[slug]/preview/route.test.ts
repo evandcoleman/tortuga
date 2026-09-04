@@ -17,7 +17,7 @@ const { UnauthorizedError: MockUnauthorizedError } = await import('@/kernel/auth
 vi.mock('@/kernel/context', () => ({
   getAppContext: () => ({
     db,
-    config: { newsletter: { from: { email: 'from@x.io', name: 'Olympus' }, theme: 'editorial' } },
+    config: { newsletter: { from: { email: 'from@x.io', name: 'Aurora' }, theme: 'editorial' } },
   }),
 }));
 
@@ -52,8 +52,8 @@ describe('POST /api/templates/:slug/preview', () => {
 
     expect(res.status).toBe(200);
     expect(body.subject).toBe('Hi Ada');
-    expect(body.html).toContain('<strong>Olympus</strong>');
-    expect(body.text).toContain('Join Olympus.');
+    expect(body.html).toContain('<strong>Aurora</strong>');
+    expect(body.text).toContain('Join Aurora.');
   });
 
   it('falls back to placeholder values when no overrides are given', async () => {
@@ -72,8 +72,8 @@ describe('POST /api/templates/:slug/preview', () => {
 
     expect(res.status).toBe(200);
     expect(body.subject).toBe('Draft subject Ada');
-    expect(body.html).toContain('<strong>Olympus</strong>');
-    expect(body.text).toContain('Draft body Olympus.');
+    expect(body.html).toContain('<strong>Aurora</strong>');
+    expect(body.text).toContain('Draft body Aurora.');
   });
 
   it('falls back to the stored template when overrides are absent, even with other fields present', async () => {

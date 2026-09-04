@@ -17,7 +17,7 @@ Deploys as **a single Docker container**, matching the convention of the rest of
 ## Goals
 
 1. **Replace Tautulli's newsletter** with something visually intentional, filtered, and TMDB-enriched.
-2. **Ship a deployment story** that fits both a single-container `docker compose` use case and the Olympus homelab's Nomad/Vault/Authelia pattern.
+2. **Ship a deployment story** that fits both a single-container `docker compose` use case and the deployment cluster's Nomad/Vault/Authelia pattern.
 3. **Lay a foundation** for future modules (broadcasts, invites, user directory, re-engagement) without overbuilding for them now.
 4. **Be honest about scope.** v1 = newsletter only, same digest for everyone, no per-user personalization. Future modules are anticipated but not designed.
 
@@ -73,7 +73,7 @@ Single Next.js 15 (App Router) application, `output: 'standalone'`, deployed as 
 
 **Scheduling.** The newsletter module registers a cron-style schedule with the kernel's scheduler (croner). The schedule is config-driven (`tortuga.yml` → `newsletter.schedule`). The same pipeline is also exposed at `POST /api/digests/run`, which accepts either a session cookie or a bearer token (`DIGEST_RUN_TOKEN`) — so an external cron / Nomad periodic batch can drive it instead.
 
-**For the Olympus homelab specifically:** one `olympus/jobs/tortuga/job.nomad` service (Linux class), one CSI volume for `/config`, Authelia ForwardAuth in front of the admin routes, image bump via `versions.json`. Same shape as any other custom service in the cluster.
+**For the deployment cluster specifically:** one `<your-infra-repo>/jobs/tortuga/job.nomad` service (Linux class), one CSI volume for `/config`, Authelia ForwardAuth in front of the admin routes, image bump via `versions.json`. Same shape as any other custom service in the cluster.
 
 ## Stack
 
@@ -259,7 +259,7 @@ newsletter:
   lookback_days: 7
   from:
     email: "newsletter@example.com"
-    name: "Olympus Plex"
+    name: "Aurora Plex"
   reply_to: "evan@example.com"
   include_libraries:               # null or omitted = all libraries
     - "Movies"
@@ -390,15 +390,15 @@ GitHub Actions:
 
 1. PR / push: `pnpm install` → `pnpm test` → `pnpm build`.
 2. Push to `main`: build Docker image, push to `ghcr.io/evandcoleman/tortuga:<sha>` and `:latest`. Tag releases also push `:vX.Y.Z`.
-3. After image push on `main`: call `<your-infra-repo>/.github/workflows/update-version.yml` to bump `versions.json`. Olympus CI then deploys.
+3. After image push on `main`: call `<your-infra-repo>/.github/workflows/update-version.yml` to bump `versions.json`. Deployment cluster CI then deploys.
 
 ## Deployment artifacts
 
-For Olympus homelab:
+For the deployment cluster:
 
-- `olympus/jobs/tortuga/job.nomad` — Linux class service, exposes one HTTP port, Vault template for `RESEND_API_KEY` / `TAUTULLI_API_KEY` / `TMDB_API_KEY` / `SESSION_SECRET`, CSI volume for `/config`, `AUTH_MODE=forward`, Authelia ForwardAuth via Traefik tags.
-- `olympus/vault-policies/tortuga.hcl` — read on `kv/tortuga`, `kv/tautulli`, `kv/tmdb`, `kv/resend`.
-- `olympus/versions.json` — `tortuga` key pointing at `ghcr.io/evandcoleman/tortuga:<tag>`.
+- `<your-infra-repo>/jobs/tortuga/job.nomad` — Linux class service, exposes one HTTP port, Vault template for `RESEND_API_KEY` / `TAUTULLI_API_KEY` / `TMDB_API_KEY` / `SESSION_SECRET`, CSI volume for `/config`, `AUTH_MODE=forward`, Authelia ForwardAuth via Traefik tags.
+- `<your-infra-repo>/vault-policies/tortuga.hcl` — read on `kv/tortuga`, `kv/tautulli`, `kv/tmdb`, `kv/resend`.
+- `<your-infra-repo>/versions.json` — `tortuga` key pointing at `ghcr.io/evandcoleman/tortuga:<tag>`.
 
 For everyone else:
 

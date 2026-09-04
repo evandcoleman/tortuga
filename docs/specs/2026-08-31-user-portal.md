@@ -27,7 +27,7 @@ with a markdown blob. The welcome/invite emails (#1) link to it.
 - Cloudflare tunnel + Traefik router: add the portal domain as a host for the tortuga
   service.
 - Authelia (edge node config): bypass rule for the portal domain.
-- Documented in the spec's rollout notes / docs/CONFIG.md, applied in the olympus repo.
+- Documented in the spec's rollout notes / docs/CONFIG.md, applied in the deployment cluster repo.
 
 ## Pages
 

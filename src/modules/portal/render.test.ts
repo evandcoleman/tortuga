@@ -3,7 +3,7 @@ import { renderPortalMarkdown, splitLead, addHeadingIds } from './render';
 import type { PortalVariables } from './variables';
 
 const vars: PortalVariables = {
-  serverName: 'Olympus',
+  serverName: 'Aurora',
   requestUrl: 'https://req.example',
   requestLabel: 'Overseerr',
   statusUrl: 'https://status.example',
@@ -13,7 +13,7 @@ const vars: PortalVariables = {
 describe('renderPortalMarkdown', () => {
   it('substitutes variables before rendering markdown', () => {
     const html = renderPortalMarkdown('Welcome to **{{server_name}}**.', vars);
-    expect(html).toContain('Welcome to <strong>Olympus</strong>.');
+    expect(html).toContain('Welcome to <strong>Aurora</strong>.');
   });
 
   it('substitutes link targets', () => {

@@ -192,4 +192,4 @@ Persistence reuses the existing `writeConfigOverride` + `invalidateAppContext` f
 
 ## Rollout
 
-No migration. Ship behind nothing (additive + backward-compatible). Verify on Olympus via the standard deploy contract; confirm `/api/healthz` and a test-send after deploy.
+No migration. Ship behind nothing (additive + backward-compatible). Verify on the deployment cluster via the standard deploy contract; confirm `/api/healthz` and a test-send after deploy.
