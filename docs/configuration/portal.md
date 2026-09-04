@@ -16,7 +16,7 @@ portal:
     plex_url: "https://app.plex.tv"
     status_url: "https://status.example.com"
     request_url: "https://requests.example.com"
-    request_label: "Request a title"
+    request_label: "Make a request"
   pages:
     getting_started: { enabled: true }
     rules: { enabled: true }

@@ -4,6 +4,9 @@ import { AppearanceSchema, ThemeOverridesSchema } from '@/modules/newsletter/app
 /** An optional secret env var: a blanked-out value (e.g. `FOO=""`) is treated as unset. */
 const optionalSecret = z.union([z.literal('').transform(() => undefined), z.string().min(1)]).optional();
 
+/** Default human-readable label for the newsletter's request link (matches portal copy). */
+export const DEFAULT_REQUEST_LABEL = 'Make a request';
+
 export const EnvSchema = z.object({
   TAUTULLI_URL: z.union([z.literal('').transform(() => undefined), z.string().url()]).optional(),
   TAUTULLI_API_KEY: optionalSecret,
@@ -88,7 +91,7 @@ export const NewsletterConfigSchema = z.object({
   }).default(() => ({ enabled: false, provider: 'anthropic' as const, model: '', voice: '', disclaimer: false })),
   extras: z.object({
     request_url: z.string().url().optional(),
-    request_label: z.string().default('Request a title'),
+    request_label: z.string().default(DEFAULT_REQUEST_LABEL),
     personal_url: z.string().url().optional(),
     personal_label: z.string().optional(),
     freeform_markdown: z.string().optional(),

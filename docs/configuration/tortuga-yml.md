@@ -170,7 +170,7 @@ Extra links and a freeform block in the digest footer.
 ```yaml
 extras:
   request_url: "https://requests.example.com"
-  request_label: "Request a title"
+  request_label: "Make a request"
   personal_url: "https://example.com"
   personal_label: "example.com"
   freeform_markdown: |
@@ -180,7 +180,7 @@ extras:
 | Field | Type | Default | Notes |
 |---|---|---|---|
 | `request_url` | url | — | Link to your request site (Overseerr/Ombi/etc). |
-| `request_label` | string | `Request a title` | Label for the request link. |
+| `request_label` | string | `Make a request` | Label for the request link. |
 | `personal_url` | url | — | Optional personal/site link. |
 | `personal_label` | string | — | Label for the personal link. |
 | `freeform_markdown` | string | — | Arbitrary Markdown rendered in the footer. |

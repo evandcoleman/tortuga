@@ -65,14 +65,14 @@ describe('DigestEmail', () => {
       DigestEmail({
         ...baseProps,
         intro: 'A curated week of cinema.',
-        requestLink: { url: 'https://req.example', label: 'Request a title' },
+        requestLink: { url: 'https://req.example', label: 'Make a request' },
         personalLink: { url: 'https://example.com', label: 'example.com' },
         freeformHtml: '<p>Maintenance Sunday.</p>',
       }),
     );
     expect(html).toContain('A curated week of cinema.');
     expect(html).toContain('https://req.example');
-    expect(html).toContain('Request a title');
+    expect(html).toContain('Make a request');
     expect(html).toContain('https://example.com');
     expect(html).toContain('Maintenance Sunday.');
   });
@@ -110,7 +110,7 @@ describe('DigestEmail', () => {
 
   it('omits intro/links/freeform when absent', async () => {
     const html = await render(DigestEmail(baseProps));
-    expect(html).not.toContain('Request a title');
+    expect(html).not.toContain('Make a request');
     expect(html).not.toContain('Maintenance Sunday.');
     expect(html).not.toContain('A curated week of cinema.');
     expect(html).not.toContain('example.com');

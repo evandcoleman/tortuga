@@ -167,7 +167,7 @@ export function ContentForm({
         <CardHeader title="Extras" />
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField name="extras.request_url" label="Request URL" type="url" defaultValue={config.extras?.request_url ?? ''} error={err['extras.request_url']} />
-          <TextField name="extras.request_label" label="Request label" defaultValue={config.extras?.request_label ?? 'Request a title'} />
+          <TextField name="extras.request_label" label="Request label" defaultValue={config.extras?.request_label ?? 'Make a request'} />
           <TextField name="extras.personal_url" label="Personal URL" type="url" defaultValue={config.extras?.personal_url ?? ''} error={err['extras.personal_url']} />
           <TextField name="extras.personal_label" label="Personal label" defaultValue={config.extras?.personal_label ?? ''} />
         </div>

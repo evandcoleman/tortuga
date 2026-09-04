@@ -11,6 +11,7 @@ import type { EmailProvider } from '@/kernel/email/types';
 import { generateUnsubscribeToken } from '@/kernel/email/unsubscribe';
 import { deliverToRecipients, selectDeliverableRecipients } from '@/kernel/email/deliver';
 import type { NewsletterConfig } from '@/kernel/config/schema';
+import { DEFAULT_REQUEST_LABEL } from '@/kernel/config/schema';
 import { ServiceNotConfiguredError } from '@/kernel/config/service-settings';
 import { createLogger } from '@/kernel/logging/logger';
 import { getPreferences } from '@/modules/preferences/repo';
@@ -128,7 +129,7 @@ export async function runDigest(opts: RunDigestOpts) {
 
     const extras = opts.config.extras;
     const requestLink: DigestLink | undefined = extras?.request_url
-      ? { url: extras.request_url, label: extras.request_label ?? 'Request a title' }
+      ? { url: extras.request_url, label: extras.request_label ?? DEFAULT_REQUEST_LABEL }
       : undefined;
     const personalLink: DigestLink | undefined = extras?.personal_url
       ? { url: extras.personal_url, label: extras.personal_label ?? new URL(extras.personal_url).host }

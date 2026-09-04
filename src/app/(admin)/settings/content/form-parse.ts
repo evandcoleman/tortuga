@@ -1,4 +1,5 @@
 import type { NewsletterConfig } from '@/kernel/config/schema';
+import { DEFAULT_REQUEST_LABEL } from '@/kernel/config/schema';
 import { mergeAndValidate, type ParseResult } from '../_lib/config-patch';
 import { str, bool, num, optNum, list, opt, numList } from '../_lib/form-values';
 
@@ -17,7 +18,7 @@ export function parseContentForm(fd: FormData, current: NewsletterConfig): Parse
     extrasFields.personal_url !== undefined ||
     extrasFields.personal_label !== undefined ||
     extrasFields.freeform_markdown !== undefined ||
-    (extrasFields.request_label !== '' && extrasFields.request_label !== 'Request a title');
+    (extrasFields.request_label !== '' && extrasFields.request_label !== DEFAULT_REQUEST_LABEL);
 
   return mergeAndValidate(current, {
     include_libraries: includeRaw.length ? includeRaw : null,

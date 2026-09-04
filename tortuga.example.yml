@@ -44,7 +44,7 @@ newsletter:
   # Optional. Extra links and a freeform block rendered in the digest footer.
   extras:
     request_url: "https://requests.example.com"   # your Overseerr/Ombi/request site
-    request_label: "Request a title"
+    request_label: "Make a request"
     personal_url: "https://example.com"
     personal_label: "example.com"
     freeform_markdown: |

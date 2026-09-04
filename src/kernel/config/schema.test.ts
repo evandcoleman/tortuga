@@ -18,7 +18,7 @@ describe('NewsletterConfigSchema commentary/extras', () => {
       extras: { request_url: 'https://req.example', personal_url: 'https://example.com', freeform_markdown: '# hi' },
     });
     expect(cfg.commentary).toMatchObject({ enabled: true, provider: 'openai', model: 'gpt-4o-mini', voice: 'snappy' });
-    expect(cfg.extras).toMatchObject({ request_url: 'https://req.example', request_label: 'Request a title' });
+    expect(cfg.extras).toMatchObject({ request_url: 'https://req.example', request_label: 'Make a request' });
   });
 
   it('defaults schedule_enabled to true and parses false', () => {
