@@ -56,10 +56,11 @@ export const RULES_MARKDOWN = `A few ground rules so **{{server_name}}** stays g
   household.
 - **Report broken files.** If something won't play, stutters, or looks
   wrong, let us know so it can get fixed or re-added.
-- **Request freely.** If it's not on the server, ask — that's what the
-  request link is for. No need to ask permission first.
-- **Report missing episodes or seasons.** If a show is incomplete, flag it
-  rather than assuming it's intentional.
+- **Request freely.** If it's not on the server,
+  [ask for it on {{request_label}}]({{request_url}}) — no need to check with
+  us first. It's faster than reaching out to us directly.
+- **Report missing episodes or seasons.** If a show is incomplete,
+  [report it]({{report_issue_url}}) rather than assuming it's intentional.
 
 Thanks for keeping things running smoothly.`;
 

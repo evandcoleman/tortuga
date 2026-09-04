@@ -11,11 +11,11 @@ export const dynamic = 'force-dynamic';
 export default async function CustomPortalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const ctx = getAppContext();
-  const vars = getPortalVariables(ctx.portal, ctx.config.newsletter);
+  const basePath = await getPortalBasePath();
+  const vars = getPortalVariables(ctx.portal, ctx.config.newsletter, { basePath });
   const page = getCustomPortalPage(ctx.config.portal, slug, vars);
   if (!page) notFound();
 
-  const basePath = await getPortalBasePath();
   const { copy } = ctx.portal;
   const reportIssueHref = ctx.portal.pages.report_issue.enabled ? `${basePath}/report-issue` : null;
   const stuckCard = buildStuckCard(copy, reportIssueHref);

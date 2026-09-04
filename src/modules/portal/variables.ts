@@ -8,6 +8,12 @@ export interface PortalVariables {
   requestLabel?: string;
   statusUrl?: string;
   plexUrl: string;
+  reportIssueUrl?: string;
+}
+
+export interface GetPortalVariablesOptions {
+  /** Request-scoped portal base path (see `getPortalBasePath`); used to build `reportIssueUrl`. */
+  basePath?: string;
 }
 
 /**
@@ -18,8 +24,19 @@ export interface PortalVariables {
 export function getPortalVariables(
   portal: ResolvedPortalConfig,
   newsletter: Pick<NewsletterConfig, 'from'>,
+  opts?: GetPortalVariablesOptions,
 ): PortalVariables {
-  return getPortalVariablesFromLinks(portal.links, newsletter.from.name);
+  const vars = getPortalVariablesFromLinks(portal.links, newsletter.from.name);
+  if (opts?.basePath === undefined) return vars;
+
+  // The report-issue page itself just sends people to the request portal, so
+  // when it's disabled the rules link should still land somewhere useful
+  // rather than 404ing.
+  const reportIssueUrl = portal.pages.report_issue.enabled
+    ? `${opts.basePath}/report-issue`
+    : vars.requestUrl;
+
+  return { ...vars, reportIssueUrl };
 }
 
 /**
@@ -51,5 +68,6 @@ export function toPortalTokens(vars: PortalVariables): Record<string, string | u
     request_label: vars.requestLabel,
     status_url: vars.statusUrl,
     plex_url: vars.plexUrl,
+    report_issue_url: vars.reportIssueUrl,
   };
 }

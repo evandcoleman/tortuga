@@ -92,7 +92,10 @@ The home page renders one ordered list of rows. Each row is one of four types:
 All keys are optional strings; any key left unset falls back to the default text
 below. Every string in `entries`, `pages.<key>.title`/`eyebrow`, and `copy` runs
 through the same token substitution as page bodies (`server_name`, `plex_url`,
-`request_url`, `request_label`, `status_url`).
+`request_url`, `request_label`, `status_url`). Page bodies additionally get
+`report_issue_url`, which resolves to the portal's report-issue page (or to
+`request_url` when that page is disabled); it depends on the request, so it is
+not available in `entries`, `pages.<key>.title`/`eyebrow`, or `copy`.
 
 | key | default |
 |---|---|

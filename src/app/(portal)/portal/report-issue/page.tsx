@@ -9,11 +9,11 @@ export const dynamic = 'force-dynamic';
 
 export default async function ReportIssuePage() {
   const ctx = getAppContext();
-  const vars = getPortalVariables(ctx.portal, ctx.config.newsletter);
+  const basePath = await getPortalBasePath();
+  const vars = getPortalVariables(ctx.portal, ctx.config.newsletter, { basePath });
   const page = getBuiltinPortalPage('report_issue', ctx.portal, vars);
   if (!page) notFound();
 
-  const basePath = await getPortalBasePath();
   const { copy } = ctx.portal;
   return (
     <PortalContentPage

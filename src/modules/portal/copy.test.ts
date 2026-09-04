@@ -9,6 +9,7 @@ const vars: PortalVariables = {
   requestLabel: 'Overseerr',
   statusUrl: 'https://status.example',
   plexUrl: 'https://app.plex.tv',
+  reportIssueUrl: '/report-issue',
 };
 
 describe('default portal copy', () => {
@@ -25,6 +26,23 @@ describe('default portal copy', () => {
     expect(html).toContain('Aurora');
     expect(html.toLowerCase()).toContain('household');
     expect(html.toLowerCase()).toContain('request');
+  });
+
+  it('rules links the request bullet to request_url and the missing-episodes bullet to report_issue_url', () => {
+    const html = renderPortalMarkdown(RULES_MARKDOWN, vars);
+    expect(html).toContain('<a href="https://req.example">');
+    expect(html).toContain('<a href="/report-issue">report it</a>');
+    expect(html).not.toContain('{{request_url}}');
+    expect(html).not.toContain('{{report_issue_url}}');
+  });
+
+  it('rules renders without a broken request link when request_url is unset', () => {
+    const html = renderPortalMarkdown(RULES_MARKDOWN, {
+      ...vars,
+      requestUrl: '#',
+      requestLabel: 'the request service',
+    });
+    expect(html).toContain('<a href="#">');
   });
 
   it('report-issue links to the request portal at {{request_url}}', () => {
