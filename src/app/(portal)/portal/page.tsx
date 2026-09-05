@@ -22,7 +22,7 @@ export default async function PortalHome() {
           </span>
         }
       />
-      <div className="flex flex-col gap-4 pt-16 pb-10 sm:gap-5 sm:pt-24 sm:pb-14">
+      <div className="flex flex-col gap-7 pt-16 pb-10 sm:gap-10 sm:pt-24 sm:pb-14">
         <h1
           className="m-0 text-[76px] leading-[0.92] font-semibold tracking-[-0.03em] sm:text-[148px]"
           style={{ fontFamily: 'var(--portal-font-heading)' }}
