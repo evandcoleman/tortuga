@@ -57,8 +57,8 @@ export const RULES_MARKDOWN = `A few ground rules so **{{server_name}}** stays g
 - **Report broken files.** If something won't play, stutters, or looks
   wrong, let us know so it can get fixed or re-added.
 - **Request freely.** If it's not on the server,
-  [ask for it on {{request_label}}]({{request_url}}) — no need to check with
-  us first. It's faster than reaching out to us directly.
+  [put in a request]({{request_url}}) — no need to check with us
+  first. It's faster than reaching out to us directly.
 - **Report missing episodes or seasons.** If a show is incomplete,
   [report it]({{report_issue_url}}) rather than assuming it's intentional.
 
