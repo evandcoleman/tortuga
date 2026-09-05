@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderPortalMarkdown } from './render';
-import { GETTING_STARTED_MARKDOWN, RULES_MARKDOWN, REPORT_ISSUE_MARKDOWN } from './copy';
+import { GETTING_STARTED_MARKDOWN, RULES_MARKDOWN, REPORT_ISSUE_MARKDOWN, getReportIssueMarkdown } from './copy';
 import type { PortalVariables } from './variables';
 
 const vars: PortalVariables = {
@@ -58,5 +58,15 @@ describe('default portal copy', () => {
       requestLabel: 'the request service',
     });
     expect(html).toContain('<a href="#">Open the request portal</a>');
+  });
+
+  it('getReportIssueMarkdown points to the status page when hasStatusPage is true', () => {
+    const html = renderPortalMarkdown(getReportIssueMarkdown({ hasStatusPage: true }), vars);
+    expect(html).toContain('<a href="https://status.example">status page</a>');
+    expect(html).not.toContain('{{status_url}}');
+  });
+
+  it('getReportIssueMarkdown matches REPORT_ISSUE_MARKDOWN when hasStatusPage is false', () => {
+    expect(getReportIssueMarkdown({ hasStatusPage: false })).toBe(REPORT_ISSUE_MARKDOWN);
   });
 });

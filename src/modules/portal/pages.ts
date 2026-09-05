@@ -1,7 +1,7 @@
 import type { PortalConfig } from '@/kernel/config/schema';
 import { buildRawEntries, type ResolvedPortalConfig } from '@/kernel/config/portal';
 import { substituteTokens } from '@/modules/templates/substitute';
-import { GETTING_STARTED_MARKDOWN, RULES_MARKDOWN, REPORT_ISSUE_MARKDOWN } from './copy';
+import { GETTING_STARTED_MARKDOWN, RULES_MARKDOWN, getReportIssueMarkdown } from './copy';
 import { renderPortalMarkdown } from './render';
 import { toPortalTokens, type PortalVariables } from './variables';
 
@@ -13,10 +13,10 @@ export interface PortalPageContent {
   html: string;
 }
 
-const BUILTIN_DEFAULT_MARKDOWN: Record<BuiltinPortalPageKey, string> = {
-  getting_started: GETTING_STARTED_MARKDOWN,
-  rules: RULES_MARKDOWN,
-  report_issue: REPORT_ISSUE_MARKDOWN,
+const BUILTIN_DEFAULT_MARKDOWN: Record<BuiltinPortalPageKey, (vars: PortalVariables) => string> = {
+  getting_started: () => GETTING_STARTED_MARKDOWN,
+  rules: () => RULES_MARKDOWN,
+  report_issue: (vars) => getReportIssueMarkdown({ hasStatusPage: Boolean(vars.statusUrl) }),
 };
 
 /**
@@ -34,7 +34,7 @@ export function getBuiltinPortalPage(
   const page = portal.pages[key];
   if (!page.enabled) return null;
 
-  const defaultMarkdown = BUILTIN_DEFAULT_MARKDOWN[key];
+  const defaultMarkdown = BUILTIN_DEFAULT_MARKDOWN[key](vars);
   const markdown = page.markdown && page.markdown.trim().length > 0 ? page.markdown : defaultMarkdown;
   return { title: page.title, html: renderPortalMarkdown(markdown, vars) };
 }

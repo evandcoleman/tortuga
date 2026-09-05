@@ -126,7 +126,7 @@ export interface DefaultPageCopy {
 
 export const REPORT_ISSUE_TITLE = 'Report an issue';
 
-export const REPORT_ISSUE_MARKDOWN = `Something not playing right, missing, or broken? Here's how to report it.
+const REPORT_ISSUE_INTRO = `Something not playing right, missing, or broken? Here's how to report it.
 
 ## Content issues
 
@@ -139,10 +139,28 @@ This covers things like:
 - Wrong subtitles, or subtitles that are missing entirely
 - A movie or episode that's the wrong version, or has the wrong metadata
 
-## Something else?
+## Something else?`;
 
-If it's not a content issue — the server itself seems down, or something
+const REPORT_ISSUE_SOMETHING_ELSE_NO_STATUS = `If it's not a content issue — the server itself seems down, or something
 outside of a specific title is broken — reach out directly.`;
+
+const REPORT_ISSUE_SOMETHING_ELSE_WITH_STATUS = `If it's not a content issue — the server itself seems down, or something
+outside of a specific title is broken — check the [status page]({{status_url}})
+first. If nothing's reported there, reach out directly.`;
+
+/**
+ * Assembles the report-issue page body. The final "Something else?" section
+ * points to the status page first when one is configured; otherwise it keeps
+ * the original "reach out directly" copy verbatim.
+ */
+export function getReportIssueMarkdown(opts: { hasStatusPage: boolean }): string {
+  const somethingElse = opts.hasStatusPage
+    ? REPORT_ISSUE_SOMETHING_ELSE_WITH_STATUS
+    : REPORT_ISSUE_SOMETHING_ELSE_NO_STATUS;
+  return `${REPORT_ISSUE_INTRO}\n\n${somethingElse}`;
+}
+
+export const REPORT_ISSUE_MARKDOWN = getReportIssueMarkdown({ hasStatusPage: false });
 
 export const DEFAULT_PAGE_COPY: Record<'getting_started' | 'rules' | 'report_issue', DefaultPageCopy> = {
   getting_started: { title: GETTING_STARTED_TITLE, eyebrow: 'Guide' },

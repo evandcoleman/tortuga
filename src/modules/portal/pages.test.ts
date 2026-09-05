@@ -28,6 +28,21 @@ describe('getBuiltinPortalPage', () => {
     expect(getBuiltinPortalPage('rules', portal, vars)).toBeNull();
   });
 
+  it('points to the status page in the "something else" section when a status URL is configured', () => {
+    const portal = resolvePortalConfig(PortalConfigSchema.parse({}));
+    const page = getBuiltinPortalPage('report_issue', portal, vars);
+    expect(page!.html).toContain('<a href="https://status.example">status page</a>');
+    expect(page!.html).not.toContain('{{status_url}}');
+  });
+
+  it('falls back to "reach out directly" with no status page link when no status URL is configured', () => {
+    const portal = resolvePortalConfig(PortalConfigSchema.parse({}));
+    const noStatusVars = { ...vars, statusUrl: undefined };
+    const page = getBuiltinPortalPage('report_issue', portal, noStatusVars);
+    expect(page!.html).toContain('reach out directly');
+    expect(page!.html.toLowerCase()).not.toContain('status page');
+  });
+
   it('a configured markdown override replaces the default body entirely', () => {
     const portal = resolvePortalConfig(
       PortalConfigSchema.parse({ pages: { rules: { markdown: 'Custom rules for {{server_name}}.' } } }),
