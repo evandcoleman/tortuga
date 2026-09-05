@@ -130,14 +130,24 @@ const REPORT_ISSUE_INTRO = `Something not playing right, missing, or broken? Her
 
 ## Content issues
 
-Use the **Report Issue** flow in the request portal — it routes straight to
-the person who can fix it: [Open the request portal]({{request_url}}).
+Anything tied to a specific movie or show — playback, audio, subtitles, the
+wrong version — goes through the request portal. It routes straight to the
+person who can fix it and keeps track of what's already been reported.
+
+1. Open the request portal and search for the movie or show that's giving you
+   trouble: [Open the request portal]({{request_url}}).
+2. On the title's page, click **Report Issue**.
+3. Pick the kind of problem (video, audio, subtitles, or other). For a TV show,
+   choose the season and episode it happens in.
+4. Describe what's wrong and submit. A sentence or two is plenty — what you saw,
+   which app you were using, and roughly where in the playback it happened.
 
 This covers things like:
 
-- A video or audio file that won't play or is corrupted
+- A video or audio file that won't play, stutters, or is corrupted
 - Wrong subtitles, or subtitles that are missing entirely
 - A movie or episode that's the wrong version, or has the wrong metadata
+- An episode that's missing or out of order
 
 ## Something else?`;
 
